@@ -3,7 +3,7 @@
 #include "syscon.h"
 
 void SYSCON_InitCore72MHzFromExternal12MHz() {
-	SYSCON->PDRUNCFG &= 0xffffff5f;	//Turn on system oscillator and sys PLL
+	SYSCON->PDRUNCFG &= ~(SYSCON_SYSOSC_PD | SYSCON_SYSPLL_PD);	//Turn on system oscillator and sys PLL
 	SYSCON->SYSPLLCLKSEL = 1;	//choose external oscillator for sys PLL
 	SYSCON->SYSPLLCLKUEN = 0;	//Trigger sys pll source change
 	SYSCON->SYSPLLCLKUEN = 1;

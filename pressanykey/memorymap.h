@@ -1,14 +1,7 @@
 #ifndef _MEMORYMAP_
 #define _MEMORYMAP_
 
-/* Some definitions for registers memory mapping. All just resolve to volatile. This way, allowed usage can be seen in the typedefs. HW_WO: Write only, HW_RO: Read only, HW_RW: Read/Write, HW_RS: Reserved (do not access), HW_UU: Unused (padding etc.) */
-
-typedef volatile uint32_t HW_WO;
-typedef volatile uint32_t HW_RO;
-typedef volatile uint32_t HW_RW;
-typedef volatile uint32_t HW_RS;
-typedef volatile uint32_t HW_UU;
-
+#include "types.h"
 
 /* -----------------------------------
    --- GPIO --------------------------
@@ -32,21 +25,20 @@ typedef struct {
 	HW_UU UNUSED[0x1c00];		//padding to next GPIO bank (byte offsets 0x9000 to 0xffff)
 } GPIO_STRUCT;
 
+// GPIO bank bases can be accessed via GPIO[i]
 #define GPIO ((GPIO_STRUCT*)(0x50000000))
 
 /* -----------------------------------
    --- IOCON -------------------------
    -----------------------------------
 
-IO configuration. Functions are quite a mess...
-
-*/
+IO configuration. Functions are quite a mess... */
 
 typedef struct {
 	HW_RW PIO2_6;
 	HW_RS RESERVED1;
 	HW_RW PIO2_0;
-	HW_RW RESET_PIO0_0;
+	HW_RW PIO0_0;
 	HW_RW PIO0_1;
 	HW_RW PIO1_8;
 	HW_RS RESERVED2;
@@ -69,17 +61,17 @@ typedef struct {
 	HW_RW PIO2_2;
 	HW_RW PIO0_8;
 	HW_RW PIO0_9;
-	HW_RW SWCLK_PIO0_10;
+	HW_RW PIO0_10;
 	HW_RW PIO1_10;
 	HW_RW PIO2_11;
-	HW_RW R_PIO0_11;
-	HW_RW R_PIO1_0;
-	HW_RW R_PIO1_1;
-	HW_RW R_PIO1_2;
+	HW_RW PIO0_11;
+	HW_RW PIO1_0;
+	HW_RW PIO1_1;
+	HW_RW PIO1_2;
 	HW_RW PIO3_0;
 	HW_RW PIO3_1;
 	HW_RW PIO2_3;
-	HW_RW SWDIO_PIO1_3;
+	HW_RW PIO1_3;
 	HW_RW PIO1_4;
 	HW_RW PIO1_11;
 	HW_RW PIO3_2;
@@ -92,6 +84,18 @@ typedef struct {
 	HW_RW DCD_LOC;
 	HW_RW RI_LOC;
 } IOCON_STRUCT;
+
+typedef enum IOCON_IO_PULL_MODE {
+	IOCON_IO_PULL_NONE = 0x00,
+	IOCON_IO_PULL_DOWN = 0x08,
+	IOCON_IO_PULL_UP = 0x10,
+	IOCON_IO_PULL_REPEAT = 0x18
+} IOCON_IO_PULL_MODE;
+
+typedef enum IOCON_IO_HYSTERESIS_MODE {
+	IOCON_IO_HYSTERESIS_OFF = 0x00,
+	IOCON_IO_HYSTERESIS_ON = 0x20
+} IOCON_IO_HYSTERESIS_MODE;
 
 #define IOCON ((IOCON_STRUCT*)(0x40044000))
 
@@ -167,6 +171,42 @@ typedef struct {
 	HW_RO DEVICE_ID;		//Device ID - Chip model.
 } SYSCON_STRUCT;
 
+typedef enum SYSCON_SYSAHBCLKCTRL_BITS {
+	SYSCON_SYSAHBCLKCTRL_SYS        = 0x00001,
+	SYSCON_SYSAHBCLKCTRL_ROM        = 0x00002,
+	SYSCON_SYSAHBCLKCTRL_RAM        = 0x00004,
+	SYSCON_SYSAHBCLKCTRL_FLASHREG   = 0x00008,
+	SYSCON_SYSAHBCLKCTRL_FLASHARRAY = 0x00010,
+	SYSCON_SYSAHBCLKCTRL_I2C        = 0x00020,
+	SYSCON_SYSAHBCLKCTRL_GPIO       = 0x00040,
+	SYSCON_SYSAHBCLKCTRL_CT16B0     = 0x00080,
+	SYSCON_SYSAHBCLKCTRL_CT16B1     = 0x00100,
+	SYSCON_SYSAHBCLKCTRL_CT32B0     = 0x00200,
+	SYSCON_SYSAHBCLKCTRL_CT32B1     = 0x00400,
+	SYSCON_SYSAHBCLKCTRL_SSP        = 0x00800,
+	SYSCON_SYSAHBCLKCTRL_UART       = 0x01000,
+	SYSCON_SYSAHBCLKCTRL_ADC        = 0x02000,
+	SYSCON_SYSAHBCLKCTRL_USB_REG    = 0x04000,
+	SYSCON_SYSAHBCLKCTRL_WDT        = 0x08000,
+	SYSCON_SYSAHBCLKCTRL_IOCON      = 0x10000,
+	SYSCON_SYSAHBCLKCTRL_SSP1       = 0x40000
+} SYSCON_SYSAHBCLKCTRL_BITS;
+
+/* may be used with PDRUNCFG and PDAWAKECFG registers */
+typedef enum SYSCON_PD_BITS {
+	SYSCON_IRCOUT_PD     = 0x0001,
+	SYSCON_IRC_PD        = 0x0002,
+	SYSCON_FLASH_PD      = 0x0004,
+	SYSCON_BOD_PD        = 0x0008,
+	SYSCON_ADC_PD        = 0x0010,
+	SYSCON_SYSOSC_PD     = 0x0020,
+	SYSCON_WDTOSC_PD     = 0x0040,
+	SYSCON_SYSPLL_PD     = 0x0080,
+	SYSCON_USBPLL_PD     = 0x0100,
+	SYSCON_USBPAD_PD     = 0x0400,
+	SYSCON_PD_ALWAYS_SET = 0xe800
+} SYSCON_PD_BITS;
+
 #define SYSCON ((SYSCON_STRUCT*)(0x40048000))
 
 /* -----------------------------------
@@ -184,6 +224,96 @@ typedef struct {
 } SYSTICK_STRUCT;
 
 #define SYSTICK ((SYSTICK_STRUCT*)(0xe000e000))
+
+/* -----------------------------------
+   --- USB  --------------------------
+   -----------------------------------
+
+USB peripheral access. */
+
+typedef struct {
+	HW_RO DEVINTST;			//Device interrupt status
+	HW_RW DEVINTEN;			//Device interrupt enable
+	HW_WO DEVINTCLR;		//Device interrupt clear
+	HW_WO DEVINTSET;		//Device interrupt set
+	HW_WO CMDCODE;			//SIE Command code / data write
+	HW_RO CMDDATA;			//SIE Command data / data read
+	HW_RO RXDATA;			//Receive data
+	HW_WO TXDATA;			//Transmit data
+	HW_RO RXPLEN;			//Receive packet length
+	HW_WO TXPLEN;			//Transmit packet length
+	HW_RW CTRL;			//Control
+	HW_WO DEVFIQSEL;		//Device FIQ select
+} USB_STRUCT;
+
+typedef enum {
+	USB_CMDCODE_PHASE_WRITE = 0x100,
+	USB_CMDCODE_PHASE_READ = 0x200,
+	USB_CMDCODE_PHASE_COMMAND = 0x500,
+} USB_CMDCODE_PHASE;
+
+//interrupt bits. Can be used with DEVINTST, DEVINTEN, DEVINTCLR and DEVINTSET.
+typedef enum {
+	USB_DEVINT_FRAME    = 0x0001,
+	USB_DEVINT_EP0      = 0x0002,
+	USB_DEVINT_EP1      = 0x0004,
+	USB_DEVINT_EP2      = 0x0008,
+	USB_DEVINT_EP3      = 0x0010,
+	USB_DEVINT_EP4      = 0x0020,
+	USB_DEVINT_EP5      = 0x0040,
+	USB_DEVINT_EP6      = 0x0080,
+	USB_DEVINT_EP7      = 0x0100,
+	USB_DEVINT_DEV_STAT = 0x0200,
+	USB_DEVINT_CC_EMPTY = 0x0400,
+	USB_DEVINT_CD_FULL  = 0x0800,
+	USB_DEVINT_RXENDPKT = 0x1000,
+	USB_DEVINT_TXENDPKT = 0x2000
+} USB_DEVINT_TARGET;
+
+#define USB ((USB_STRUCT*)(0x40020000))
+
+/* -----------------------------------
+   --- NVIC --------------------------
+   -----------------------------------
+
+The Nested Vector Interrupt Controller controls interrupts. Note that we use a different base address (0xe000e1000 instead of 0xe000e000) because the first 256 bytes are not used. */
+
+typedef struct {
+	HW_RW ISER0;	//Interrupt set enabled
+	HW_RW ISER1;
+	HW_RW ICER0;	//Interrupt clear enabled
+	HW_RW ICER1;
+	HW_RW ISPR0;	//Interrupt set pending
+	HW_RW ISPR1;
+	HW_RW ICPR0;	//Interrupt clear pending
+	HW_RW ICPR1;
+	HW_RO IABR0;	//Interrupt active
+	HW_RO IABR1;	
+	HW_RW IPR0;	//Interrupt priority
+	HW_RW IPR1;
+	HW_RW IPR2;
+	HW_RW IPR3;
+	HW_RW IPR4;
+	HW_RW IPR5;
+	HW_RW IPR6;
+	HW_RW IPR7;
+	HW_RW IPR8;
+	HW_RW IPR9;
+	HW_RW IPR10;
+	HW_RW IPR11;
+	HW_RW IPR12;
+	HW_RW IPR13;
+	HW_RW IPR14;
+	HW_WO STIR;	//Software trigger interrupt register
+} NVIC_STRUCT;
+
+/* due to the number of interrupts, it doesn't make much sense to write out all masks explicitly - they are split over multiple registers anyway. Instead, they are just numbered. The respective register and bit mask can be obtained by comparison and bit shifting. */
+
+typedef enum NVIC_INTERRUPT_INDEX {
+	NVIC_PIO0_0 = 0,	NVIC_PIO0_1,	NVIC_PIO0_2,	NVIC_PIO0_3,	NVIC_PIO0_4,	NVIC_PIO0_5,	NVIC_PIO0_6,	NVIC_PIO0_7,	NVIC_PIO0_8,	NVIC_PIO0_9,	NVIC_PIO0_10,	NVIC_PIO0_11,	NVIC_PIO1_0,	NVIC_PIO1_1,	NVIC_PIO1_2,	NVIC_PIO1_3,	NVIC_PIO1_4,	NVIC_PIO1_5,	NVIC_PIO1_6,	NVIC_PIO1_7,	NVIC_PIO1_8,	NVIC_PIO1_9,	NVIC_PIO1_10,	NVIC_PIO1_11,	NVIC_PIO2_0,	NVIC_PIO2_1,	NVIC_PIO2_2,	NVIC_PIO2_3,	NVIC_PIO2_4,	NVIC_PIO2_5,	NVIC_PIO2_6,	NVIC_PIO2_7,
+	NVIC_PIO2_8,	NVIC_PIO2_9,	NVIC_PIO2_10,	NVIC_PIO2_11,	NVIC_PIO3_0,	NVIC_PIO3_1,	NVIC_PIO3_2,	NVIC_PIO3_3,	NVIC_I2C0,	NVIC_CT16B0,	NVIC_CT16B1,	NVIC_CT32B0,	NVIC_CT32B1,	NVIC_SSP0,	NVIC_UART,	NVIC_USBIRQ,	NVIC_USBFIQ,	NVIC_ADC,	NVIC_WDT,	NVIC_BOD,	NVIC_PIO_3 = 53,	NVIC_PIO_2,	NVIC_PIO_1,	NVIC_PIO_0,	NVIC_SSP1} NVIC_INTERRUPT_INDEX;
+
+#define NVIC ((NVIC_STRUCT*)0xe000e100)
 
 /* -----------------------------------
    --- VECTOR TABLE  -----------------

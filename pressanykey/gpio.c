@@ -12,17 +12,18 @@ void GPIO_SetDir(uint8_t port, uint8_t pin, GPIO_Direction dir) {
 	}
 }
 
-void GPIO_SetPull(uint8_t port, uint8_t pin, GPIO_PullState pull) {
-	//TODO
-}
-
 void GPIO_WriteOutput(uint8_t port, uint8_t pin, bool value) {
-	if (value) GPIO[port].MASKED_DATA[1<<pin] = 0x3fff;
-	else GPIO[port].MASKED_DATA[1<<pin] = 0x0000;
+	GPIO[port].MASKED_DATA[1<<pin] = value ? 0x3fff : 0x0000;
 }
 
 bool GPIO_ReadInput(uint8_t port, uint8_t pin) {
 	return (GPIO[port].DATA & (1<<pin)) ? true : false;
 }
 
+void GPIO_SetPull(HW_RW* pin, IOCON_IO_PULL_MODE mode) {
+	*pin = ((*pin) & (~IOCON_IO_PULL_REPEAT)) | mode;
+}
 
+void GPIO_SetHysteresis(HW_RW* pin, IOCON_IO_PULL_MODE mode) {
+	*pin = ((*pin) & (~IOCON_IO_HYSTERESIS_ON)) | mode;
+}
