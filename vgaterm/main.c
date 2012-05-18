@@ -28,13 +28,12 @@ uint32_t currentFrame;
 uint16_t scanlinePixels[COLUMNS];
 int16_t vOffset;
 
-const uint8_t screen1[] = "\n\n\nPress any key to continue...\n\n\n";
+const uint8_t screen1[] = "\n\n\nPress any key to continue\n\n\n";
 
-const uint8_t screen2[] = "\n\n\nThanks for pressing any key.\n\nPress again...";
-
-const uint8_t screen3[] = "\n\n\nYou have reached the third screen.\n\nPress any key to restart.";
+const uint8_t screen2[] = "\n\n\nThanks for pressing any key.\n\nPress any key to restart ";
 
 
+#define SHORT_PRESS_FRAMES 2
 #define LONG_PRESS_FRAMES 50
 
 void clearScreen() {
@@ -72,10 +71,9 @@ void main(void) {
 
 	const uint8_t* screens[] = {
 		screen1,
-		screen2,
-		screen3
+		screen2
 	};
-	uint16_t screenCount = 3;
+	uint16_t screenCount = 2;
 	
 	//init pins
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
@@ -96,8 +94,8 @@ void main(void) {
 	currentScanline = 0;
 	vOffset = 0;
 	uint32_t currentScreen = 0;
-	bool oldState;
-	uint32_t downFrame;
+	bool oldState = 1;
+	uint32_t downFrame = 0;
 	setScreen(screens[currentScreen]);
 
 	//start video generation (one systick per scanline)
@@ -112,7 +110,7 @@ void main(void) {
 			uint32_t downDuration = currentFrame - downFrame;
 			if (downDuration > LONG_PRESS_FRAMES) {
 				currentScreen = (currentScreen + screenCount - 1) % screenCount;
-			} else {
+			} else if (downDuration > SHORT_PRESS_FRAMES) {
 				currentScreen = (currentScreen + 1) % screenCount;
 			}
 			setScreen(screens[currentScreen]);
@@ -122,6 +120,7 @@ void main(void) {
 		int val = currentFrame % 100 - 50;
 		val = val * val / 10;
 		vOffset = -val;
+		GPIO_WriteOutput(LED_PORT, LED_PIN, currentScreen & 1);
 	}
 }
 
@@ -1328,17 +1327,11 @@ void systick(void) {
 		"VSYNCDOWN:\n"
 		"MOV r1, #0\n"			//1       r1 = 0
 		"STR r1, [r0, #0x100]\n"	//2	  set vsync
-		"LDR r0, =LED\n"		//        turn LED on
-		"LDR r1, =0xff\n"
-		"STR r1,[r0, #0]\n"
 		"B LINEEND\n"			//2-4     goto end
 
 		"VSYNCUP:\n"
 		"MOV r1, #0xff\n"		//1       r1 = 255
 		"STR r1, [r0, #0x100]\n"	//2	  set vsync
-		"LDR r0, =LED\n"		//        turn LED off
-		"MOV r1, #0x00\n"
-		"STR r1,[r0, #0]\n"
 		"B LINEEND\n"			//2-4     goto end
 
 		"RESETLINE:\n"
