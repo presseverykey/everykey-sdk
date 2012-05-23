@@ -44,7 +44,7 @@ void GPIO_SetPull(HW_RW* pin, IOCON_IO_PULL_MODE mode);
 	@param pin pointer to a pin register in the IOCON struct. Must be a pin that supports hysteresis, in a supported mode
 	@param mode mode to set to
 */
-void GPIO_SetHysteresis(HW_RW* pin, IOCON_IO_PULL_MODE mode);
+void GPIO_SetHysteresis(HW_RW* pin, IOCON_IO_HYSTERESIS_MODE mode);
 
 /** define to call setHysteresis in a syntax similar to other in/out calls if port and pin are known at compile time. Two-step for argument macro expansion. */
 #define GPIO_SETHYSTERESIS2(port,pin,mode) {GPIO_SetHysteresis(&(IOCON->PIO ## port ## _ ## pin),mode); }
