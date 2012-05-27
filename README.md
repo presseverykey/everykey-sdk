@@ -3,11 +3,11 @@ Contents of this directory
 
 This directory contains the following items:
 
-- pressanykey: The pressanykey runtime for the LPC1343 / press any key
+- pressanykey: The pressanykey runtime for the LPC1343 / Anykey0x.de
   board, linker script and makefile
 - checksum: A tool to calculate and adjust the checksum of a firmware
   file
-- several example projects (see bottom for descriptions)
+- several example projects (see below for descriptions)
 
 In contrast to other runtimes, pressanykey does not link against
 precompiled libraries. Instead, the runtime is included into projects as
@@ -26,7 +26,7 @@ peripherals are working yet.
 Setup build environment
 =======================
 
-- Install gcc arm-none-eabi toolchain (see below) 
+- Install gcc arm-none-eabi toolchain (see [below](#installing-the-compiler)) 
 - Go to checksum directory, build checksum tool (`make`)
 - Move checksum tool or adjust $PATH so that it can be found
 
@@ -48,9 +48,9 @@ following steps to create a project directory from scratch:
   directory
 - link, symlink or copy lpc1343.ld (inside pressanykey dir) to project
   directory
-- make (will compile and link all c files in project dir and subdirs)
+- run `make` (will compile and link all c files in project dir and subdirs)
 - connect target board in USB programming mode
-- make install (optionally copy the resulting .bin file manually)
+- run `make install` (optionally copy the resulting .bin file manually)
 - disconnect and re-plug target board
 
 In most cases, symlinking (or hard-linking, if you prefer) the
@@ -106,10 +106,10 @@ assembly strategies.
 Installing the compiler
 =======================
 
-The most common open source compiler toolchain in use for arm is the gnu
-compiler toolchain. [Mentor
-Graphics](http://www.mentor.com/embedded-software/codesourcery),
-formerly CodeSourcery provide and maintain the ARM version of GCC.
+The most common open source compiler toolchain in use for ARM based systems is
+the gnu compiler toolchain. [Mentor
+Graphics](http://www.mentor.com/embedded-software/codesourcery), formerly
+CodeSourcery, provide and maintain the ARM version of GCC.
 
 Linux
 -----
@@ -117,7 +117,7 @@ Linux
 Check your distributions package manager, it will probably contain a
 package called something like `arm-none-eabi`.
 
-Alternatively, you can download am installer directly from CodeSourcery
+Alternatively, you can download an installer directly from CodeSourcery
 [here](http://www.codesourcery.com/sgpp/lite/arm/portal/package8736/public/arm-none-eabi/arm-2011.03-42-arm-none-eabi.bin) (
 [mirror](ftp://pr0n.club.muc.ccc.de/incoming/arm-2011.03-42-arm-none-eabi.bin)).
 You'll need to make the installer executable, using `chmod +x`, and then
