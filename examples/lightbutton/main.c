@@ -12,6 +12,6 @@ void main(void) {
 
 	while (true) {
 		bool button = GPIO_ReadInput(KEY_PORT, KEY_PIN);
-		GPIO_WriteOutput(LED_PORT, LED_PIN, !button);
+		GPIO_WriteOutput(LED_PORT, LED_PIN, button);
 	}
 }

@@ -109,7 +109,7 @@ Installing the compiler
 The most common open source compiler toolchain in use for arm is the gnu
 compiler toolchain. [Mentor
 Graphics](http://www.mentor.com/embedded-software/codesourcery),
-formerly CodeSourcery provide maintain the ARM version of GCC.
+formerly CodeSourcery provide and maintain the ARM version of GCC.
 
 Linux
 -----
@@ -117,9 +117,9 @@ Linux
 Check your distributions package manager, it will probably contain a
 package called something like `arm-none-eabi`.
 
-Alternatively, you can download am installer directly from CodeSourcery.
-[Here](http://www.codesourcery.com/sgpp/lite/arm/portal/package8736/public/arm-none-eabi/arm-2011.03-42-arm-none-eabi.bin)
-[mirror](ftp://pr0n.club.muc.ccc.de/incoming/arm-2011.03-42-arm-none-eabi.bin).
+Alternatively, you can download am installer directly from CodeSourcery
+[here](http://www.codesourcery.com/sgpp/lite/arm/portal/package8736/public/arm-none-eabi/arm-2011.03-42-arm-none-eabi.bin) (
+[mirror](ftp://pr0n.club.muc.ccc.de/incoming/arm-2011.03-42-arm-none-eabi.bin)).
 You'll need to make the installer executable, using `chmod +x`, and then
 just run it.
 
