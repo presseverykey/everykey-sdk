@@ -30,14 +30,7 @@ void ADC_Init();
 
 /* A/D Control Register 20.6.1*/
 typedef struct {
-	unsigned SEL0     :1;
-	unsigned SEL1     :1;
-	unsigned SEL2     :1;
-	unsigned SEL3     :1;
-	unsigned SEL4     :1;
-	unsigned SEL5     :1;
-	unsigned SEL6     :1;
-	unsigned SEL7     :1;
+	unsigned SEL      :8;
 	unsigned CLKDIV   :8;
 	unsigned BURST    :1;
   /*
@@ -62,6 +55,39 @@ typedef struct {
 	unsigned EDGE     :1;
 	unsigned RESERVED0:4;
 } ADCTRL;
+
+typedef enum ADC_BURST {
+  ADC_BURST_SW = 0, 
+  ADC_BURST_HW = 1, 
+} ADC_BURST;
+
+
+typedef enum ADC_CLKS {
+  ADC_CLKS_11C_10B = 0x0,
+  ADC_CLKS_10C_9B  = 0x1,
+  ADC_CLKS_9C_8B    =0x2,
+  ADC_CLKS_8C_7B    =0x3,
+  ADC_CLKS_7C_6B    =0x4,
+  ADC_CLKS_6C_5B    =0x5,
+  ADC_CLKS_5C_4B    =0x6,
+  ADC_CLKS_4C_3B    =0x7,
+} ADC_CLKS;
+
+typedef enum ADC_START {
+  ADC_START_NOSTART = 0x0,
+  ADC_START_START   = 0x1,
+  ADC_START_16C0    = 0x2,
+  ADC_START_32C0    = 0x3,
+  ADC_START_32M0    = 0x4,
+  ADC_START_32M1    = 0x5,
+  ADC_START_16M0    = 0x6,
+  ADC_START_16M1    = 0x7,
+} ADC_START;
+
+typedef enum ADC_EDGE {
+  ADC_EDGE_RISING  = 0x0,
+  ADC_EDGE_FALLING = 0x1,
+} ADC_EDGE;
 
 /* A/D Global Data Register 20.6.2 */
 typedef struct {
@@ -102,11 +128,11 @@ typedef struct {
 
 	/* A/D Control Register. The AD0CR register must be written to select
 	 * the operating mode before A/D conversion can occur.*/
-	ADCTRL AD0CR; 
+	volatile ADCTRL AD0CR; 
 
 	/* A/D Global Data Register. Contains the result of the most recent
 	 * A/D conversion. */
-	ADGDR AD0GDR; 
+	volatile ADGDR AD0GDR; 
 
 	/*reserved*/
 	HW_RS RESERVED;
@@ -114,43 +140,15 @@ typedef struct {
 	/* A/D Interrupt Enable Register. This register contains enable bits
 	 * that allow the DONE flag of each A/D channel to be included or excluded
 	 * from contributing to the generation of an A/D interrupt.*/
-	ADINTEN AD0INTEN;
+	volatile ADINTEN AD0INTEN;
 
-	/* A/D Channel 0 Data Register. This register contains the result of
+	/* A/D Channel 0-7 Data Register. This register contains the result of
 	 * the most recent conversion completed on channel 0*/
-	ADDR AD0DR0;
-
-	/* A/D Channel 1 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 1.*/
-	ADDR AD0DR1;
-
-	/* A/D Channel 2 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 2.*/
-	ADDR AD0DR2;
-
-	/* A/D Channel 3 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 3.*/
-	ADDR AD0DR3;
-
-	/* A/D Channel 4 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 4.*/
-	ADDR AD0DR4;
-
-	/* A/D Channel 5 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 5.*/
-	ADDR AD0DR5;
-
-	/* A/D Channel 6 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 6.*/
-
-	ADDR AD0DR6;
-	/* A/D Channel 7 Data Register. This register contains the result of
-	 * the most recent conversion completed on channel 7.*/
-	ADDR AD0DR7;
+	volatile ADDR AD0DR [8];
 
 	/* A/D Status Register. This register contains DONE and OVERRUN flags
 	 * for all of the A/D channels, as well as the A/D interrupt flag.*/
-	ADSTAT AD0STAT;
+	volatile ADSTAT AD0STAT;
 } ADC_STRUCT;
 
-#define ADC ((ADC_STRUCT)(0x4001C000))
+#define ADC ((ADC_STRUCT*)(0x4001C000))

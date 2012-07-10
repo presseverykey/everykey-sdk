@@ -57,7 +57,11 @@ void GPIO_SetFunction(HW_RW* pin, IOCON_IO_FUNC function);
 
 /** define to call setFunction in a syntax similar to other in/out calls if port and pin are known at compile time. Two-step for argument macro expansion. */
 #define GPIO_SETFUNCTION(port,pin,func) GPIO_SETFUNCTION2(port,pin,func)
-#define GPIO_SETFUNCTION2(port,pin,func) {GPIO_SetFunction(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO ## port ## _ ## pin ## _FUNC_ ## func); }
+#define GPIO_SETFUNCTION2(port,pin,func) {GPIO_SetFunction(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func  ); }
+
+
+
+
 
 
 #endif
