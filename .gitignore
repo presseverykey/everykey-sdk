@@ -9,3 +9,5 @@ a.out
 *.swo
 *.gch
 tags
+*.s
+*.d
