@@ -1,14 +1,17 @@
 #include "types.h"
 #include "memorymap.h"
 
-#define AD0 IOCON.PIO0_11
-#define AD1 IOCON.PIO1_0 
-#define AD2 IOCON.PIO1_1 
-#define AD3 IOCON.PIO1_2 
-#define AD4 IOCON.PIO1_3 
-#define AD5 IOCON.PIO1_4 
-#define AD6 IOCON.PIO1_10 
-#define AD7 IOCON.PIO1_11
+
+//typedef struct {
+//  unsigned FUNC:3;
+//  unsigned MODE:2;
+//  unsigned HYS:1;
+//  unsigned RESERVED0:1;
+//  unsigned ADMODE:1;
+//  unsigned RESERVED1:2;
+//  unsigned OD:1;
+//  unsigned RESERVED2:21;
+//} IOCON_ADC;
 
 /*
   Description UM10375 Chapter 20:
