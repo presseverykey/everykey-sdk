@@ -27,3 +27,8 @@ void GPIO_SetPull(HW_RW* pin, IOCON_IO_PULL_MODE mode) {
 void GPIO_SetHysteresis(HW_RW* pin, IOCON_IO_HYSTERESIS_MODE mode) {
 	*pin = ((*pin) & (~IOCON_IO_HYSTERESIS_ON)) | mode;
 }
+
+void GPIO_SetFunction(HW_RW* pin, IOCON_IO_FUNC func) {
+	*pin = ((*pin) & (~0x07)      ) | func;
+  *pin = ((*pin) & (~ (0x01<<7))) | (IOCON_IO_ADMODE_ANALOG << 7);
+}

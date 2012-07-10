@@ -1,3 +1,11 @@
-*.dep
 *.o
-
+*.dep
+*.bin
+*.hex
+*.obj
+.DS_Store
+*.swp
+a.out
+*.swo
+*.gch
+tags
