@@ -52,12 +52,14 @@ void GPIO_SetHysteresis(HW_RW* pin, IOCON_IO_HYSTERESIS_MODE mode);
 
 /** sets the pin function of an IO pin
 	@param pin pointer to a pin register in the IOCON struct. 
-	@param mode mode to set to (e.g. ADC or TIMER). Obviously, the given pin must support that function */
-void GPIO_SetFunction(HW_RW* pin, IOCON_IO_FUNC function);
+	@param function pin function to use (e.g. ADC or TIMER). Obviously, the given pin must support that function
+	@param admode analog or digital pin mode (typically analog for ADC, digital for all others) 
+*/
+void GPIO_SetFunction(HW_RW* pin, IOCON_IO_FUNC function, IOCON_IO_ADMODE admode);
 
 /** define to call setFunction in a syntax similar to other in/out calls if port and pin are known at compile time. Two-step for argument macro expansion. */
-#define GPIO_SETFUNCTION(port,pin,func) GPIO_SETFUNCTION2(port,pin,func)
-#define GPIO_SETFUNCTION2(port,pin,func) {GPIO_SetFunction(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func  ); }
+#define GPIO_SETFUNCTION(port,pin,func,admode) GPIO_SETFUNCTION2(port,pin,func,admode)
+#define GPIO_SETFUNCTION2(port,pin,func,admode) {GPIO_SetFunction(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func ,admode); }
 
 
 

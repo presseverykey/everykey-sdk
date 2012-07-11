@@ -92,11 +92,13 @@ const VECTOR_TABLE vtable = {
 };
 
 void bootstrap(void) {
-//TODO: Move define to some better form in memorymap
+//Set STKALIGN in NVIC. Not stritly necessary, but good to do. TODO: Make more readable (i.e. memorymap.h definitions)
 #define NVIC_CCR ((volatile unsigned long *)(0xE000ED14))
-	*NVIC_CCR = *NVIC_CCR | 0x200; 			// Set STKALIGN in NVIC
+	*NVIC_CCR = *NVIC_CCR | 0x200; 			
+
 	SYSCON_InitCore72MHzFromExternal12MHz();	// let there be speed
-	SYSCON->SYSAHBCLKCTRL |= 0x40;			// Enable GPIO clock
+	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON; // Enable common clocks: GPIO and IOCON
+
 	main();
 	while (true) {
 		waitForInterrupt();
