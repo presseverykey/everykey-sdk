@@ -309,6 +309,52 @@ typedef enum {
 	USB_DEVINT_TXENDPKT = 0x2000
 } USB_DEVINT_TARGET;
 
+//USB SIE Commands
+typedef enum USB_SIE_CommandID {
+	USB_SIE_CMD_SetAddress = 0xd0,					//device - write 1 byte
+	USB_SIE_CMD_ConfigureDevice = 0xd8,				//device - write 1 byte
+	USB_SIE_CMD_SetMode = 0xf3,						//device - write 1 byte
+	USB_SIE_CMD_ReadInterruptStatus = 0xf4,			//device - read 1 or 2 bytes
+	USB_SIE_CMD_ReadCurrentFrameNumber = 0xf5,		//device - read 1 or 2 bytes
+	USB_SIE_CMD_ReadChipID = 0xfd,					//device - read 2 bytes
+	USB_SIE_CMD_GetSetDeviceStatus = 0xfe,			//device - write 1 byte (set) or read 1 byte (get)
+	USB_SIE_CMD_GetErrorCode = 0xff,				//device - read 1 byte
+	USB_SIE_CMD_SelectEndpoint = 0x00,				//endpoint 0 - read 1 byte (optional). This is the base address, add the physical EP index (0..9)
+	USB_SIE_CMD_SelectEndpointClearInterruptSetStatus  = 0x40,	//endpoint 0 - read 1 byte (select/clear int) or write 1 byte (set endpoint status). This is the base address, add physical EP index (0-9)
+	USB_SIE_CMD_ClearBuffer = 0xf2,					//selected endpoint - read 1 byte (optional)
+	USB_SIE_CMD_ValidateBuffer = 0xfa				//selected endpoint - no read/write
+} USB_SIE_CommandID;
+
+//SIE Select Endpoint status bits
+typedef enum {
+	USB_SELEP_FE		= 0x01,	//FULL/EMPTY (IN: 0=One write buffer is empty, OUT: 1=One read buffer is full)
+	USB_SELEP_ST		= 0x02,	//STALL (endpoint is stalled)
+	USB_SELEP_STP		= 0x04,	//SETUP (last received packet was a setup packet)
+	USB_SELEP_PO		= 0x08,	//Packet Overwritten (at least one packet was overwritten)
+	USB_SELEP_EPN		= 0x10, //Endpoint NAKed
+	USB_SELEP_B1FULL	= 0x20, //Buffer 1 full
+	USB_SELEP_B2FULL	= 0x40	//Buffer 2 full
+} USB_SELECT_EP_STATUS;
+
+//SIE Set Endpoint status bits
+typedef enum {
+	USB_EPSTAT_ST		= 0x01,	//Stall (0 = not stalled, 1 = stalled)
+	USB_EPSTAT_DA		= 0x10,	//disable (0 = enabled, 1 = disabled)
+	USB_EPSTAT_CND_ST	= 0x80,	//Conditional stall (0 = unstall both ends, 1 = stall both unless STP is set in SELEP)
+} USB_SET_EP_STATUS;
+
+typedef enum {
+	USB_CTRL_RD_EN		= 0x01,	//set to read
+	USB_CTRL_WR_EN		= 0x02, //set to write
+	USB_CTRL_LOG_EP		= 0x04, //logical endpoint number is bit 2..5
+} USB_CTRL_VALUES;
+
+typedef enum {
+	USB_RXPLEN_DV			= 0x400,
+	USB_RXPLEN_LENGTH_MASK	= 0x3ff
+} USB_RXPLEN_VALUES;
+
+
 #define USB ((USB_STRUCT*)(0x40020000))
 
 /* -----------------------------------

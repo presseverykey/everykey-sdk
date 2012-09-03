@@ -103,6 +103,16 @@ example, a VGA connector and three resistors are required (schematics
 identical to colorbars example). The example shows some advanced inline
 assembly strategies.
 
+usbraw
+------
+
+This example uses the software USB stack to implement a raw USB device. The device does not have any functionality other than the required standard USB functionality for USB enumeration.
+
+usbkeyboard
+-----------
+
+Implements a simple USB HID keyboard. The example includes a two-step abstraction: hid.c implements a HID device based on the USB software stack. keyboard.c builds a keyboard on top of the HID device functionality. The keyboard can write text and the LED will act as a caps lock key (note that not all OSes synchronize caps lock among multiple keyboards). This example may be useful as a base for implementing your own HID devices.
+
 Installing the compiler
 =======================
 
