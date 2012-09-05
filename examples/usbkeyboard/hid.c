@@ -13,11 +13,16 @@ uint8_t hidIdleValue;
 
 USB_Device_Struct hidUSBDevice;
 
-/** this string descriptor is always returned as string 0 - it tells the host about available string languages */
+/** this string descriptor is always returned as string 0 - it tells the host
+ * about available string languages */
+
 const uint8_t languagesString[] = {
-	0x04,							//bLength: length of this descriptor in bytes (4)
-	USB_DESC_STRING,				//bDescriptorType: string descriptor
-	0x09,0x04						//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
+  //bLength: length of this descriptor in bytes (4)
+	0x04,		
+  //bDescriptorType: string descriptor
+	USB_DESC_STRING,	
+  //wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
+	0x09,0x04					
 };
 
 /** called when the data from a set report command has arrived */
@@ -32,25 +37,31 @@ void hidSetReportDataComplete() {
 bool hidCommandHandler() {
 	uint16_t maxTransferLen = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
 	switch (usbCurrentCommand.bRequest) {
-		case USB_REQ_SET_ADDRESS: 				//we don't handle this command, but we use it as a trigger to init our globals
+    //we don't handle this command, but we use it as a trigger to init our globals
+		case USB_REQ_SET_ADDRESS: 				
 			if ((usbCurrentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_HOST_TO_DEVICE) break;
 			if ((usbCurrentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_DEVICE) break;
 			hidCurrentProtocol = 1;
 			hidIdleValue = 128;
 			break;
-		case USB_REQ_GET_DESCRIPTOR:			//We handle HID-specific reports here.
+    //We handle HID-specific reports here.
+		case USB_REQ_GET_DESCRIPTOR:		
 			if ((usbCurrentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_DEVICE_TO_HOST) break;
 			if (usbCurrentCommand.wIndexL == hidInterfaceNumber) {
 				switch (usbCurrentCommand.wValueH) {
 					case USB_DESC_HID_HID:
 						usbCurrentCommandDataBase = hidHidDescriptor;
 						usbCurrentCommandDataRemaining = usbCurrentCommandDataBase[0];
-						if (usbCurrentCommandDataRemaining > maxTransferLen) usbCurrentCommandDataRemaining = maxTransferLen;
+						if (usbCurrentCommandDataRemaining > maxTransferLen) {
+              usbCurrentCommandDataRemaining = maxTransferLen;
+            }
 						return true;
 					case USB_DESC_HID_REPORT:
 						usbCurrentCommandDataBase = hidReportDescriptor;
 						usbCurrentCommandDataRemaining = hidReportDescriptorLen;
-						if (usbCurrentCommandDataRemaining > maxTransferLen) usbCurrentCommandDataRemaining = maxTransferLen;
+						if (usbCurrentCommandDataRemaining > maxTransferLen) {
+              usbCurrentCommandDataRemaining = maxTransferLen;
+            }
 						return true;
 				}
 			}
@@ -95,7 +106,8 @@ bool hidCommandHandler() {
 			if ((!hidOutReportHandler) || (!hidOutBuffer)) break;
 			usbCurrentCommandDataBase = hidOutBuffer;
 			usbCurrentCommandDataRemaining = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
-			usbControlOutDataCompleteCallback = hidSetReportDataComplete;	//Call us again when the data is there
+      //Call us again when the data is there
+			usbControlOutDataCompleteCallback = hidSetReportDataComplete;	
 			return true;
 			break;
 	}
@@ -132,8 +144,10 @@ void HIDInit(	const uint8_t* deviceDesc,
 	hidUSBDevice.strings[3] = string3;
 	hidUSBDevice.extendedControlSetupCallback = hidCommandHandler;
 	hidUSBDevice.endpointDataCallback = hidEndpointDataHandler;
-	hidHidDescriptor = (uint8_t*)hidDesc;		//we don't change values inside
-	hidReportDescriptor = (uint8_t*)reportDesc;	//we don't change values inside
+  //we don't change values inside
+	hidHidDescriptor = (uint8_t*)hidDesc;		
+  //we don't change values inside
+	hidReportDescriptor = (uint8_t*)reportDesc;	
 	hidReportDescriptorLen = reportDescLen;
 	hidInBuffer = inReportBuffer;
 	hidOutBuffer = outReportBuffer;
