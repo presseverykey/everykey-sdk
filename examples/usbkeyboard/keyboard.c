@@ -42,7 +42,7 @@ const uint8_t configDescriptor[] = {
 	0x09,							//bLength: length of HID descriptor in bytes
 	USB_DESC_HID_HID,				//bDescriptorType: HID descriptor
 	0x00, 0x01,						//bcdHID: version 1.0
-	0x00,							//bCountryCode: 0 = non-localized
+	0x09,							//bCountryCode: 9 = German (HID spec 1.11, section 6.2.1 - 0=not supported, 33=US)
 	0x01,							//bNumDescriptors: We have one descriptor
 	USB_DESC_HID_REPORT,			//bDescriptorType: It is a report descriptor
 	0x3f, 0x00,						//wDescriptorLength: Length of report descriptor. MUST BE UPDATED WHEN REPORT DESCRIPTOR CHANGES!

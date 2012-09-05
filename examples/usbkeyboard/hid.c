@@ -13,12 +13,14 @@ uint8_t hidIdleValue;
 
 USB_Device_Struct hidUSBDevice;
 
+/** this string descriptor is always returned as string 0 - it tells the host about available string languages */
 const uint8_t languagesString[] = {
 	0x04,							//bLength: length of this descriptor in bytes (4)
 	USB_DESC_STRING,				//bDescriptorType: string descriptor
 	0x09,0x04						//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
 };
 
+/** called when the data from a set report command has arrived */
 void hidSetReportDataComplete() {
 	if (hidOutReportHandler) {
 		hidOutReportHandler(	usbCurrentCommand.wValueH, usbCurrentCommand.wValueL,
@@ -26,6 +28,7 @@ void hidSetReportDataComplete() {
 	}
 }
 
+/** handler for HID-specific USB commands */
 bool hidCommandHandler() {
 	uint16_t maxTransferLen = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
 	switch (usbCurrentCommand.bRequest) {
@@ -92,7 +95,7 @@ bool hidCommandHandler() {
 			if ((!hidOutReportHandler) || (!hidOutBuffer)) break;
 			usbCurrentCommandDataBase = hidOutBuffer;
 			usbCurrentCommandDataRemaining = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
-			usbControlOutDataCompleteCallback = hidSetReportDataComplete;
+			usbControlOutDataCompleteCallback = hidSetReportDataComplete;	//Call us again when the data is there
 			return true;
 			break;
 	}
@@ -100,8 +103,9 @@ bool hidCommandHandler() {
 }
 
 void hidEndpointDataHandler(uint8_t epIdx) {
-	//Do nothing, just add a handler to prevent pipe from stalling
+	//Do nothing, just add a handler to prevent pipe from stalling (will stall if no handler is there)
 }
+
 
 USB_Device_Struct myUSBDevice;
 

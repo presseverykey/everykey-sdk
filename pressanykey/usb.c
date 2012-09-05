@@ -1,14 +1,13 @@
 #include "types.h"
 #include "memorymap.h"
 #include "usb.h"
+#include "usbsie.h"
 #include "usbspec.h"
 #include "utils.h"
 #include "nvic.h"
 
 
-// -----------
-// USB globals
-// -----------
+#pragma mark USB globals
 
 bool usbSuspended;
 USB_Device_Struct* usbDeviceDefinition;
@@ -23,125 +22,8 @@ uint32_t usbCurrentCommandDataRemaining;
 void (*usbControlOutDataCompleteCallback)(void);	//callback when host-to-device has arrived
 void (*usbControlStatusCallback)(void);				//callback when status was sent
 
-// private function declarations
 
-// ---------------------------------------
-// SIE low level (command building blocks)
-// ---------------------------------------
-
-/** low level SIE out phase (command or write)
-	@param cmdCode value for cmdcode register
-*/
-void USB_SIE_Out(uint32_t cmdCode);
-
-/** low level SIE in phase (read)
-	@param cmdCode value for cmdcode register
-	@return read value
-*/
-uint8_t USB_SIE_In(uint32_t cmdCode);
-
-// -------------------------------------------------
-// SIE mid level (generic commands, using low level)
-// -------------------------------------------------
-
-
-/** Command without writing or reading anything
-	@param cmd command to send
-*/
-void USB_SIE_Command(USB_SIE_CommandID cmd);
-
-/** Command with 1 byte write
-	@param cmd command to send
-	@param value value to send
-*/
-void USB_SIE_Command_Write1(USB_SIE_CommandID cmd, uint8_t value);
-
-/** Command with 1 byte read
-	@param cmd command to send
-	@return read value
-*/
-uint8_t USB_SIE_Command_Read1(USB_SIE_CommandID cmd);
-
-/** Command with 2 byte read
-	@param cmd command to send
-	@return read value (first low, second high)
-*/
-uint16_t USB_SIE_Command_Read2(USB_SIE_CommandID cmd);
-
-// -----------------------------------------
-// SIE high level (real commands, use these)
-// -----------------------------------------
-
-/** sets the soft connect state
-	@param connected true to make the device visible to the host, false otherwise
-*/
-void USB_SIE_SetConnected(bool connected);
-
-/** returns the connected state 
-	@return true if the device is connected (VBus sense), false otherwise
-*/
-bool USB_SIE_GetConnected(void);
-
-/** sets the device address and enabled state.
-	@param address 0..63
-	@param enabled true if the device should respond to packets, false otherwise
-*/
-void USB_SIE_SetAddress(uint8_t address, bool enabled);
-
-/** sets the device configured state
-	@param configured true to set the device in the configured state, false for unconfigured
-*/
-void USB_SIE_ConfigureDevice(bool configured);
-
-/** reads the SIE interrupt status
-	@return bits 0-4 (0x1f): EP0-4 interrupt, bit 10 (0x0400): Device Status change interrupt
-*/
-uint16_t USB_SIE_ReadInterruptStatus();
-
-/** selects an endpoint and clears the interrupt
- @param epIdx physical endpoint index (0..9)
- @return an info bitfield about the endpoint status (USB_SELECT_EP_STATUS)
- */
-uint8_t USB_SIE_SelectEndpointClearInterrupt(uint8_t epIdx);
-
-/** sets an endpoint status
- @param epIdx physical endpoint index (0..9)
- @param status status bitfield (USB_SET_EP_STATUS)
- */
-void USB_SIE_SetEndpointStatus(uint8_t epIdx, uint8_t status);
-
-
-/** marks an OUT (device view: read) endpoint buffer as free. Will do nothing on isochronous endpoints.
- @param epIdx physical endpoint index (0..9)
- */
-void USB_SIE_ClearBuffer(uint8_t epIdx);
-
-/** marks an IN (device view: write) endpoint buffer as filled. Will do nothing on isochronous endpoints.
- @param epIdx physical endpoint index (0..9)
- */
-void USB_SIE_ValidateBuffer(uint8_t epIdx);
-
-// ---------
-// Endpoints
-// ---------
-
-/** converts usb endpoint indexes (dir at bit 7) to native indexes (dir at bit 0)
- @param index usb endpoint index
- @return physical endpoint index
-*/
-uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
-
-
-// ------------------
-// interrupt handlers
-// ------------------
-
-/** regular interrupt handler */
-void usb_irq_handler(void);
-
-// ----------------------
-// Private implementation
-// ----------------------
+#pragma mark SIE functions
 
 void USB_SIE_Out(uint32_t cmdCode) {
 	USB->DEVINTCLR =  USB_DEVINT_CC_EMPTY;		//clear cc empty interrupt flag
@@ -221,6 +103,8 @@ void USB_SIE_ValidateBuffer(uint8_t epIdx) {
 	USB_SIE_Command(USB_SIE_CMD_ValidateBuffer);
 }
 
+#pragma mark Endpoint functions
+
 uint32_t USB_EP_Read(uint8_t epIdx, uint8_t* buffer, uint32_t maxLen) {
 	uint8_t logEpIdx = epIdx >> 1;
 	USB->CTRL = USB_CTRL_LOG_EP * logEpIdx + USB_CTRL_RD_EN;	//we want to read the number of bytes available
@@ -279,6 +163,8 @@ bool USB_EP_GetStall(uint8_t epIdx) {
 uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index) {
 	return ((index & 0x0f) < 1) | (index & 0x80 >> 7);
 }
+
+#pragma mark USB common command handlers
 
 void USB_Reset() {
 	USB->DEVINTCLR = 0x3fff;			//clear all interrupts
@@ -455,6 +341,8 @@ bool USB_HandleSetAddress() {
 	return true;
 }
 
+#pragma mark USB control and data flow handling
+
 void USB_Control_ReceiveDeviceToHostStatus() {
 	USB_EP_Read(0, NULL, 0);
 	if (usbControlStatusCallback) usbControlStatusCallback();
@@ -527,8 +415,8 @@ void USB_Control_HandleSetup() {
 	}
 }
 
-
-void USB_Control_HandleOut() { // data arrived for us - either HostToDevice command data stage or DeviceToHost status stage
+/** data arrived for us - either HostToDevice command data stage or DeviceToHost status stage */
+void USB_Control_HandleOut() { 
 	bool deviceToHost = usbCurrentCommand.bmRequestType & USB_RT_DIR_DEVICE_TO_HOST;
 	if (deviceToHost) USB_Control_ReceiveDeviceToHostStatus();
 	else {
@@ -545,7 +433,8 @@ void USB_Control_HandleOut() { // data arrived for us - either HostToDevice comm
 	}
 }
 
-void USB_Control_HandleIn() { // buffer for sending is free again - either DeviceToHost data stage or HostToDevice status stage
+/** buffer for sending is free again - either DeviceToHost data stage or HostToDevice status stage */
+void USB_Control_HandleIn() { 
 	bool deviceToHost = usbCurrentCommand.bmRequestType & USB_RT_DIR_DEVICE_TO_HOST;
 	if (deviceToHost) USB_Control_WriteDeviceToHostData();
 	else USB_Control_WriteHostToDeviceStatus();
@@ -560,6 +449,7 @@ void USB_HandleData(int epIdx) {
 	else USB_EP_SetStall(epIdx, true);
 }
 
+/** this function is added to the interrupt vector table - see startup.c */
 void usb_irq_handler(void) {
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
@@ -586,6 +476,8 @@ void usb_irq_handler(void) {
 		}
 	}	
 }
+
+#pragma mark USB high level API
 
 void USB_Init(USB_Device_Struct* deviceDefinition) {
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG

@@ -7,6 +7,5 @@
 #include "syscon.h"
 #include "utils.h"
 #include "usb.h"
-#include "usbspec.h"
 
 #endif

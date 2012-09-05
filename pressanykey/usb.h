@@ -23,6 +23,7 @@
 /** fixed by spec and device */
 #define USB_MAX_COMMAND_PACKET_SIZE 64
 
+#pragma mark USB Types
 
 /** Set extendedControlSetupCallback when you want to respond to class- or
  * device-specific commands (setup packets on the control out pipe). Otherwise, set to NULL.
@@ -72,6 +73,8 @@ typedef struct USB_Device_Struct {
 	EndpointDataCallback endpointDataCallback;
 } USB_Device_Struct;
 
+#pragma mark USB Functions
+
 /** reads from an endpoint
  @param epIdx physical endpoint index (must be OUT)
  @param buffer read buffer (must not be null if length > 0). Reads will be multiples of 4, make buffer large enough.
@@ -110,6 +113,12 @@ void USB_SoftDisconnect(void);
 /** returns whether the device is connected (VBUS present) */
 bool USB_Connected(void);
 
+/** converts usb endpoint indexes (dir at bit 7) to native indexes (dir at bit 0)
+ @param index usb endpoint index
+ @return physical endpoint index */
+uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
+
+#pragma mark USB global variables
 
 /** current USB command */
 extern USB_Setup_Packet usbCurrentCommand;
