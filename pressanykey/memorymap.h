@@ -98,6 +98,24 @@ typedef enum IOCON_IO_HYSTERESIS_MODE {
 } IOCON_IO_HYSTERESIS_MODE;
 
 typedef enum IOCON_IO_FUNC {
+	IOCON_IO_FUNC_PIO0_2_PIO    = 0x00,
+	IOCON_IO_FUNC_PIO0_2_SSP    = 0x01,
+	IOCON_IO_FUNC_PIO0_2_TIMER  = 0x02,
+
+	IOCON_IO_FUNC_PIO0_8_PIO    = 0x00,
+	IOCON_IO_FUNC_PIO0_8_SSP    = 0x01,
+	IOCON_IO_FUNC_PIO0_8_TIMER  = 0x02,
+	
+	IOCON_IO_FUNC_PIO0_9_PIO    = 0x00,
+	IOCON_IO_FUNC_PIO0_9_SSP    = 0x01,
+	IOCON_IO_FUNC_PIO0_9_TIMER  = 0x02,
+	IOCON_IO_FUNC_PIO0_9_SWD    = 0x03,
+
+	IOCON_IO_FUNC_PIO0_10_SWD   = 0x00,
+	IOCON_IO_FUNC_PIO0_10_PIO   = 0x01,
+	IOCON_IO_FUNC_PIO0_10_SSP   = 0x02,
+	IOCON_IO_FUNC_PIO0_10_TIMER = 0x03,
+	
 	IOCON_IO_FUNC_PIO0_11_PIO   = 0x01,
 	IOCON_IO_FUNC_PIO0_11_ADC   = 0x02,
 	IOCON_IO_FUNC_PIO0_11_TIMER = 0x03,
@@ -128,13 +146,23 @@ typedef enum IOCON_IO_FUNC {
 	IOCON_IO_FUNC_PIO1_10_TIMER = 0x02,
 
 	IOCON_IO_FUNC_PIO1_11_PIO   = 0x00,
-	IOCON_IO_FUNC_PIO1_11_ADC   = 0x01
+	IOCON_IO_FUNC_PIO1_11_ADC   = 0x01,
+	
+	IOCON_IO_FUNC_PIO2_11_PIO   = 0x00,
+	IOCON_IO_FUNC_PIO2_11_SSP   = 0x01	//Wrong value (0x02) in older versions of the user manual
+	
 } IOCON_IO_FUNC;
 
 typedef enum IOCON_IO_ADMODE {
 	IOCON_IO_ADMODE_ANALOG  = 0x00,
 	IOCON_IO_ADMODE_DIGITAL = 0x80
 } IOCON_IO_ADMODE;
+
+typedef enum IOCON_SCK0_LOC_VALUES {
+	IOCON_SCK0_LOC_PIO0_10 = 0x00,
+	IOCON_SCK0_LOC_PIO2_11 = 0x01,
+	IOCON_SCK0_LOC_PIO0_6 = 0x02
+} IOCON_SCK0_LOC_VALUES;
 
 #define IOCON ((IOCON_STRUCT*)(0x40044000))
 
@@ -169,9 +197,10 @@ typedef struct {
 	HW_RS RESERVED5;
 	HW_RW SYSAHBCLKCTRL;		//AHB clock ctrl, enable bits for various peripheral clocks. List in manual.
 	HW_RS RESERVED6[4];
-	HW_RW SSPCLKDIV;		//SSP clock divider. Bit7:0: 0:disable, 1..255: divide by 1..255
+	HW_RW SSP0CLKDIV;		//SSP0 clock divider. Bit7:0: 0:disable, 1..255: divide by 1..255
 	HW_RW UARTCLKDIV;		//UART clock divider. Bit7:0: 0:disable, 1..255: divide by 1..255
-	HW_RS RESERVED7[4];
+	HW_RW SSP1CLKDIV;		//SSP1 clock divider (only on LPC1313FBD48). Bit7:0: 0:disable, 1..255: divide by 1..255
+	HW_RS RESERVED7[3];
 	HW_RW TRACECLKDIV;		//Trace clock divider. Bit7:0: 0:Trace clock off, 1..255: divide by 1..255
 	HW_RW SYSTICKCLKDIV;		//SYSTICK clock divider. Bit7:0: 0:disable, 1..255: divide by 1..255
 	HW_RS RESERVED8[3];
@@ -245,6 +274,12 @@ typedef enum SYSCON_PD_BITS {
 	SYSCON_USBPAD_PD     = 0x0400,
 	SYSCON_PD_ALWAYS_SET = 0xe800
 } SYSCON_PD_BITS;
+
+typedef enum SYSCON_PRESETCTRL_BITS {
+	SYSCON_PRESETCTRL_SSP0_RST_N = 0x01,
+	SYSCON_PRESETCTRL_I2C_RST_N = 0x02,
+	SYSCON_PRESETCTRL_SSP1_RST_N = 0x04
+} SYSCON_PRESETCTRL_BITS;
 
 #define SYSCON ((SYSCON_STRUCT*)(0x40048000))
 
@@ -455,6 +490,73 @@ typedef enum NVIC_INTERRUPT_INDEX {
 } NVIC_INTERRUPT_INDEX;
 
 #define NVIC ((NVIC_STRUCT*)0xe000e100)
+
+/* --------------------------------------
+   --- Synchronous Serial Port  (SSP) ---
+   --------------------------------------
+ 
+ The SSP can be used for SPI, TI serial protocol or microwire. */
+
+typedef struct {
+	HW_RW CR0;		//Control register 0
+	HW_RW CR1;		//Control register 1
+	HW_RW DR;		//Data register
+	HW_RO SR;		//Status register
+	HW_RW CPSR;		//Clock prescale register
+	HW_RW IMSC;		//Interrupt mask set and clear register
+	HW_RO RIS;		//Raw interrupt status register
+	HW_RO MIS;		//Masked interrupt status register
+	HW_WO ICR;		//SSPICR interrupt clear register 
+} SSP_STRUCT;
+
+
+typedef enum SSP_CR0_VALUES {
+	SSP_CR0_DSS_4BIT			= 0x03,
+	SSP_CR0_DSS_5BIT			= 0x04,
+	SSP_CR0_DSS_6BIT			= 0x05,
+	SSP_CR0_DSS_7BIT			= 0x06,
+	SSP_CR0_DSS_8BIT			= 0x07,
+	SSP_CR0_DSS_9BIT			= 0x08,
+	SSP_CR0_DSS_10BIT			= 0x09,
+	SSP_CR0_DSS_11BIT			= 0x0a,
+	SSP_CR0_DSS_12BIT			= 0x0b,
+	SSP_CR0_DSS_13BIT			= 0x0c,
+	SSP_CR0_DSS_14BIT			= 0x0d,
+	SSP_CR0_DSS_15BIT			= 0x0e,
+	SSP_CR0_DSS_16BIT			= 0x0f,
+	SSP_CR0_FRF_SPI				= 0x00,
+	SSP_CR0_FRF_TI				= 0x10,
+	SSP_CR0_FRF_MICROWIRE		= 0x20,
+	SSP_CR0_CPOL_LOW			= 0x00,
+	SSP_CR0_CPOL_HIGH			= 0x40,
+	SSP_CR0_CPHA_FIRST			= 0x00,
+	SSP_CR0_CPHA_SECOND			= 0x80,
+	SSP_CR0_SCR_BASE			= 0x100		//Multiply with clock rate-1 (prescaler-out clocks per bit)
+} SSP_CR0_VALUES;
+
+
+typedef enum SSP_CR1_VALUES {
+	SSP_CR1_LBM_NORMAL			= 0x00,
+	SSP_CR1_LBM_LOOPBACK		= 0x01,
+	SSP_CR1_SSE_DISABLE			= 0x00,
+	SSP_CR1_SSE_ENABLE			= 0x02,
+	SSP_CR1_MS_MASTER			= 0x00,
+	SSP_CR1_MS_SLAVE			= 0x04,
+	SSP_CR1_SOD					= 0x08
+} SSP_CR1_VALUES;
+
+typedef enum SSP_SR_BITS {
+	SSP_SR_TFE					= 0x01,
+	SSP_SR_TNF					= 0x02,
+	SSP_SR_RNE					= 0x04,
+	SSP_SR_RFF					= 0x08,
+	SSP_SR_BSY					= 0x10
+} SSP_SR_BITS;
+	
+#define SSP0 ((SSP_STRUCT*)0x40040000)
+//#define SSP1 ((SSP_STRUCT*)0x40058000) //Not available on LPC1343
+
+
 
 /* -----------------------------------
    --- VECTOR TABLE  -----------------
