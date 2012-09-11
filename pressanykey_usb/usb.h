@@ -1,7 +1,7 @@
 #ifndef _USB_
 #define _USB_
 
-#include "types.h"
+#include "../pressanykey/types.h"
 #include "usbspec.h"
 
 /** General notes: The terminology of this USB stack tries to adhere to the USB specification.

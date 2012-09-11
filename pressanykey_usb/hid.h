@@ -1,7 +1,7 @@
 #ifndef _HID_
 #define _HID_
 
-#include "pressanykey/pressanykey.h"
+#include "../pressanykey/pressanykey.h"
 
 typedef enum {
 	HID_REPORTTYPE_INPUT = 1,

@@ -1,6 +1,8 @@
 #ifndef _USBSIE_
 #define _USBSIE_
 
+#include "../pressanykey/memorymap.h"
+
 /** Functions for accessing the LPC1343's USB Serial Interface Engine. The SIE actually handles USB data communication. */
 
 // ---------------------------------------

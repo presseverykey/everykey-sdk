@@ -1,6 +1,6 @@
 #include "keyboard.h"
 
-const uint8_t deviceDescriptor[] = {
+static const uint8_t deviceDescriptor[] = {
 	0x12,							              //bLength: length of this structure in bytes (18)
 	USB_DESC_DEVICE,				        //bDescriptorType: usb device descriptor
 	0x00, 0x02,						          //bcdUSB: 0200 (Little Endian) - USB 2.0 compliant
@@ -17,7 +17,7 @@ const uint8_t deviceDescriptor[] = {
 	0x01                            //bNumConfigurations: Number of configurations
 };
 
-const uint8_t configDescriptor[] = {
+static const uint8_t configDescriptor[] = {
 	0x09,							      //bLength: length of this descriptor in bytes (9)
 	USB_DESC_CONFIGURATION,	//bDescriptorType: configuration descriptor
 	0x22, 0x00,						  //wTotalLen: Total length, including attached interface and endpoint descriptors
@@ -56,7 +56,7 @@ const uint8_t configDescriptor[] = {
 	0x0a          				//bInterval: Poll interval in ms
 };
 
-const uint8_t reportDescriptor[] = {
+static const uint8_t reportDescriptor[] = {
 	0x05, 0x01,	// Usage Page (Generic Desktop)
 	0x09, 0x06,	// Usage (Keyboard)
 	0xa1, 0x01,	// Collection (Application)
@@ -91,19 +91,19 @@ const uint8_t reportDescriptor[] = {
 	0xc0 		    // End Collection
 };
 
-const uint8_t manufacturerName[] = {
+static const uint8_t manufacturerName[] = {
 	0x22,							      //bLength: length of this descriptor in bytes (34)
 	USB_DESC_STRING,				//bDescriptorType: string descriptor
 	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
 };
 
-const uint8_t deviceName[] = {
+static const uint8_t deviceName[] = {
 	0x12,							      //bLength: length of this descriptor in bytes (18)
 	USB_DESC_STRING,				//bDescriptorType: string descriptor
 	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
 };
 
-const uint8_t serialName[] = {
+static const uint8_t serialName[] = {
 	0x0a,							        //bLength: length of this descriptor in bytes (10)
 	USB_DESC_STRING,				  //bDescriptorType: string descriptor
 	'V',0,'1',0,'.',0,'0',0		//bString[]: String (UTF16LE, not terminated)

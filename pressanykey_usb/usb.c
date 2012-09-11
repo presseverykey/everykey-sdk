@@ -1,10 +1,10 @@
-#include "types.h"
-#include "memorymap.h"
 #include "usb.h"
 #include "usbsie.h"
 #include "usbspec.h"
-#include "utils.h"
-#include "nvic.h"
+
+#include "../pressanykey/memorymap.h"
+#include "../pressanykey/utils.h"
+#include "../pressanykey/nvic.h"
 
 
 #pragma mark USB globals

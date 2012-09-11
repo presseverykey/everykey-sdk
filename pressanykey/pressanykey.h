@@ -6,7 +6,7 @@
 #include "gpio.h"
 #include "syscon.h"
 #include "utils.h"
-#include "usb.h"
+#include "../pressanykey_usb/usb.h"
 #include "ssp.h"
 
 #endif
