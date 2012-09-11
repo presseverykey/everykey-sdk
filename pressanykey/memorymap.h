@@ -346,36 +346,36 @@ typedef enum {
 
 //USB SIE Commands
 typedef enum USB_SIE_CommandID {
-	USB_SIE_CMD_SetAddress = 0xd0,					//device - write 1 byte
-	USB_SIE_CMD_ConfigureDevice = 0xd8,				//device - write 1 byte
-	USB_SIE_CMD_SetMode = 0xf3,						//device - write 1 byte
-	USB_SIE_CMD_ReadInterruptStatus = 0xf4,			//device - read 1 or 2 bytes
-	USB_SIE_CMD_ReadCurrentFrameNumber = 0xf5,		//device - read 1 or 2 bytes
-	USB_SIE_CMD_ReadChipID = 0xfd,					//device - read 2 bytes
-	USB_SIE_CMD_GetSetDeviceStatus = 0xfe,			//device - write 1 byte (set) or read 1 byte (get)
-	USB_SIE_CMD_GetErrorCode = 0xff,				//device - read 1 byte
-	USB_SIE_CMD_SelectEndpoint = 0x00,				//endpoint 0 - read 1 byte (optional). This is the base address, add the physical EP index (0..9)
+	USB_SIE_CMD_SetAddress             = 0xd0,				//device - write 1 byte
+	USB_SIE_CMD_ConfigureDevice        = 0xd8,				//device - write 1 byte
+	USB_SIE_CMD_SetMode                = 0xf3,				//device - write 1 byte
+	USB_SIE_CMD_ReadInterruptStatus    = 0xf4,			  //device - read 1 or 2 bytes
+	USB_SIE_CMD_ReadCurrentFrameNumber = 0xf5,		    //device - read 1 or 2 bytes
+	USB_SIE_CMD_ReadChipID             = 0xfd,				//device - read 2 bytes
+	USB_SIE_CMD_GetSetDeviceStatus     = 0xfe,			  //device - write 1 byte (set) or read 1 byte (get)
+	USB_SIE_CMD_GetErrorCode           = 0xff,				//device - read 1 byte
+	USB_SIE_CMD_SelectEndpoint         = 0x00,				//endpoint 0 - read 1 byte (optional). This is the base address, add the physical EP index (0..9)
 	USB_SIE_CMD_SelectEndpointClearInterruptSetStatus  = 0x40,	//endpoint 0 - read 1 byte (select/clear int) or write 1 byte (set endpoint status). This is the base address, add physical EP index (0-9)
-	USB_SIE_CMD_ClearBuffer = 0xf2,					//selected endpoint - read 1 byte (optional)
-	USB_SIE_CMD_ValidateBuffer = 0xfa				//selected endpoint - no read/write
+	USB_SIE_CMD_ClearBuffer            = 0xf2,			//selected endpoint - read 1 byte (optional)
+	USB_SIE_CMD_ValidateBuffer         = 0xfa				//selected endpoint - no read/write
 } USB_SIE_CommandID;
 
 //SIE Select Endpoint status bits
 typedef enum {
-	USB_SELEP_FE		= 0x01,	//FULL/EMPTY (IN: 0=One write buffer is empty, OUT: 1=One read buffer is full)
-	USB_SELEP_ST		= 0x02,	//STALL (endpoint is stalled)
-	USB_SELEP_STP		= 0x04,	//SETUP (last received packet was a setup packet)
-	USB_SELEP_PO		= 0x08,	//Packet Overwritten (at least one packet was overwritten)
-	USB_SELEP_EPN		= 0x10, //Endpoint NAKed
-	USB_SELEP_B1FULL	= 0x20, //Buffer 1 full
-	USB_SELEP_B2FULL	= 0x40	//Buffer 2 full
+	USB_SELEP_FE     = 0x01,	//FULL/EMPTY (IN: 0=One write buffer is empty, OUT: 1=One read buffer is full)
+	USB_SELEP_ST     = 0x02,	//STALL (endpoint is stalled)
+	USB_SELEP_STP    = 0x04,	//SETUP (last received packet was a setup packet)
+	USB_SELEP_PO     = 0x08,	//Packet Overwritten (at least one packet was overwritten)
+	USB_SELEP_EPN    = 0x10, //Endpoint NAKed
+	USB_SELEP_B1FULL = 0x20, //Buffer 1 full
+	USB_SELEP_B2FULL = 0x40	//Buffer 2 full
 } USB_SELECT_EP_STATUS;
 
 //SIE Set Endpoint status bits
 typedef enum {
-	USB_EPSTAT_ST		= 0x01,	//Stall (0 = not stalled, 1 = stalled)
-	USB_EPSTAT_DA		= 0x10,	//disable (0 = enabled, 1 = disabled)
-	USB_EPSTAT_CND_ST	= 0x80,	//Conditional stall (0 = unstall both ends, 1 = stall both unless STP is set in SELEP)
+	USB_EPSTAT_ST     = 0x01,	//Stall (0 = not stalled, 1 = stalled)
+	USB_EPSTAT_DA     = 0x10,	//disable (0 = enabled, 1 = disabled)
+	USB_EPSTAT_CND_ST = 0x80,	//Conditional stall (0 = unstall both ends, 1 = stall both unless STP is set in SELEP)
 } USB_SET_EP_STATUS;
 
 typedef enum {
@@ -511,38 +511,38 @@ typedef struct {
 
 
 typedef enum SSP_CR0_VALUES {
-	SSP_CR0_DSS_4BIT			= 0x03,
-	SSP_CR0_DSS_5BIT			= 0x04,
-	SSP_CR0_DSS_6BIT			= 0x05,
-	SSP_CR0_DSS_7BIT			= 0x06,
-	SSP_CR0_DSS_8BIT			= 0x07,
-	SSP_CR0_DSS_9BIT			= 0x08,
-	SSP_CR0_DSS_10BIT			= 0x09,
-	SSP_CR0_DSS_11BIT			= 0x0a,
-	SSP_CR0_DSS_12BIT			= 0x0b,
-	SSP_CR0_DSS_13BIT			= 0x0c,
-	SSP_CR0_DSS_14BIT			= 0x0d,
-	SSP_CR0_DSS_15BIT			= 0x0e,
-	SSP_CR0_DSS_16BIT			= 0x0f,
-	SSP_CR0_FRF_SPI				= 0x00,
-	SSP_CR0_FRF_TI				= 0x10,
-	SSP_CR0_FRF_MICROWIRE		= 0x20,
-	SSP_CR0_CPOL_LOW			= 0x00,
-	SSP_CR0_CPOL_HIGH			= 0x40,
-	SSP_CR0_CPHA_FIRST			= 0x00,
-	SSP_CR0_CPHA_SECOND			= 0x80,
-	SSP_CR0_SCR_BASE			= 0x100		//Multiply with clock rate-1 (prescaler-out clocks per bit)
+	SSP_CR0_DSS_4BIT      = 0x03,
+	SSP_CR0_DSS_5BIT      = 0x04,
+	SSP_CR0_DSS_6BIT      = 0x05,
+	SSP_CR0_DSS_7BIT      = 0x06,
+	SSP_CR0_DSS_8BIT      = 0x07,
+	SSP_CR0_DSS_9BIT      = 0x08,
+	SSP_CR0_DSS_10BIT     = 0x09,
+	SSP_CR0_DSS_11BIT     = 0x0a,
+	SSP_CR0_DSS_12BIT     = 0x0b,
+	SSP_CR0_DSS_13BIT     = 0x0c,
+	SSP_CR0_DSS_14BIT     = 0x0d,
+	SSP_CR0_DSS_15BIT     = 0x0e,
+	SSP_CR0_DSS_16BIT     = 0x0f,
+	SSP_CR0_FRF_SPI       = 0x00,
+	SSP_CR0_FRF_TI        = 0x10,
+	SSP_CR0_FRF_MICROWIRE = 0x20,
+	SSP_CR0_CPOL_LOW      = 0x00,
+	SSP_CR0_CPOL_HIGH     = 0x40,
+	SSP_CR0_CPHA_FIRST    = 0x00,
+	SSP_CR0_CPHA_SECOND   = 0x80,
+	SSP_CR0_SCR_BASE      = 0x100		//Multiply with clock rate-1 (prescaler-out clocks per bit)
 } SSP_CR0_VALUES;
 
 
 typedef enum SSP_CR1_VALUES {
-	SSP_CR1_LBM_NORMAL			= 0x00,
-	SSP_CR1_LBM_LOOPBACK		= 0x01,
-	SSP_CR1_SSE_DISABLE			= 0x00,
-	SSP_CR1_SSE_ENABLE			= 0x02,
-	SSP_CR1_MS_MASTER			= 0x00,
-	SSP_CR1_MS_SLAVE			= 0x04,
-	SSP_CR1_SOD					= 0x08
+	SSP_CR1_LBM_NORMAL      = 0x00,
+	SSP_CR1_LBM_LOOPBACK    = 0x01,
+	SSP_CR1_SSE_DISABLE     = 0x00,
+	SSP_CR1_SSE_ENABLE      = 0x02,
+	SSP_CR1_MS_MASTER       = 0x00,
+	SSP_CR1_MS_SLAVE        = 0x04,
+	SSP_CR1_SOD             = 0x08
 } SSP_CR1_VALUES;
 
 typedef enum SSP_SR_BITS {
@@ -566,7 +566,7 @@ The vector table specifies the boot stack position, the boot address and interru
 
 typedef struct {
 	void* STACK_ENTRY;		//Initial Stack pointer
-  	void* BOOT_HANDLER;		//Reset handler
+	void* BOOT_HANDLER;		//Reset handler
 	void* NMI_HANDLER;		//NMI handler
 	void* HARDFAULT_HANDLER;	//Hard fault handler
 	void* MPUFAULT_HANDLER;		//Memory protection unit fault handler
