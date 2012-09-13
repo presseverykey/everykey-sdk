@@ -9,7 +9,7 @@ uint8_t outBuffer[8];
 uint8_t key;
 uint8_t mod;
 
-uint16_t inReportHandler(uint8_t reportType, uint8_t reportId, uint16_t len) {
+uint16_t inReportHandler(uint8_t reportType, uint8_t reportId) {
   inBuffer[0] = mod;
   inBuffer[1] = 0;
   inBuffer[2] = key;
@@ -32,14 +32,17 @@ uint8_t map (char c) {
 		//c -= 0x41;
 		//c += 0x04; // see above.
     return c - 0x3D;
-	} else if (('0' <= c) && (c <= '9')) {
-	  //	c -= 0x30;
+	} else if (('1' <= c) && (c <= '9')) {
+	  //	c -= 0x31;
 	  //	c += 0x1E;
-    return c - 0x12;
+    return c - 0x13;
 	} else {
     switch (c) {
       case ' ': return 0x2C;
       case '\n': return 0x28;
+      case '#': return 0x20;
+      case '!': return 0x1e;
+      case '0': return 0x27;
       // TODO various punctuation and brackets ...
       default: return 0x2D; // '-'
     }
@@ -49,6 +52,11 @@ uint8_t map (char c) {
 
 uint8_t modifier (char c) {
   if (('A' <= c) && (c <= 'Z')) {	return 0x02;}
+  switch(c) {
+    case '#':
+    case '!':
+      return 0x02;
+  }
 	return 0;
 }
 void delay (int i) {
@@ -58,6 +66,11 @@ void delay (int i) {
 
 
 void type(char * mes) {
+  command("# ");
+  command(mes);
+
+}
+void command (char * mes) {
   char curr;
   while (curr = *mes++, curr !=0) {
     key = map(curr);

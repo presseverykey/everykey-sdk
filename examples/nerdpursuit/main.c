@@ -1,5 +1,6 @@
 #include "pressanykey/pressanykey.h"
 #include "typing.h"
+#include "sm.h"
 
 #define LED_PORT 0
 #define LED_PIN  7
@@ -22,28 +23,23 @@ void main (void) {
 
   GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
   init_keyboard();
-  for (i=500000; i!=0; --i) {}
-  GPIO_WriteOutput(LED_PORT, LED_PIN, true);
+  init_game();
+  GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+  for (i=5000000; i!=0; --i) {}
   SYSCON_StartSystick(SYSTICK_CNTR);
 }
 
 void systick(void) {
   static bool     key_state = false;
-//  static uint32_t count     = 0x00;
+  static uint32_t count     = 0x00;
 
   key_state = GPIO_ReadInput(KEY_PORT, KEY_PIN);
 
-  //GPIO_WriteOutput(0,7,key_state);
+  do_nerd_sm(!key_state, count);
 
-  //if ((count != 0) && (0 == (count % 100))) {
-  if (!key_state) {
-    type("Hello world!");
-    //type("\x17\x17\x17\xff");
-  }
-
-   // GPIO_WriteOutput(LED_PORT, LED_PIN, key_state);
-    //do_nerd_sm(key_state, count++);
-
-  //count++;
+  count++;
+  //if ((count % 100)==0) {
+  //  type("date\n");
+  //}
 }
 
