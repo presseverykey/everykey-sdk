@@ -31,8 +31,9 @@ typedef struct nerd_sm {
 
 nerd_sm sm;
 
-void random_question (nerd_sm *sm) {
-  sm->question = 0;
+void random_question (nerd_sm *sm, uint32_t count) {
+	int num_questions = sizeof(questions) / sizeof(question);
+  sm->question = count % num_questions;
 }
 void init_game(){
   sm.state = start;
@@ -42,19 +43,24 @@ void type_question(uint8_t q_id) {
 	question q;
 	q = questions[q_id];
 	type(q.question);
-	command("# 1.)");
+				delay(5000000);
+	command("\n");
+	command("# 1.) ");
 	command(q.answer1);
-	command("# 2.)");
+	command("\n");
+	command("# 2.) ");
 	command(q.answer2);
-	command("# 3.)");
+	command("\n");
+	command("# 3.) ");
 	command(q.answer3);
-	command("# 4.)");
+	command("\n");
+	command("# 4.) ");
 	command(q.answer4);
+	command("\n");
 }
 uint8_t get_answer(uint8_t q_id) {
 	return questions[q_id].answer;
 }
-
 // 50 * 10 ms half a second for click ...
 #define CLICK_TIME 30 
 
@@ -75,13 +81,13 @@ void do_nerd_sm (bool pressed, uint32_t count) {
 		case question_:
 			if (pressed) {
 				command("\nclear\n");
-				random_question(&sm);
+				random_question(&sm, count);
 				sm.state=question_print;
 			}	
 			break;
 		case question_print:
 			if (!pressed) {
-				type ("question\n");
+				//type ("question\n");
 				type_question(sm.question);
 				sm.state=press_1_0;
 				sm.last_time = count;
@@ -148,14 +154,21 @@ void do_nerd_sm (bool pressed, uint32_t count) {
 			//	type(result);
 			if (sm.answer == get_answer(sm.question)) {
 				command("cowsay hurrah!\n");
+				delay(100000);
 			} else {
-				type("oh noes!\n");
+				type("Wrong!\n");
+				delay(5000000);
+				command("cowsay -f hellokitty rm -rf /\n");
+				delay(100000);
 			}
 			sm.state = press_any_key;
 			break;      
 		case timeout:
-			type("oh please!\n");
-			sm.state = press_any_key;
+			command("cowsay -f turtle faster\n");
+				delay(100000);
+			if (!pressed) {
+				sm.state = press_any_key;
+			}
 			break;
 		default:
 			sm.state = start;
