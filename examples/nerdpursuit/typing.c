@@ -43,6 +43,35 @@ uint8_t map (char c) {
       case '#': return 0x20;
       case '!': return 0x1e;
       case '0': return 0x27;
+      case '>': 
+      case '.': return 0x37;
+      case '<':
+      case ',': return 0x36;
+      case ';': return 0x33;
+      case ':': return 0x33;
+      case ')': return 0x27;
+      case '(': return 0x26;
+      case '*': return 0x25;
+      case '_': return 0x2D;
+      case '&': return 0x24;
+      case '^': return 0x23;
+      case '=': 
+      case '+': return 0x2E;
+      case '[': 
+      case '{':
+                return 0x2F;
+      case ']': 
+      case '}': 
+                return 0x30;
+      case '/':
+      case '?':
+                return 0x38;
+      case '"':
+      case '\'':
+                return 0x34;
+      case '`':
+      case '~':
+                return 0x35;
       // TODO various punctuation and brackets ...
       default: return 0x2D; // '-'
     }
@@ -55,6 +84,20 @@ uint8_t modifier (char c) {
   switch(c) {
     case '#':
     case '!':
+    case ')': 
+    case '(': 
+    case '*': 
+    case '_':
+    case ':':
+    case '+':
+    case '&':
+    case '{':
+    case '?':
+    case '}':
+    case '<':
+    case '>':
+    case '^':
+    case '\'':
       return 0x02;
   }
 	return 0;
@@ -76,11 +119,11 @@ void command (char * mes) {
     key = map(curr);
 		mod = modifier(curr);
     HIDPushReport(HID_REPORTTYPE_INPUT, 0);
-    delay(50000);
+//    delay(50000);
     key = 0;
 		mod = 0;
     HIDPushReport(HID_REPORTTYPE_INPUT, 0);
-    delay(50000);
+//    delay(50000);
   }
 }
 
