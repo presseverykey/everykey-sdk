@@ -39,7 +39,7 @@ $(NAME).obj: $(OBJS)
 -include $(DEPENDS)
 
 # install target builds bin, copies it to LPC and unmounts it.
-install: $(NAME).bin
+mac-install: $(NAME).bin
 	cp $(NAME).bin /Volumes/CRP\ DISABLD/
 	diskutil umount /Volumes/CRP\ DISABLD/
 	
