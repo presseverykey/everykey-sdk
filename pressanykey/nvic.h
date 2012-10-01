@@ -63,17 +63,6 @@ uint8_t NVIC_GetInterruptPriority(NVIC_INTERRUPT_INDEX interrupt);
 */
 void NVIC_TriggerInterrupt(NVIC_INTERRUPT_INDEX interrupt);
 
-// The following functions are related to interrupts, but not strictly to the NVIC. Therefore, there's no name prefix.
-
-/** copies the default vector table to a given address in RAM. 
-	@param to target postion. Must be in RAM, at least sizeof(VECTOR_TABLE)
-*/
-void CopyDefaultVectorTable(void* to);
-
-/** Sets the interrupt vector table to a given address.
-	@param base new vector table base. Pass null to use the default flash table (in this case, null is not a placeholder, but the actual address)
-*/
-void UseVectorTable(void* base);
 
 
 #endif

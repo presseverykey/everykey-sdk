@@ -61,11 +61,3 @@ void NVIC_TriggerInterrupt(NVIC_INTERRUPT_INDEX interrupt) {
 	NVIC->STIR = interrupt;
 }
 
-void CopyDefaultVectorTable(void* to) {
-	memcpy(to, 0, sizeof(VECTOR_TABLE));
-}
-
-void UseVectorTable(void* base) {
-	// TODO ************
-}
-
