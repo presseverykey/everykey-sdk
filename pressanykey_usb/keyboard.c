@@ -110,21 +110,26 @@ const uint8_t kbd_serialName[] = {
 };
 
 
-void KeyboardInit( uint8_t* inBuffer, 
-                   uint8_t* outBuffer, 
-                   HidInReportHandler inReportHandler, 
-                   HidOutReportHandler outReportHandler) {
+void KeyboardInit(USB_Device_Struct* device,
+				  HID_Device_Struct* hid,
+				  uint8_t* inBuffer, 
+                  uint8_t* outBuffer, 
+                  HidInReportHandler inReportHandler, 
+                  HidOutReportHandler outReportHandler) {
 
-	HIDInit(kbd_deviceDescriptor, 
-          kbd_configDescriptor, 
-          kbd_manufacturerName, 
-          kbd_deviceName, 
-          kbd_serialName, 
-          kbd_configDescriptor+0x12,
-			    reportDescriptor, 
-          sizeof(reportDescriptor), 
-          inBuffer, 
-          outBuffer, 
-          inReportHandler, 
-          outReportHandler);
+	HIDInit(device,
+			hid,
+			0,
+			kbd_deviceDescriptor, 
+			kbd_configDescriptor, 
+			kbd_manufacturerName, 
+			kbd_deviceName, 
+			kbd_serialName, 
+			kbd_configDescriptor+0x12,
+			reportDescriptor, 
+			sizeof(reportDescriptor), 
+			inBuffer, 
+			outBuffer, 
+			inReportHandler, 
+			outReportHandler);
 }

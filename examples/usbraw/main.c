@@ -80,5 +80,5 @@ void main(void) {
 	myUSBDevice.endpointDataCallback = NULL;
 	
 	USB_Init(&myUSBDevice);
-	USB_SoftConnect();
+	USB_SoftConnect(&myUSBDevice);
 }

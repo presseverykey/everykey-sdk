@@ -29,7 +29,7 @@ const uint8_t typeSequence[] =
 };
 
 /** generate an IN report. We only use one key, no modifiers */
-uint16_t inReportHandler (uint8_t reportType, uint8_t reportId) {
+uint16_t inReportHandler (HID_Device_Struct* hid, uint8_t reportType, uint8_t reportId) {
   inBuffer[0] = 0;
   inBuffer[1] = 0;
   inBuffer[2] = downKey;
@@ -44,10 +44,13 @@ uint16_t inReportHandler (uint8_t reportType, uint8_t reportId) {
 /** parse an OUT report. We just read the caps lock bit and turn the LED on and
  * off */
 
-void outReportHandler (uint8_t reportType, uint8_t reportId, uint16_t len) {
+void outReportHandler (HID_Device_Struct* hid, uint8_t reportType, uint8_t reportId, uint16_t len) {
   bool ledOn = outBuffer[0] & 0x02;	//caps lock LED
   GPIO_WriteOutput (LED_PORT, LED_PIN, ledOn);
 }
+
+USB_Device_Struct usbDevice;
+HID_Device_Struct hidDevice;
 
 void main () {
   GPIO_SetDir (LED_PORT, LED_PIN, GPIO_Output);
@@ -59,8 +62,8 @@ void main () {
   downKey = 0;
   counter = -1;
 
-  KeyboardInit (inBuffer, outBuffer, inReportHandler, outReportHandler);
-  USB_SoftConnect ();
+  KeyboardInit (&usbDevice, &hidDevice, inBuffer, outBuffer, inReportHandler, outReportHandler);
+  USB_SoftConnect (&usbDevice);
   SYSCON_StartSystick (71999);	// 1KHz
 }
 
@@ -84,7 +87,7 @@ void systick () {
 	      downKey = 0;
 	      counter = -1;
 	    }
-	  HIDPushReport (HID_REPORTTYPE_INPUT, 0);
+	  HIDPushReport (&hidDevice, USB_HID_REPORTTYPE_INPUT, 0);
 	}
     }
 }

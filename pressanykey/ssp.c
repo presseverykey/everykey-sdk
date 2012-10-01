@@ -14,10 +14,10 @@ void SSP_Init(uint8_t clockDiv, uint8_t datasize, SSP_CR0_VALUES frameformat, bo
 
 	
 	//Enable SSP clock
-	SYSCON->SSP0CLKDIV = 255;	//********
-	SSP0->CPSR = 254;			//********
-//	SYSCON->SSP0CLKDIV = 1;	//AHB clock is divided by 1 to get the SSP peripheral clock (clock on)
-//	SSP0->CPSR = 2;			//SSP peripheral clock is divided by this factor to get the prescaler clock
+//	SYSCON->SSP0CLKDIV = 255;	//********
+//	SSP0->CPSR = 254;			//********
+	SYSCON->SSP0CLKDIV = 1;	//AHB clock is divided by 1 to get the SSP peripheral clock (clock on)
+	SSP0->CPSR = 2;			//SSP peripheral clock is divided by this factor to get the prescaler clock
 
 	//Set pin functions (0_8 -> MISO, 0_9 -> MOSI, 2_11 -> SCK)
 	GPIO_SetFunction(&(IOCON->PIO0_8), IOCON_IO_FUNC_PIO0_8_SSP, IOCON_IO_ADMODE_DIGITAL);

@@ -118,6 +118,12 @@ usbkeyboard
 
 Implements a simple USB HID keyboard. The example includes a two-step abstraction: hid.c implements a HID device based on the USB software stack. keyboard.c builds a keyboard on top of the HID device functionality. The keyboard can write text and the LED will act as a caps lock key (note that not all OSes synchronize caps lock among multiple keyboards). This example may be useful as a base for implementing your own HID devices.
 
+nerdpursuit
+-----------
+A HID-keyboard implementation of Nerd Pursuit - see https://github.com/Nerds/NerdPursuit. Play it on a standard *NIX shell.
+
+
+
 Installing the compiler
 =======================
 

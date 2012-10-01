@@ -20,23 +20,26 @@
 #define USB_MAX_CONFIGURATION_COUNT 3
 #define USB_MAX_STRING_COUNT 5
 
-/** fixed by spec and device */
 #define USB_MAX_COMMAND_PACKET_SIZE 64
+#define USB_MAX_COMMAND_DATA_SIZE 64
 
 #pragma mark USB Types
+
+// forward declaration of device struct
+typedef struct USB_Device_Struct USB_Device_Struct;
 
 /** Set extendedControlSetupCallback when you want to respond to class- or
  * device-specific commands (setup packets on the control out pipe). Otherwise, set to NULL.
  * The function is called upon arrival of a new control setup block, before the
  * USB driver handles standard requests, so that the callback can override standard behaviour.
- * Implementations should check the current setup packet in the global variable usbCurrentCommand.
+ * Implementations should check the current setup packet in the device struct's currentCommand.
  * If the callback handles the command, it should return true, false otherwise. If data is to be
- * transferred within the command's data phase, the callback should set the global
- * usbCurrentCommandDataBase to the base of the send / receive buffer (determined by the
- * direction bit in usbCurrentCommand.bmRequestType) and the number of bytes to transfer into
- * usbCurrentCommandBytesRemaining. Additionally, it may set usbControlOutDataCompleteCallback or/and
- * usbControlStatusCallback to be notified when the data or status phase of the command has completed. */
-typedef	bool (*ExtendedControlSetupCallback)();
+ * transferred within the command's data phase, the callback should set the device's
+ * currentCommandDataBase to the base of the send / receive buffer (determined by the
+ * direction bit in currentCommand.bmRequestType) and the number of bytes to transfer into
+ * currentCommandBytesRemaining. Additionally, it may set controlOutDataCompleteCallback or/and
+ * controlStatusCallback to be notified when the data or status phase of the command has completed. */
+typedef	bool (*ExtendedControlSetupCallback)(USB_Device_Struct* device);
 
 /** Set endpointDataCallback to handle data transfer on non-control endpoints.
  * The physical endpoint index is passed as parameter. Out (host-to-device) endpoints
@@ -45,7 +48,13 @@ typedef	bool (*ExtendedControlSetupCallback)();
  * the buffer is not filled, read requests by the host are silently NAK-ed.
  * In (device-to-host) endpoints have uneven indexes. For them, the callback is called
  * when data has arrived, ready to be read via USB_EP_Read(). */
-typedef	void (*EndpointDataCallback)(uint8_t epIdx);
+typedef	void (*EndpointDataCallback)(USB_Device_Struct* device, uint8_t epIdx);
+
+/** Set frameCallback to be notified on every USB frame. This callback is mainly useful for
+ * isochronous endpoints - data flow on isochronous pipes is not notified by endpointDataCallback.
+ * Instead, they must be read and written each frame. */
+typedef void (*USBFrameCallback)(USB_Device_Struct* device);
+
 
 /**init structure describing the device to be implemented */
 typedef struct USB_Device_Struct {
@@ -66,75 +75,97 @@ typedef struct USB_Device_Struct {
 	 * Entries 0..stringCount-1 must not be NULL. Length is taken from [0]. */
 	const uint8_t* strings[USB_MAX_STRING_COUNT];
 
-	/** callback for handling device-specific USB commands */
+	/** callback for handling device-specific USB commands - set to NULL if not used */
 	ExtendedControlSetupCallback extendedControlSetupCallback;
 
-	/** callback for handling data transfers */
+	/** callback for handling data transfers - set to NULL if not used */
 	EndpointDataCallback endpointDataCallback;
+	
+	/** callback invoked each USB frame - set to NULL if not used */
+	USBFrameCallback frameCallback;
+	
+	/** may be set and used by the user */
+	void* refcon;
+	
+	/** Data buffer for USB command OUT data phase */
+	uint8_t commandDataBuffer[USB_MAX_COMMAND_DATA_SIZE];
+
+	//Runtime state from here - don't need to be initialized, may change at runtime 
+	
+	/** remember if we're suspended or not */
+	bool usbSuspended;
+	
+	/** Current configuration */
+	uint8_t currentConfiguration;
+	
+	/** Currently pending command */
+	USB_Setup_Packet currentCommand;
+	
+	/** Pointer for command data phase - may point to const if dir is DEVICE_TO_HOST */
+	uint8_t* currentCommandDataBase;			
+	
+	/** Number of remaining bytes to transfer in data phase */
+	uint32_t currentCommandDataRemaining;
+	
+	/** callback when host-to-device has arrived - may be set on a per-command basis */
+	void (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
+	
+	/** callback when status was sent - may be set on a per-command basis */
+	void (*controlStatusCallback)(USB_Device_Struct* device);				
+	
 } USB_Device_Struct;
 
 #pragma mark USB Functions
 
 /** reads from an endpoint
- @param epIdx physical endpoint index (must be OUT)
- @param buffer read buffer (must not be null if length > 0). Reads will be multiples of 4, make buffer large enough.
- @param length max length to read. Rest of packet will be skipped.
- @return number of bytes actually read */
-uint32_t USB_EP_Read(uint8_t epIdx, uint8_t* buffer, uint32_t length);
+ * @param device device to check 
+ * @param epIdx physical endpoint index (must be OUT)
+ * @param buffer read buffer (must not be null if length > 0). Reads will be multiples of 4, make buffer large enough.
+ * @param length max length to read. Rest of packet will be skipped.
+ * @return number of bytes actually read */
+uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, uint32_t length);
 
 /** writes to an endpoint
- @param epIdx physical endpoint index (must be IN)
- @param buffer write buffer (must not be null if length > 0)
- @param length max length to write
- @return number of bytes actually written */
-uint32_t USB_EP_Write(uint8_t epIdx, const uint8_t* buffer, uint32_t length);
+ * @param device device to check 
+ * @param epIdx physical endpoint index (must be IN)
+ * @param buffer write buffer (must not be null if length > 0)
+ * @param length max length to write
+ * @return number of bytes actually written */
+uint32_t USB_EP_Write(USB_Device_Struct* device, uint8_t epIdx, const uint8_t* buffer, uint32_t length);
 
-/** stalls or unstalls a given endpoint.
-	@param epIdx physical endpoint index
-	@param stalled true to stall, false to unstall */
-void USB_EP_SetStall(uint8_t epIdx, bool stalled);
+/** stalls or unstalls a given endpoint
+ * @param device device to modify 
+ * @param epIdx physical endpoint  
+ * @param stalled true to stall, false to unstall */
+void USB_EP_SetStall(USB_Device_Struct* device, uint8_t epIdx, bool stalled);
 
 /** returns the stall state of an endpoint
-	@param epIdx physical endpoint index
-	@return the corresponding native index - must still be checked for validity */
-bool USB_EP_GetStall(uint8_t epIdx);
+ * @param device device to check 
+ * @param epIdx physical endpoint index
+ * @return the corresponding native index - must still be checked for validity */
+bool USB_EP_GetStall(USB_Device_Struct* device, uint8_t epIdx);
 
 /** powers up required blocks, sets up clock etc. Leaves soft-connect disconnected.
- * @param deviceDefinition Pointer to correctly and completely filled USB_Device_Struct. Must not be NULL.
+ * @param device Pointer to correctly filled USB_Device_Struct. Must not be NULL.
  */
-void USB_Init(USB_Device_Struct* deviceDefinition);
+void USB_Init(USB_Device_Struct* device);
 
-/** enable connection from client side (soft-connect) */
-void USB_SoftConnect(void);
+/** enable connection from client side (soft-connect) 
+  * @param device device to connect */
+void USB_SoftConnect(USB_Device_Struct* device);
 
-/** disable connection from client side (soft-connect) */
-void USB_SoftDisconnect(void);
+/** disable connection from client side (soft-connect)
+  * @param device device to disconnect */
+void USB_SoftDisconnect(USB_Device_Struct* device);
 
-/** returns whether the device is connected (VBUS present) */
-bool USB_Connected(void);
+/** returns whether the device is connected (VBUS present) 
+ * @param device device to check */
+bool USB_Connected(USB_Device_Struct* device);
 
 /** converts usb endpoint indexes (dir at bit 7) to native indexes (dir at bit 0)
  @param index usb endpoint index
  @return physical endpoint index */
 uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
-
-#pragma mark USB global variables
-
-/** current USB command */
-extern USB_Setup_Packet usbCurrentCommand;
-
-/** current command data phase data. Init in setup handler if needed */
-extern uint8_t* usbCurrentCommandDataBase;	//handled like const if current command is USB_RT_DIR_DEVICE_TO_HOST
-
-/** current command data phase length. Init in setup handler if needed */
-extern uint32_t usbCurrentCommandDataRemaining;
-
-/** current command data phase completed callback. Init in setup handler if needed */
-extern void (*usbControlOutDataCompleteCallback)(void);		//callback when host-to-device has arrived
-
-/** current command status phase completed callback. Init in setup handler if needed */
-extern void (*usbControlStatusCallback)(void);				//callback when status was sent
-
 
 
 #endif

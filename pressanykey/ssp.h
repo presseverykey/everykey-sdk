@@ -17,13 +17,10 @@
  */
 void SSP_Init(uint8_t clockDiv, uint8_t datasize, SSP_CR0_VALUES frameformat, bool idleClockHigh, bool dataOnSecond, bool master);
 
-/** writes a frame to the SSP port 
- * @param value frame to write (4..16 bits) */
-void SSP_Write(uint16_t value);
-
-/** reads a frame from the SPI port 
- * @return read frame (4..16 bits) */
-uint16_t SSP_Read();
+/** writes and reads a frame to the SSP port 
+ * @param value frame to write (4..16 bits)
+ * @return frame read at the same time */
+uint16_t SSP_Transfer(uint16_t value);
 
 
 #endif

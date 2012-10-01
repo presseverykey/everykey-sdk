@@ -24,9 +24,9 @@ int main(void) {
 		int i = ADC_Read(5);
     //int i = 512;
     GPIO_WriteOutput(LED_PORT, LED_PIN, false);
-		delay(1000 * (i+100));
+		delay(50 * (i+100));
 		GPIO_WriteOutput(LED_PORT, LED_PIN, true);
-    delay(1000 * (1124-i));
+    delay(50 * (1124-i));
 	}
   return 0;
 }

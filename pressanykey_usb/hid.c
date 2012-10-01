@@ -1,17 +1,6 @@
 #include "hid.h"
+#include "usbhidspec.h"
 
-const uint8_t hidInterfaceNumber = 0;
-uint8_t hidCurrentProtocol;
-uint8_t* hidHidDescriptor;
-uint8_t* hidReportDescriptor;
-uint16_t hidReportDescriptorLen;
-uint8_t* hidInBuffer;
-uint8_t* hidOutBuffer;
-HidInReportHandler hidInReportHandler;
-HidOutReportHandler hidOutReportHandler;
-uint8_t hidIdleValue;
-
-USB_Device_Struct hidUSBDevice;
 
 /** this string descriptor is always returned as string 0 - it tells the host
  * about available string languages */
@@ -26,103 +15,110 @@ const uint8_t languagesString[] = {
 };
 
 /** called when the data from a set report command has arrived */
-void hidSetReportDataComplete() {
-	if (hidOutReportHandler) {
-		hidOutReportHandler(	usbCurrentCommand.wValueH, usbCurrentCommand.wValueL,
-								(usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL);
+void hidSetReportDataComplete(USB_Device_Struct* device) {
+	HID_Device_Struct* hid = (HID_Device_Struct*)(device->refcon);
+	if (hid->outReportHandler) {
+		hid->outReportHandler(hid,
+							  device->currentCommand.wValueH,
+							  device->currentCommand.wValueL,
+							  (device->currentCommand.wLengthH << 8) |
+							  device->currentCommand.wLengthL);
 	}
 }
 
 /** handler for HID-specific USB commands */
-bool hidCommandHandler() {
-	uint16_t maxTransferLen = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
-	switch (usbCurrentCommand.bRequest) {
-    //we don't handle this command, but we use it as a trigger to init our globals
+bool hidCommandHandler(USB_Device_Struct* device) {
+	HID_Device_Struct* hid = (HID_Device_Struct*)(device->refcon);
+	uint16_t maxTransferLen = (device->currentCommand.wLengthH << 8) | device->currentCommand.wLengthL;
+	switch (device->currentCommand.bRequest) {
+    //we don't handle this command, but we use it as a trigger to init our state
 		case USB_REQ_SET_ADDRESS: 				
-			if ((usbCurrentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_HOST_TO_DEVICE) break;
-			if ((usbCurrentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_DEVICE) break;
-			hidCurrentProtocol = 1;
-			hidIdleValue = 128;
+			if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_HOST_TO_DEVICE) break;
+			if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_DEVICE) break;
+			hid->currentProtocol = 1;
+			hid->idleValue = 128;
 			break;
     //We handle HID-specific reports here.
 		case USB_REQ_GET_DESCRIPTOR:		
-			if ((usbCurrentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_DEVICE_TO_HOST) break;
-			if (usbCurrentCommand.wIndexL == hidInterfaceNumber) {
-				switch (usbCurrentCommand.wValueH) {
+			if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_DEVICE_TO_HOST) break;
+			if (device->currentCommand.wIndexL == hid->interfaceNumber) {
+				switch (device->currentCommand.wValueH) {
 					case USB_DESC_HID_HID:
-						usbCurrentCommandDataBase = hidHidDescriptor;
-						usbCurrentCommandDataRemaining = usbCurrentCommandDataBase[0];
-						if (usbCurrentCommandDataRemaining > maxTransferLen) {
-              usbCurrentCommandDataRemaining = maxTransferLen;
-            }
+						device->currentCommandDataBase = hid->hidDescriptor;
+						device->currentCommandDataRemaining = hid->hidDescriptor[0];
+						if (device->currentCommandDataRemaining > maxTransferLen) {
+							device->currentCommandDataRemaining = maxTransferLen;
+						}
 						return true;
 					case USB_DESC_HID_REPORT:
-						usbCurrentCommandDataBase = hidReportDescriptor;
-						usbCurrentCommandDataRemaining = hidReportDescriptorLen;
-						if (usbCurrentCommandDataRemaining > maxTransferLen) {
-              usbCurrentCommandDataRemaining = maxTransferLen;
-            }
+						device->currentCommandDataBase = hid->reportDescriptor;
+						device->currentCommandDataRemaining = hid->reportDescriptorLen;
+						if (device->currentCommandDataRemaining > maxTransferLen) {
+							device->currentCommandDataRemaining = maxTransferLen;
+						}
 						return true;
 				}
 			}
 			break;
 		case USB_REQ_HID_GETIDLE:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			usbCurrentCommandDataBase = &hidIdleValue;
-			usbCurrentCommandDataRemaining = 1;
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			device->currentCommandDataBase = &(hid->idleValue);
+			device->currentCommandDataRemaining = 1;
 			return true;
 			break;
 		case USB_REQ_HID_SETIDLE:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			hidIdleValue = usbCurrentCommand.wValueH;
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			hid->idleValue = device->currentCommand.wValueH;
 			return true;
 			break;
 		case USB_REQ_HID_GETPROTOCOL:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			usbCurrentCommandDataBase = &hidCurrentProtocol;
-			usbCurrentCommandDataRemaining = 1;
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			device->currentCommandDataBase = &(hid->currentProtocol);
+			device->currentCommandDataRemaining = 1;
 			return true;
 			break;
 		case USB_REQ_HID_SETPROTOCOL:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			hidCurrentProtocol = usbCurrentCommand.wValueL;
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			hid->currentProtocol = device->currentCommand.wValueL;
 			return true;
 			break;
 		case USB_REQ_HID_GETREPORT:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			if ((!hidInReportHandler) || (!hidInBuffer)) break;
-			usbCurrentCommandDataBase = hidInBuffer;
-			usbCurrentCommandDataRemaining = (*hidInReportHandler)(usbCurrentCommand.wValueH, usbCurrentCommand.wValueL);
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			if ((!hid->inReportHandler) || (!hid->inBuffer)) break;
+			device->currentCommandDataBase = hid->inBuffer;
+			device->currentCommandDataRemaining = (hid->inReportHandler)(hid,
+																			device->currentCommand.wValueH,
+																			device->currentCommand.wValueL);   
 			return true;
 			break;
 		case USB_REQ_HID_SETREPORT:
-			if (usbCurrentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
-			if (usbCurrentCommand.wIndexL != hidInterfaceNumber) break;
-			if ((!hidOutReportHandler) || (!hidOutBuffer)) break;
-			usbCurrentCommandDataBase = hidOutBuffer;
-			usbCurrentCommandDataRemaining = (usbCurrentCommand.wLengthH << 8) | usbCurrentCommand.wLengthL;
+			if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE)) break;
+			if (device->currentCommand.wIndexL != hid->interfaceNumber) break;
+			if ((!hid->outReportHandler) || (!hid->outBuffer)) break;
+			device->currentCommandDataBase = hid->outBuffer;
+			device->currentCommandDataRemaining = (device->currentCommand.wLengthH << 8) |
+														device->currentCommand.wLengthL;
       //Call us again when the data is there
-			usbControlOutDataCompleteCallback = hidSetReportDataComplete;	
+			device->controlOutDataCompleteCallback = hidSetReportDataComplete;	
 			return true;
 			break;
 	}
 	return false;
 }
 
-void hidEndpointDataHandler(uint8_t epIdx) {
+void hidEndpointDataHandler(USB_Device_Struct* device, uint8_t epIdx) {
 	//Do nothing, just add a handler to prevent pipe from stalling (will stall if no handler is there)
 }
 
-
-USB_Device_Struct myUSBDevice;
-
-
-void HIDInit(	const uint8_t* deviceDesc,
+void HIDInit(	USB_Device_Struct* usbDevice,
+				HID_Device_Struct* hidDevice,
+				int interfaceNum,
+				const uint8_t* deviceDesc,
 				const uint8_t* configDesc,
 				const uint8_t* string1,
 				const uint8_t* string2,
@@ -134,32 +130,34 @@ void HIDInit(	const uint8_t* deviceDesc,
 				uint8_t* outReportBuffer,
 				HidInReportHandler inReportHandler,
 				HidOutReportHandler outReportHandler) {
-	hidUSBDevice.deviceDescriptor = deviceDesc;
-	hidUSBDevice.configurationCount = 1;
-	hidUSBDevice.configurationDescriptors[0] = configDesc;
-	hidUSBDevice.stringCount = 4;
-	hidUSBDevice.strings[0] = languagesString;
-	hidUSBDevice.strings[1] = string1;
-	hidUSBDevice.strings[2] = string2;
-	hidUSBDevice.strings[3] = string3;
-	hidUSBDevice.extendedControlSetupCallback = hidCommandHandler;
-	hidUSBDevice.endpointDataCallback = hidEndpointDataHandler;
-  //we don't change values inside
-	hidHidDescriptor = (uint8_t*)hidDesc;		
-  //we don't change values inside
-	hidReportDescriptor = (uint8_t*)reportDesc;	
-	hidReportDescriptorLen = reportDescLen;
-	hidInBuffer = inReportBuffer;
-	hidOutBuffer = outReportBuffer;
-	hidInReportHandler = inReportHandler;
-	hidOutReportHandler = outReportHandler;
-
-	USB_Init(&hidUSBDevice);
+	usbDevice->deviceDescriptor = deviceDesc;
+	usbDevice->configurationCount = 1;
+	usbDevice->configurationDescriptors[0] = configDesc;
+	usbDevice->stringCount = 4;
+	usbDevice->strings[0] = languagesString;
+	usbDevice->strings[1] = string1;
+	usbDevice->strings[2] = string2;
+	usbDevice->strings[3] = string3;
+	usbDevice->extendedControlSetupCallback = hidCommandHandler;
+	usbDevice->endpointDataCallback = hidEndpointDataHandler;
+	usbDevice->frameCallback = NULL;
+	usbDevice->refcon = hidDevice;
+	//we don't change values inside
+	hidDevice->hidDescriptor = (uint8_t*)hidDesc;		
+	//we don't change values inside
+	hidDevice->reportDescriptor = (uint8_t*)reportDesc;	
+	hidDevice->reportDescriptorLen = reportDescLen;
+	hidDevice->inBuffer = inReportBuffer;
+	hidDevice->outBuffer = outReportBuffer;
+	hidDevice->inReportHandler = inReportHandler;
+	hidDevice->outReportHandler = outReportHandler;
+	hidDevice->interfaceNumber = interfaceNum;
+	USB_Init(usbDevice);
 }
 
-void HIDPushReport(HID_REPORTTYPE reportType, uint8_t reportId) {
-	if ((!hidInReportHandler) || (!hidInBuffer)) return;
-	uint16_t len = hidInReportHandler(reportType, reportId);
-	USB_EP_Write(3, hidInBuffer, len);
+void HIDPushReport(HID_Device_Struct* hid, USB_HID_REPORTTYPE reportType, uint8_t reportId) {
+	if ((!hid->inReportHandler) || (!hid->inBuffer)) return;
+	uint16_t len = (hid->inReportHandler)(hid, reportType, reportId);
+	USB_EP_Write(hid->usbDevice, 3, hid->inBuffer, len);
 }
 
