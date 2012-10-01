@@ -50,7 +50,7 @@ following steps to create a project directory from scratch:
   directory
 - run `make` (will compile and link all c files in project dir and subdirs)
 - connect target board in USB programming mode
-- run `make install` (optionally copy the resulting .bin file manually)
+- run `make mac-install` (optionally copy the resulting .bin file manually)
 - disconnect and re-plug target board
 
 In most cases, symlinking (or hard-linking, if you prefer) the
@@ -60,7 +60,12 @@ project refers to the original, unaltered runtime library.
 
 The build system should work in OSX without modifications. For other
 *NIX platforms, please adjust the target board path and unmount command
-for the makefile ("install" target). 
+for the makefile ("mac-install" target).
+
+Linux' FAT drivers apparently interfere with copying, you need to transfer
+the files directly onto the device:
+
+    dd if=firmware.bin of=/dev/<wherever the ANYKEY appears>
 
 Examples
 ========
