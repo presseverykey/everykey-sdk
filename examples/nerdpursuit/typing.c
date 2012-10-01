@@ -119,11 +119,11 @@ void command (char * mes) {
     key = map(curr);
 		mod = modifier(curr);
     HIDPushReport(HID_REPORTTYPE_INPUT, 0);
-//    delay(50000);
+    delay(50000);
     key = 0;
 		mod = 0;
     HIDPushReport(HID_REPORTTYPE_INPUT, 0);
-//    delay(50000);
+    delay(50000);
   }
 }
 
