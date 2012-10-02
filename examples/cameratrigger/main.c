@@ -8,8 +8,10 @@
 #define KEY_PIN 4
 #define MIC_PORT 1
 #define MIC_PIN 4
+#define OPTOCOUPLER_PORT 2
+#define OPTOCOUPLER_PIN 11
 
-const uint16_t threshold = 400;
+const uint16_t threshold = 200;
 const uint32_t deaf_timeout = 76800;
 
 typedef enum State {
@@ -30,12 +32,19 @@ void main(void) {
 	state = Deaf;
 	counter = 0;
 	
+	//	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
+	//	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	
 	GPIO_SetDir(IR_PORT, IR_PIN, GPIO_Output);
+	GPIO_WriteOutput(IR_PORT, IR_PIN, false);
+	
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-//	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
-//	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
-	GPIO_SetDir(MIC_PORT, MIC_PIN, GPIO_Input);
+	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
 
+	GPIO_SetDir(OPTOCOUPLER_PORT, OPTOCOUPLER_PIN, GPIO_Output);
+	GPIO_WriteOutput(OPTOCOUPLER_PORT, OPTOCOUPLER_PIN, false);
+	
+	GPIO_SetDir(MIC_PORT, MIC_PIN, GPIO_Input);
 	ADC_Init();
 	GPIO_SETPULL(MIC_PORT, MIC_PIN, IOCON_IO_PULL_NONE);
 	GPIO_SETFUNCTION(MIC_PORT, MIC_PIN, ADC, IOCON_IO_ADMODE_ANALOG);
@@ -51,6 +60,7 @@ void systick_scan() {
 		int val = max - min;
 		if (val > threshold) {
 			GPIO_WriteOutput(LED_PORT, LED_PIN, true);
+			GPIO_WriteOutput(OPTOCOUPLER_PORT, OPTOCOUPLER_PIN, true);
 			state = Triggering;
 			counter = 0;
 			return;
@@ -62,6 +72,7 @@ void systick_scan() {
 		if (min>i) min = i;
 	}
 	counter++;
+	GPIO_WriteOutput(LED_PORT, LED_PIN, (counter / 10000) & 1);
 }
 
 void systick_trigger() {
@@ -88,6 +99,7 @@ void systick_trigger() {
 				(counter >= 7602 && counter < 7633);
 
 	GPIO_WriteOutput(IR_PORT, IR_PIN, on && ((toggle++) & 1));
+
 	counter++;
 	if (counter > 8000) {
 		state = Deaf;
@@ -102,6 +114,7 @@ void systick_deaf() {
 		counter = 0;
 		max = 0;
 		min = 0;
+		GPIO_WriteOutput(OPTOCOUPLER_PORT, OPTOCOUPLER_PIN, false);
 		GPIO_WriteOutput(LED_PORT, LED_PIN, false);
 	}
 }
