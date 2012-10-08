@@ -101,12 +101,4 @@ typedef enum USB_ENDPOINT_USAGE {
 	USB_EPUSAGE_RESERVED			= 0x40
 } USB_ENDPOINT_USAGE;
 
-#pragma mark Descriptor convenience macros
-
-/** splits a 16 bit unsigned integer into two bytes, little-endian - useful for various USB descriptors */
-#define USB16(val) ((val) & 0xff),(((val) >> 8) & 0xff)
-
-/** splits a 24 bit unsigned integer into three bytes, little-endian - useful for various USB descriptors */
-#define USB24(val) ((val) & 0xff),(((val) >> 8) & 0xff),(((val) >> 16) & 0xff)
-
 #endif

@@ -14,24 +14,24 @@
 #define MIC_FEATURE_NODE 5
 #define MIC_OUTTERM_NODE 6
 #define SAMPLE_RATE 48000
-#define BYTES_PER_FRAME (SAMPLE_RATE/500+2)
+#define BYTES_PER_FRAME (((SAMPLE_RATE/1000)+1)*2) /* samples per ms * sample size, 1 sample extra */
+
 #define KEY_PORT 1
 #define KEY_PIN 4
-
 #define LED_PORT 0
 #define LED_PIN 7
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)
 	USB_DESC_DEVICE,				//bDescriptorType: usb device descriptor
-	USB16(0x0200),					//bcdUSB: USB 2.0
+	I16_TO_LE_BA(0x0200),			//bcdUSB: USB 2.0
 	0x00,							//bDeviceClass: Device class (0 = interfaces specify class)
 	0x00,							//bDeviceSubClass: Device subclass (must be 0 if bDeviceClass is 0)
 	0x00,							//bDeviceProtocol: 0 for no specific device-level protocols
 	USB_MAX_COMMAND_PACKET_SIZE,	//bMaxPacketSize0: Max packet size for control endpoint
-	USB16(0x1234),                  //idVendor: 16 bit vendor id
-	USB16(0x4567),                  //idProduct: 16 bit product id
-	USB16(0x0100),					//bcdDevice: Device release version
+	I16_TO_LE_BA(0x1234),           //idVendor: 16 bit vendor id
+	I16_TO_LE_BA(0x4567),           //idProduct: 16 bit product id
+	I16_TO_LE_BA(0x0100),			//bcdDevice: Device release version
 	0x01,                           //iManufacturer: Manufacturer string index
 	0x02,                           //iProduct: Product string index
 	0x03,                           //iSerialNumber: Serial number string index
@@ -82,7 +82,7 @@ const uint8_t configDescriptor[] = {
 	//Config descriptor
 	9,													//bLength
 	USB_DESC_CONFIGURATION,								//bDescriptorType
-	USB16(196),											//wTotalLength (configDesc complete)
+	I16_TO_LE_BA(196),									//wTotalLength (configDesc complete)
 	3,													//bNumInterfaces
 	1,													//bConfigurationValue
 	0,													//iConfiguration
@@ -104,8 +104,8 @@ const uint8_t configDescriptor[] = {
 	10,													//bLength
 	USB_DESC_AUDIO_INTERFACE,							//bDescriptorType
 	USB_AUDIO_CONTROL_INTERFACE_DESCRIPTOR_HEADER,		//bDescriptorSubtype
-	USB16(0x0100),										//bcdADC
-	USB16(74),											//wTotalLength (this+units+terminals)
+	I16_TO_LE_BA(0x0100),								//bcdADC
+	I16_TO_LE_BA(74),									//wTotalLength (this+units+terminals)
 	2,													//nInConnection
 	SPEAKER_STREAM_INTERFACE,							//baInterfaceNr1
 	MIC_STREAM_INTERFACE,								//baInterfaceNr2
@@ -119,10 +119,10 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_INTERFACE,							//bDescriptorType
 	USB_AUDIO_CONTROL_INTERFACE_DESCRIPTOR_INPUT_TERMINAL,	//bDescriptorSubtype
 	SPEAKER_INTERM_NODE,								//bTerminalId
-	USB16(USB_AUDIO_TERMINAL_USB_STREAMING),			//wTerminalType
+	I16_TO_LE_BA(USB_AUDIO_TERMINAL_USB_STREAMING),		//wTerminalType
 	0,													//bAssocTerminal
 	1,													//bNrChannels
-	USB16(USB_AUDIO_CHANNELCONFIG_LEFT_FRONT),			//wChannelConfig (should use center front, just for fun here)
+	I16_TO_LE_BA(USB_AUDIO_CHANNELCONFIG_LEFT_FRONT),	//wChannelConfig (should use center front, just for fun here)
 	0,													//iChannelNames (none)
 	0,													//iTerminal (none)
 	
@@ -142,7 +142,7 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_INTERFACE,							//bDescriptorType
 	USB_AUDIO_CONTROL_INTERFACE_DESCRIPTOR_OUTPUT_TERMINAL,	//bDescriptorSubtype
 	SPEAKER_OUTTERM_NODE,								//bTerminalId
-	USB16(USB_AUDIO_TERMINAL_OUT_SPEAKER),				//wTerminalType (speaker)
+	I16_TO_LE_BA(USB_AUDIO_TERMINAL_OUT_SPEAKER),		//wTerminalType (speaker)
 	0,													//bAssocTerminal
 	SPEAKER_FEATURE_NODE,								//bSourceID
 	0,													//iTerminal (none)
@@ -152,10 +152,10 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_INTERFACE,							//bDescriptorType
 	USB_AUDIO_CONTROL_INTERFACE_DESCRIPTOR_INPUT_TERMINAL,	//bDescriptorSubtype
 	MIC_INTERM_NODE,									//bTerminalId
-	USB16(USB_AUDIO_TERMINAL_IN_MICROPHONE),			//wTerminalType
+	I16_TO_LE_BA(USB_AUDIO_TERMINAL_IN_MICROPHONE),		//wTerminalType
 	0,													//bAssocTerminal
 	1,													//bNrChannels
-	USB16(USB_AUDIO_CHANNELCONFIG_CENTER_FRONT),		//wChannelConfig
+	I16_TO_LE_BA(USB_AUDIO_CHANNELCONFIG_CENTER_FRONT),	//wChannelConfig
 	0,													//iChannelNames (none)
 	0,													//iTerminal (none)
 	
@@ -175,7 +175,7 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_INTERFACE,							//bDescriptorType
 	USB_AUDIO_CONTROL_INTERFACE_DESCRIPTOR_OUTPUT_TERMINAL,	//bDescriptorSubtype
 	MIC_OUTTERM_NODE,									//bTerminalId
-	USB16(USB_AUDIO_TERMINAL_USB_STREAMING),			//wTerminalType
+	I16_TO_LE_BA(USB_AUDIO_TERMINAL_USB_STREAMING),		//wTerminalType
 	0,													//bAssocTerminal
 	MIC_FEATURE_NODE,									//bSourceID
 	0,													//iTerminal (none)
@@ -208,7 +208,7 @@ const uint8_t configDescriptor[] = {
 	USB_AUDIO_STREAM_INTERFACE_DESCRIPTOR_GENERAL,		//bDescriptorSubtype
 	SPEAKER_INTERM_NODE,								//bTerminalLink
 	0,													//bDelay
-	USB16(USB_AUDIO_FORMAT_I_PCM),						//wFormatFlag
+	I16_TO_LE_BA(USB_AUDIO_FORMAT_I_PCM),				//wFormatFlag
 	
 	//Audio Class Audio Stream Format Type (USB Audio Format spec type 1, section 2.2.5
 	11,													//bLength
@@ -219,14 +219,14 @@ const uint8_t configDescriptor[] = {
 	2,													//bSubframeSize: 2 bytes per sample
 	16,													//bBitResolution: We state 16 although we use less
 	1,													//bSamFreqType: Only one fixed freq
-	USB24(SAMPLE_RATE),									//tSamFreq[0]
+	I24_TO_LE_BA(SAMPLE_RATE),							//tSamFreq[0]
 	
 	//Standard AS Isochronous out endpoint descriptor (see audio spec 4.6.1.1)
 	9,													//bLength
 	USB_DESC_ENDPOINT,									//bDescriptorType
 	0x04,												//bEndpointAddress:4 out (our isoch out endpoint)
 	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_SYNCHRONOUS,	//bmAttributes
-	USB16(BYTES_PER_FRAME),								//wMaxPacketSize
+	I16_TO_LE_BA(BYTES_PER_FRAME),						//wMaxPacketSize
 	1,													//bInterval: isoch = every frame
 	0,													//bRefresh (always 0)
 	0,													//unused by spec (just to make length 9 fit)
@@ -237,7 +237,7 @@ const uint8_t configDescriptor[] = {
 	USB_AUDIO_ENDPOINT_DESCRIPTOR_GENERAL,				//bDescriptorSubtype
 	USB_AUDIO_EP_ATTRIBUTE_FREQ,						//bmAttributes (none)
 	USB_AUDIO_LOCKDELAY_SAMPLES,						//bLockDelayUnits
-	USB16(1),											//bLockDelay
+	I16_TO_LE_BA(1),									//bLockDelay
 	
 	
 	//Interface 2 alt 0: Audio stream in (mic, no bandwidth)
@@ -269,7 +269,7 @@ const uint8_t configDescriptor[] = {
 	USB_AUDIO_STREAM_INTERFACE_DESCRIPTOR_GENERAL,		//bDescriptorSubtype
 	MIC_OUTTERM_NODE,									//bTerminalLink
 	0,													//bDelay
-	USB16(USB_AUDIO_FORMAT_I_PCM),						//wFormatFlag
+	I16_TO_LE_BA(USB_AUDIO_FORMAT_I_PCM),				//wFormatFlag
 	
 	//Audio Class Audio Stream Format Type (USB Audio Format spec type 1, section 2.2.5
 	11,													//bLength
@@ -280,14 +280,14 @@ const uint8_t configDescriptor[] = {
 	2,													//bSubframeSize: 2 bytes per sample
 	16,													//bBitResolution: We state 16 although we use less
 	1,													//bSamFreqType: Only one fixed freq
-	USB24(SAMPLE_RATE),									//tSamFreq[0]
+	I24_TO_LE_BA(SAMPLE_RATE),							//tSamFreq[0]
 	
 	//Standard AS Isochronous out endpoint descriptor (see audio spec 4.6.1.1)
 	9,													//bLength
 	USB_DESC_ENDPOINT,									//bDescriptorType
 	0x84,												//bEndpointAddress:4 in (our isoch in endpoint)
 	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_SYNCHRONOUS,	//bmAttributes
-	USB16(BYTES_PER_FRAME),								//wMaxPacketSize (72 should be sufficient)
+	I16_TO_LE_BA(BYTES_PER_FRAME),						//wMaxPacketSize (72 should be sufficient)
 	1,													//bInterval: isoch = every frame
 	0,													//bRefresh (always 0)
 	0,													//unused by spec (just to make length 9 fit)
@@ -298,7 +298,7 @@ const uint8_t configDescriptor[] = {
 	USB_AUDIO_ENDPOINT_DESCRIPTOR_GENERAL,				//bDescriptorSubtype
 	USB_AUDIO_EP_ATTRIBUTE_FREQ,						//bmAttributes (none)
 	USB_AUDIO_LOCKDELAY_SAMPLES,						//bLockDelayUnits
-	USB16(1)											//bLockDelay
+	I16_TO_LE_BA(1)										//bLockDelay
 };
 
 

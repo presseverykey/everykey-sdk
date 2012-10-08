@@ -2,6 +2,7 @@
 #define _ANYKEY_
 
 #include "types.h"
+#include "endian.h"
 #include "memorymap.h"
 #include "gpio.h"
 #include "syscon.h"
