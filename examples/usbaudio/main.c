@@ -236,8 +236,8 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_ENDPOINT,							//bDescriptorType
 	USB_AUDIO_ENDPOINT_DESCRIPTOR_GENERAL,				//bDescriptorSubtype
 	USB_AUDIO_EP_ATTRIBUTE_FREQ,						//bmAttributes (none)
-	USB_AUDIO_LOCKDELAY_SAMPLES,						//bLockDelayUnits
-	I16_TO_LE_BA(1),									//bLockDelay
+	USB_AUDIO_LOCKDELAY_UNDEFINED,						//bLockDelayUnits (undefined/0 means unsupported)
+	I16_TO_LE_BA(0),									//bLockDelay
 	
 	
 	//Interface 2 alt 0: Audio stream in (mic, no bandwidth)
@@ -297,8 +297,8 @@ const uint8_t configDescriptor[] = {
 	USB_DESC_AUDIO_ENDPOINT,							//bDescriptorType
 	USB_AUDIO_ENDPOINT_DESCRIPTOR_GENERAL,				//bDescriptorSubtype
 	USB_AUDIO_EP_ATTRIBUTE_FREQ,						//bmAttributes (none)
-	USB_AUDIO_LOCKDELAY_SAMPLES,						//bLockDelayUnits
-	I16_TO_LE_BA(1)										//bLockDelay
+	USB_AUDIO_LOCKDELAY_UNDEFINED,						//bLockDelayUnits (undefined/0 means unsupported)
+	I16_TO_LE_BA(0)										//bLockDelay
 };
 
 
@@ -589,6 +589,7 @@ void frameCallback(USB_Device_Struct* device) {
 			if (val < min) min = val;
 			if (val > max) max = val;
 		}
+		
 		uint32_t level = (max > min) ? (max - min) : 0;
 		level = level * (speakerVolume+0x8000) / 0x10000;	//scale by speaker volume
 
