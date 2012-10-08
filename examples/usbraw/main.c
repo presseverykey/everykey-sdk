@@ -78,6 +78,8 @@ void main(void) {
 	myUSBDevice.strings[3] = serialName;
 	myUSBDevice.extendedControlSetupCallback = NULL;
 	myUSBDevice.endpointDataCallback = NULL;
+	myUSBDevice.frameCallback = NULL;
+	myUSBDevice.interfaceAltCallback = NULL;
 	
 	USB_Init(&myUSBDevice);
 	USB_SoftConnect(&myUSBDevice);

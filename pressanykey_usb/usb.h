@@ -19,6 +19,7 @@
 /** change limits if you need more */
 #define USB_MAX_CONFIGURATION_COUNT 3
 #define USB_MAX_STRING_COUNT 5
+#define USB_MAX_INTERFACES_PER_DEVICE 8
 
 #define USB_MAX_COMMAND_PACKET_SIZE 64
 #define USB_MAX_COMMAND_DATA_SIZE 64
@@ -39,7 +40,7 @@ typedef struct USB_Device_Struct USB_Device_Struct;
  * direction bit in currentCommand.bmRequestType) and the number of bytes to transfer into
  * currentCommandBytesRemaining. Additionally, it may set controlOutDataCompleteCallback or/and
  * controlStatusCallback to be notified when the data or status phase of the command has completed. */
-typedef	bool (*ExtendedControlSetupCallback)(USB_Device_Struct* device);
+typedef	bool (*USBExtendedControlSetupCallback)(USB_Device_Struct* device);
 
 /** Set endpointDataCallback to handle data transfer on non-control endpoints.
  * The physical endpoint index is passed as parameter. Out (host-to-device) endpoints
@@ -48,12 +49,18 @@ typedef	bool (*ExtendedControlSetupCallback)(USB_Device_Struct* device);
  * the buffer is not filled, read requests by the host are silently NAK-ed.
  * In (device-to-host) endpoints have uneven indexes. For them, the callback is called
  * when data has arrived, ready to be read via USB_EP_Read(). */
-typedef	void (*EndpointDataCallback)(USB_Device_Struct* device, uint8_t epIdx);
+typedef	void (*USBEndpointDataCallback)(USB_Device_Struct* device, uint8_t epIdx);
 
 /** Set frameCallback to be notified on every USB frame. This callback is mainly useful for
  * isochronous endpoints - data flow on isochronous pipes is not notified by endpointDataCallback.
  * Instead, they must be read and written each frame. */
 typedef void (*USBFrameCallback)(USB_Device_Struct* device);
+
+/** Set interfaceAltCallback to be notified on changes of interface alt settings. This callback is
+ * useful for changing alt-setting-dependent functionality such as starting or stopping isochronous
+ * streaming. Return true if the new alt setting is ok, false otherwise.
+ * If unused, alt changes will fail. */
+typedef bool (*USBInterfaceAltCallback)(USB_Device_Struct* device, uint8_t interface, uint8_t newAlt);
 
 
 /**init structure describing the device to be implemented */
@@ -76,21 +83,27 @@ typedef struct USB_Device_Struct {
 	const uint8_t* strings[USB_MAX_STRING_COUNT];
 
 	/** callback for handling device-specific USB commands - set to NULL if not used */
-	ExtendedControlSetupCallback extendedControlSetupCallback;
+	USBExtendedControlSetupCallback extendedControlSetupCallback;
 
 	/** callback for handling data transfers - set to NULL if not used */
-	EndpointDataCallback endpointDataCallback;
+	USBEndpointDataCallback endpointDataCallback;
 	
 	/** callback invoked each USB frame - set to NULL if not used */
 	USBFrameCallback frameCallback;
 	
+	/** callback invoked on interface alt changes - set to NULL if not used */
+	USBInterfaceAltCallback interfaceAltCallback;
+	
 	/** may be set and used by the user */
 	void* refcon;
 	
+	//Runtime state from here - don't need to be initialized, may change at runtime 
+	
 	/** Data buffer for USB command OUT data phase */
 	uint8_t commandDataBuffer[USB_MAX_COMMAND_DATA_SIZE];
-
-	//Runtime state from here - don't need to be initialized, may change at runtime 
+	
+	/** Remember our alt interface settings */
+	uint8_t	interfaceAltSetting[USB_MAX_INTERFACES_PER_DEVICE];
 	
 	/** remember if we're suspended or not */
 	bool usbSuspended;
@@ -108,10 +121,10 @@ typedef struct USB_Device_Struct {
 	uint32_t currentCommandDataRemaining;
 	
 	/** callback when host-to-device has arrived - may be set on a per-command basis */
-	void (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
+	bool (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
 	
 	/** callback when status was sent - may be set on a per-command basis */
-	void (*controlStatusCallback)(USB_Device_Struct* device);				
+	bool (*controlStatusCallback)(USB_Device_Struct* device);				
 	
 } USB_Device_Struct;
 

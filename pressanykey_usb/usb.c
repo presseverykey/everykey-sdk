@@ -7,6 +7,7 @@
 #include "../pressanykey/nvic.h"
 
 
+
 #pragma mark USB globals
 
 /** This is the only global - and it should only be used from interrupt handlers.
@@ -85,13 +86,13 @@ void USB_SIE_SetEndpointStatus(USB_Device_Struct* device, uint8_t epIdx, uint8_t
 }
 
 void USB_SIE_ClearBuffer(USB_Device_Struct* device, uint8_t epIdx) {
-	if (epIdx > 7) return;		//isoch endpoint
+	if (epIdx > 9) return;
 	USB_SIE_Command(device, USB_SIE_CMD_SelectEndpoint + epIdx);
 	USB_SIE_Command(device, USB_SIE_CMD_ClearBuffer);
 }
 
 void USB_SIE_ValidateBuffer(USB_Device_Struct* device, uint8_t epIdx) {
-	if (epIdx > 7) return;		//isoch endpoint
+	if (epIdx > 9) return;
 	USB_SIE_Command(device, USB_SIE_CMD_SelectEndpoint + epIdx);
 	USB_SIE_Command(device, USB_SIE_CMD_ValidateBuffer);
 }
@@ -105,32 +106,29 @@ uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, 
 	NOP;
 	NOP;
 	uint32_t readBytes;
-	do {
-		readBytes = USB->RXPLEN;
-	} while (!(readBytes & USB_RXPLEN_DV));
-	readBytes &= USB_RXPLEN_LENGTH_MASK;
-	if (maxLen < readBytes) readBytes = maxLen;
-	uint16_t readWords = (readBytes + 3) >> 2;				//round up, convert to words
-	uint16_t i;
-	for (i=0; i<readWords; i++) {
-		((uint32_t*)buffer)[i] = USB->RXDATA;
-	}
-	USB->CTRL = 0;											//disable read again
-	USB_SIE_ClearBuffer(device, epIdx);						//mark buffer as free again
+	readBytes = USB->RXPLEN;
+	if (readBytes & USB_RXPLEN_DV) {
+		readBytes & USB_RXPLEN_LENGTH_MASK;
+		if (maxLen < readBytes) readBytes = maxLen;
+		uint16_t readWords = (readBytes + 3) >> 2;				//round up, convert to words
+		uint16_t i;
+		for (i=0; i<readWords; i++) {
+			((uint32_t*)buffer)[i] = USB->RXDATA;
+		}
+	} else readBytes = 0;
+	USB->CTRL = 0;												//disable read again
+	USB_SIE_ClearBuffer(device, epIdx);							//mark buffer as free again
 	return readBytes;
 }
 
 uint32_t USB_EP_Write(USB_Device_Struct* device, uint8_t epIdx, const uint8_t* buffer, uint32_t length) {
-//	if (USB_EP_GetStall(epIdx)) return length; 				//EP is stalled: Do not write but flush output
+//	if (USB_EP_GetStall(epIdx)) return length;					//EP is stalled: Do not write but flush output
 	uint8_t logEpIdx = epIdx >> 1;
 	USB->CTRL = USB_CTRL_LOG_EP * logEpIdx + USB_CTRL_WR_EN;	//enable writing for this ep
 	NOP;					//wait a bit, just to be safe
 	NOP;
 	NOP;
 	uint16_t epPacketSize = (epIdx < 8) ? 64 : 512;
-	NOP;					//wait a bit, just to be safe
-	NOP;
-	NOP;
 	if (epPacketSize < length) length = epPacketSize;
 	USB->TXPLEN = length;
 	uint16_t writeWords = (length + 3) >> 2;
@@ -170,7 +168,8 @@ void USB_Reset(USB_Device_Struct* device) {
 		USB_DEVINT_EP5 |
 		USB_DEVINT_EP6 |
 		USB_DEVINT_EP7 |
-		USB_DEVINT_DEV_STAT;				//enable EP interrupts + status change
+		USB_DEVINT_FRAME | 
+		USB_DEVINT_DEV_STAT;				//enable EP interrupts + status change + frame
 	device->usbSuspended = false;
 	device->currentCommandDataBase = NULL;
 	device->currentCommandDataRemaining = 0;
@@ -178,6 +177,8 @@ void USB_Reset(USB_Device_Struct* device) {
 	USB_SIE_SetAddress(device, 0, true);
 	device->controlOutDataCompleteCallback = NULL;
 	device->controlStatusCallback = NULL;
+	int i;
+	for (i=0; i<USB_MAX_INTERFACES_PER_DEVICE; i++) device->interfaceAltSetting[i] = 0;
 }
 
 void USB_Suspend(USB_Device_Struct* device) {
@@ -318,8 +319,9 @@ bool USB_HandleSetConfiguration(USB_Device_Struct* device) {
 	return true;
 }
 
-void USB_HandleSetAddress2(USB_Device_Struct* device) {
+bool USB_HandleSetAddress2(USB_Device_Struct* device) {
 	USB_SIE_SetAddress(device, device->currentCommand.wValueL & 0x7f, 1);
+	return true;
 }
 
 bool USB_HandleSetAddress(USB_Device_Struct* device) {
@@ -334,11 +336,42 @@ bool USB_HandleSetAddress(USB_Device_Struct* device) {
 	return true;
 }
 
+bool USB_HandleGetInterface(USB_Device_Struct* device) {
+	if (device->currentCommand.bmRequestType != (USB_RT_DIR_DEVICE_TO_HOST | USB_RT_RECIPIENT_INTERFACE)) return false;
+	if (device->currentCommand.wValueH != 0) return false;
+	if (device->currentCommand.wValueL != 0) return false;
+	if (device->currentCommand.wIndexH != 0) return false;
+	if (device->currentCommand.wIndexL >= USB_MAX_INTERFACES_PER_DEVICE) return false;
+	if (device->currentCommand.wLengthH != 0) return false;
+	if (device->currentCommand.wLengthL != 1) return false;
+	device->commandDataBuffer[0] = device->interfaceAltSetting[device->currentCommand.wIndexL];
+	device->currentCommandDataBase = device->commandDataBuffer;
+	device->currentCommandDataRemaining = 1;
+	return true;
+}
+
+bool USB_HandleSetInterface(USB_Device_Struct* device) {
+/*	if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_RECIPIENT_INTERFACE)) return false;
+	if (device->currentCommand.wValueH != 0) return false;
+	if (device->currentCommand.wIndexH != 0) return false;
+	if (device->currentCommand.wIndexL >= USB_MAX_INTERFACES_PER_DEVICE) return false;
+	if (device->currentCommand.wLengthH != 0) return false;
+	if (device->currentCommand.wLengthL != 0) return false;
+*/	if (device->interfaceAltCallback == NULL) return false;
+	if (!(device->interfaceAltCallback(device, device->currentCommand.wIndexL, device->currentCommand.wValueL))) return false;
+	device->interfaceAltSetting[device->currentCommand.wIndexL] = device->currentCommand.wValueL;
+	return true;
+}
+
 #pragma mark USB control and data flow handling
 
 void USB_Control_ReceiveDeviceToHostStatus(USB_Device_Struct* device) {
 	USB_EP_Read(device, 0, NULL, 0);
-	if (device->controlStatusCallback) device->controlStatusCallback(device);
+	if (device->controlStatusCallback) {
+		if (!(device->controlStatusCallback(device))) {
+			USB_EP_SetStall(device, 1, true);
+		}
+	}
 	device->controlStatusCallback = NULL;
 }
 
@@ -398,6 +431,12 @@ void USB_Control_HandleSetup(USB_Device_Struct* device) {
 			case USB_REQ_SET_CONFIGURATION:
 				ok = USB_HandleSetConfiguration(device);
 				break;
+			case USB_REQ_GET_INTERFACE:
+				ok = USB_HandleGetInterface(device);
+				break;
+			case USB_REQ_SET_INTERFACE:
+				ok = USB_HandleSetInterface(device);
+				break;
 			default:
 				break;
 		}
@@ -420,11 +459,13 @@ void USB_Control_HandleOut(USB_Device_Struct* device) {
 		if (device->currentCommandDataRemaining > 0) {
 			USB_Control_ReceiveHostToDeviceData(device);
 			if (device->currentCommandDataRemaining == 0) {
+				bool success = true;
 				if (device->controlOutDataCompleteCallback) {
-					device->controlOutDataCompleteCallback(device);
+					success = device->controlOutDataCompleteCallback(device);
 					device->controlOutDataCompleteCallback = NULL;
 				}
-				USB_Control_WriteHostToDeviceStatus(device);
+				if (success) USB_Control_WriteHostToDeviceStatus(device);
+				else USB_EP_SetStall(device, 1, true);
 			}
 		} else {
 			USB_EP_SetStall(device, 1, true);
@@ -454,7 +495,11 @@ void usb_irq_handler(void) {
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
 	
-	//We could test other USB interrupts here, but we don't need do
+	//We could test other USB interrupts here if we need to
+	if (interruptMask & USB_DEVINT_FRAME) {
+		if (device->frameCallback) device->frameCallback(device);
+
+	}
 
 	int epIdx;
 	for (epIdx = 0; epIdx < 8; epIdx++) {
@@ -482,7 +527,7 @@ void usb_irq_handler(void) {
 void USB_Init(USB_Device_Struct* device) {
 
 	usbDeviceDefinition = device;
-
+	
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON | SYSCON_SYSAHBCLKCTRL_USB_REG;
 

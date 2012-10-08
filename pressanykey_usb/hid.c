@@ -15,7 +15,7 @@ const uint8_t languagesString[] = {
 };
 
 /** called when the data from a set report command has arrived */
-void hidSetReportDataComplete(USB_Device_Struct* device) {
+bool hidSetReportDataComplete(USB_Device_Struct* device) {
 	HID_Device_Struct* hid = (HID_Device_Struct*)(device->refcon);
 	if (hid->outReportHandler) {
 		hid->outReportHandler(hid,
@@ -24,6 +24,7 @@ void hidSetReportDataComplete(USB_Device_Struct* device) {
 							  (device->currentCommand.wLengthH << 8) |
 							  device->currentCommand.wLengthL);
 	}
+	return true;
 }
 
 /** handler for HID-specific USB commands */
@@ -141,6 +142,7 @@ void HIDInit(	USB_Device_Struct* usbDevice,
 	usbDevice->extendedControlSetupCallback = hidCommandHandler;
 	usbDevice->endpointDataCallback = hidEndpointDataHandler;
 	usbDevice->frameCallback = NULL;
+	usbDevice->interfaceAltCallback = NULL;
 	usbDevice->refcon = hidDevice;
 	//we don't change values inside
 	hidDevice->hidDescriptor = (uint8_t*)hidDesc;		
