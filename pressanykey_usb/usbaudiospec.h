@@ -112,7 +112,8 @@ typedef enum USB_AUDIO_REQUEST {
 	USB_AUDIO_REQ_GET_STAT			= 0xff
 } USB_AUDIO_REQUEST;
 	
-/** USB Audio control selectors, sent to units (USB Audio Spec A.10) */
+/** USB Audio control selectors, sent to units (USB Audio Spec A.10),
+ don't confuse with feature control flags (USB_AUDIO_FEATURE_xyz_FLAG) */
 typedef enum USB_AUDIO_CONTROL_SELECTOR {
 	USB_AUDIO_CSEL_TERMINAL_COPY_PROTECT	= 0x01,
 	USB_AUDIO_CSEL_FEATURE_MUTE				= 0x01,
@@ -171,7 +172,21 @@ typedef enum USB_AUDIO_CHANNELCONFIG_FLAGS {
 	USB_AUDIO_CHANNELCONFIG_SIDE_RIGHT		= 0x0400,
 	USB_AUDIO_CHANNELCONFIG_TOP				= 0x0800
 } USB_AUDIO_CHANNELCONFIG_FLAGS;
-	
+
+/** feature support flags - use or-ed in bmaControls fields of Feature Unit Descriptors.
+ Don't confuse with selector IDs in get/set requests (USB_AUDIO_CSEL_FEATURE_xyz) */
+typedef enum USB_AUDIO_FEATURE_CONTROL_BITS {
+	USB_AUDIO_FEATURE_MUTE_FLAG				= 0x0001,
+	USB_AUDIO_FEATURE_VOLUME_FLAG			= 0x0002,
+	USB_AUDIO_FEATURE_BASS_FLAG				= 0x0004,
+	USB_AUDIO_FEATURE_MID_FLAG				= 0x0008,
+	USB_AUDIO_FEATURE_TREBLE_FLAG			= 0x0010,
+	USB_AUDIO_FEATURE_GRAPHIC_EQ_FLAG		= 0x0020,
+	USB_AUDIO_FEATURE_AUTO_GAIN_FLAG		= 0x0040,
+	USB_AUDIO_FEATURE_DELAY_FLAG			= 0x0080,
+	USB_AUDIO_FEATURE_BASS_BOOST_FLAG		= 0x0100,
+	USB_AUDIO_FEATURE_LOUDNESS_FLAG			= 0x0200
+} USB_AUDIO_FEATURE_CONTROL_FLAGS;
 
 /** Terminal type codes for use in terminal descriptors (USB Audio Terminal Types spec) */
 typedef enum USB_AUDIO_TERMINAL_TYPE {

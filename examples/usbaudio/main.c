@@ -133,8 +133,8 @@ const uint8_t configDescriptor[] = {
 	SPEAKER_FEATURE_NODE,								//bUnitID
 	SPEAKER_INTERM_NODE,								//bSourceID
 	2,													//bControlSize
-	0x02,0x00,											//bmaControls 0 : Master -> Volume
-	0x00,0x00,											//bmaControls 1 : chan 1 -> none
+	I16_TO_LE_BA(USB_AUDIO_FEATURE_VOLUME_FLAG),		//bmaControls 0 : Master -> Volume
+	I16_TO_LE_BA(0),									//bmaControls 1 : chan 1 -> none
 	0,													//iFeature : no string
 	
 	// 3 speaker node (USB Audio Spec 1.0 section 4.3.2.1)
@@ -166,8 +166,8 @@ const uint8_t configDescriptor[] = {
 	MIC_FEATURE_NODE,									//bUnitID
 	MIC_INTERM_NODE,									//bSourceID
 	2,													//bControlSize
-	0x02,0x00,											//bmaControls 0 : Master -> Volume
-	0x00,0x00,											//bmaControls 1 : chan 1 -> none
+	I16_TO_LE_BA(USB_AUDIO_FEATURE_VOLUME_FLAG),		//bmaControls 0 : Master -> Volume
+	I16_TO_LE_BA(0),									//bmaControls 1 : chan 1 -> none
 	0,													//iFeature : no string
 	
 	// 6 USB in stream node (USB Audio Spec 1.0 section 4.3.2.1)
