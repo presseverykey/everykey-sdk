@@ -20,6 +20,7 @@
 #define USB_MAX_CONFIGURATION_COUNT 3
 #define USB_MAX_STRING_COUNT 5
 #define USB_MAX_INTERFACES_PER_DEVICE 8
+#define USB_MAX_BEHAVIOURS_PER_DEVICE 4
 
 #define USB_MAX_COMMAND_PACKET_SIZE 64
 #define USB_MAX_COMMAND_DATA_SIZE 64
@@ -63,7 +64,29 @@ typedef void (*USBFrameCallback)(USB_Device_Struct* device);
 typedef bool (*USBInterfaceAltCallback)(USB_Device_Struct* device, uint8_t interface, uint8_t newAlt);
 
 
-/**init structure describing the device to be implemented */
+/** this structure devines callbacks for class- or vendor-specific functionality. One or multiple
+ * behaviours can be attached to a USB device. Typical behaviour implementations create a new
+ * struct that starts with this substructure and continues with their own state variables,
+ * so that pointers can be cast back and forth. */
+typedef struct USB_Behaviour_Struct {
+
+	/** callback for handling device-specific USB commands - set to NULL if not used */
+	USBExtendedControlSetupCallback extendedControlSetupCallback;
+	
+	/** callback for handling data transfers - set to NULL if not used */
+	USBEndpointDataCallback endpointDataCallback;
+	
+	/** callback invoked each USB frame - set to NULL if not used */
+	USBFrameCallback frameCallback;
+	
+	/** callback invoked on interface alt changes - set to NULL if not used */
+	USBInterfaceAltCallback interfaceAltCallback;
+	
+} USB_Behaviour_Struct;
+
+
+/** A structure describing the device to be implemented plus runtime state. Therefore, it has to
+ * be in RAM. Initialize the first fields up to the runtime state, then pass it to USB_Init(). */
 typedef struct USB_Device_Struct {
 	/** main device descriptor. Length is taken from [0]. Must not be NULL. */
 	const uint8_t* deviceDescriptor;
@@ -97,8 +120,15 @@ typedef struct USB_Device_Struct {
 	/** may be set and used by the user */
 	void* refcon;
 	
-	//Runtime state from here - don't need to be initialized, may change at runtime 
+	/* Runtime state from here - don't need to be initialized, may change at runtime. If not stated
+	 * otherwise, behaviours and outside states should not modify their contents */
 	
+	/** callback when host-to-device has arrived - may be set by behaviours on a per-command basis */
+	bool (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
+	
+	/** callback when status was sent - may be set by behaviours on a per-command basis */
+	bool (*controlStatusCallback)(USB_Device_Struct* device);
+
 	/** Data buffer for USB command OUT data phase */
 	uint8_t commandDataBuffer[USB_MAX_COMMAND_DATA_SIZE];
 	
@@ -120,11 +150,12 @@ typedef struct USB_Device_Struct {
 	/** Number of remaining bytes to transfer in data phase */
 	uint32_t currentCommandDataRemaining;
 	
-	/** callback when host-to-device has arrived - may be set on a per-command basis */
-	bool (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
+	/** number of currently attached behaviours */
+	uint8_t behaviourCount;
+
+	/** a list of attached behaviours */
+	USB_Behaviour_Struct* behaviours[USB_MAX_BEHAVIOURS_PER_DEVICE];
 	
-	/** callback when status was sent - may be set on a per-command basis */
-	bool (*controlStatusCallback)(USB_Device_Struct* device);				
 	
 } USB_Device_Struct;
 
@@ -159,6 +190,7 @@ void USB_EP_SetStall(USB_Device_Struct* device, uint8_t epIdx, bool stalled);
 bool USB_EP_GetStall(USB_Device_Struct* device, uint8_t epIdx);
 
 /** powers up required blocks, sets up clock etc. Leaves soft-connect disconnected.
+ * If used before, clears out all runtime state and previously attached behaviours.
  * @param device Pointer to correctly filled USB_Device_Struct. Must not be NULL.
  */
 void USB_Init(USB_Device_Struct* device);
@@ -180,5 +212,8 @@ bool USB_Connected(USB_Device_Struct* device);
  @return physical endpoint index */
 uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
 
+/** add a behaviour to a USB device. Make sure you don't exceed USB_MAX_BEHAVIOURS_PER_DEVICE.
+ @param behaviour behaviour to be added */
+void USB_AddBehaviour(USB_Device_Struct* device, USB_Behaviour_Struct* behaviour);
 
 #endif

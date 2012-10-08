@@ -225,7 +225,7 @@ const uint8_t configDescriptor[] = {
 	9,													//bLength
 	USB_DESC_ENDPOINT,									//bDescriptorType
 	0x04,												//bEndpointAddress:4 out (our isoch out endpoint)
-	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_SYNCHRONOUS,	//bmAttributes
+	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_ADAPTIVE,		//bmAttributes
 	I16_TO_LE_BA(BYTES_PER_FRAME),						//wMaxPacketSize
 	1,													//bInterval: isoch = every frame
 	0,													//bRefresh (always 0)
@@ -286,7 +286,7 @@ const uint8_t configDescriptor[] = {
 	9,													//bLength
 	USB_DESC_ENDPOINT,									//bDescriptorType
 	0x84,												//bEndpointAddress:4 in (our isoch in endpoint)
-	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_SYNCHRONOUS,	//bmAttributes
+	USB_EPTYPE_ISOCHRONOUS | USB_EPSYNC_ADAPTIVE,		//bmAttributes
 	I16_TO_LE_BA(BYTES_PER_FRAME),						//wMaxPacketSize (72 should be sufficient)
 	1,													//bInterval: isoch = every frame
 	0,													//bRefresh (always 0)
@@ -363,9 +363,6 @@ typedef bool (*USBAudio_GetEndpointValue)(USB_AUDIO_REQUEST request,
 
 int16_t speakerVolume;
 int16_t micVolume;
-
-uint8_t status;		//DEBUG***
-uint32_t counter;	//DEBUG***
 
 bool AudioGetControlValue(USB_AUDIO_REQUEST request,
 						  uint8_t nodeId,
@@ -564,58 +561,51 @@ bool USBAudio_ExtendedControlSetupCallback(USB_Device_Struct* device) {
 	return result;
 }
 
-
+uint32_t counter;
 
 void frameCallback(USB_Device_Struct* device) {
 	int16_t buffer[BYTES_PER_FRAME/2];
 	uint16_t i;
-
-	uint16_t read = USB_EP_Read(device, 8, (uint8_t*)buffer, BYTES_PER_FRAME);
-	uint16_t inSampleCount = read / 2;
-	int16_t min = 32767;
-	int16_t max = -32767;
-	for (i=0; i<inSampleCount; i++) {
-		int16_t val = buffer[i];
-		if (val < min) min = val;
-		if (val > max) max = val;
-	}
-	uint16_t level = (max > min) ? (max - min) : 0;
-	level /= 1000;
 	
-	uint16_t outSampleCount = SAMPLE_RATE/1000;
-	for (i=0;i<outSampleCount;i++) {
-		int32_t value = GPIO_ReadInput(KEY_PORT, KEY_PIN) ? 0 : (2000 * (i - 16));
-		value = (value * (micVolume+0x8000)) / 65536;
-		((int16_t*)(buffer))[i] = value;	//this will not work on big-endian architectures
+	if (micStreaming) {
+		//generate a sawtooth waveform with 1 KHz
+		uint16_t outSampleCount = SAMPLE_RATE/1000;
+		uint32_t scale = ((GPIO_ReadInput(KEY_PORT, KEY_PIN) ? 0 : (micVolume+0x8000) / (outSampleCount+1)));
+		for (i=0;i<outSampleCount;i++) {
+			int32_t value = scale * (2*i+1-outSampleCount);
+			((int16_t*)(buffer))[i] = S16_TO_LE(value);
+		}
+		USB_EP_Write(device, 9, (uint8_t*)buffer, outSampleCount*2);
 	}
-	USB_EP_Write(device, 9, (uint8_t*)buffer, outSampleCount*2);
-
-	counter++;
-	int phase = counter % 10;
-	GPIO_WriteOutput(0,7,phase<level);
 	
-	/* DEBUG***
-	 status = (status & 0xf0) | (micStreaming ? 1 : 0) | (speakerStreaming ? 2 : 0) | ((read > 0) ? 4 : 0);
-	 status = read;
-	int phase = counter % 500;
-	int bit = (counter / 500) % 10;
-	int len;
-	if (bit < 8) {
-		len = (status & (1 << (7-bit))) ? 400 : 100;
-	} else len = 0;
-	GPIO_WriteOutput(0,7,phase<len);
-	*/
+	if (speakerStreaming) {
+		//read samples coming in and find the value range size = rough estimation of audio level (high frequencies only)
+		uint16_t read = USB_EP_Read(device, 8, (uint8_t*)buffer, BYTES_PER_FRAME);
+		uint16_t inSampleCount = read / 2;
+		int16_t min = 32767;
+		int16_t max = -32767;
+		for (i=0; i<inSampleCount; i++) {
+			int16_t val = buffer[i];
+			if (val < min) min = val;
+			if (val > max) max = val;
+		}
+		uint32_t level = (max > min) ? (max - min) : 0;
+		level = level * (speakerVolume+0x8000) / 0x10000;	//scale by speaker volume
+
+		//turn audio level into brightness of LED (by very ugly PWM, just 10 levels, but hey, it's just an example)
+		level /= 800;
+		counter++;
+		int phase = counter % 10;
+		GPIO_WriteOutput(0,7,phase<level);
+	}
 }
 
 bool interfaceAltCallback(USB_Device_Struct* device, uint8_t interface, uint8_t value) {
-	status |= 0x40;
 	if (interface == SPEAKER_STREAM_INTERFACE) {
-		status |= 0x10;
 		if (value >= 2) return false;
 		speakerStreaming = (value > 0);
 		return true;
 	} else if (interface == MIC_STREAM_INTERFACE) {
-		status |= 0x20;
 		if (value >= 2) return false;
 		micStreaming = (value > 0);
 		return true;
@@ -631,8 +621,6 @@ void main(void) {
 	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
 	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
 	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
-
-	status = 0x00;	//DEBUG***
 
 	micStreaming = false;
 	speakerStreaming = false;
@@ -657,5 +645,6 @@ void main(void) {
 	USBAudio_GetEndpointValue getEndpointValueHandler;
 	
 	USB_Init(&device);
+	
 	USB_SoftConnect(&device);
 }
