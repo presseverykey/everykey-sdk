@@ -68,7 +68,7 @@ const uint8_t serialName[] = {
  * generally structured as usual, but the spec requires additional class-specific descriptors inbetween
  * the standard ones. USB Audio devices consist of two parts: One Audio Control interface and one or more
  * Audio Stream interfaces. The control interface mainly describes a graph of audio processing nodes.
- * Terminal nodes can either lead to the host (via USB - that's what the main thing is about) or to non-USB
+ * Terminal nodes can either lead to the host (via USB - hey, that's what the whole thing is about) or to non-USB
  * terminals (microphones, loudspeakers etc.). Each unit has a unique ID that can be used to communicate to
  * it via the control interface (setting volume etc.). Each USB terminal node has an Audio Stream interface
  * that is responsible for transmitting the actual audio data. These interfaces usually contain an
@@ -122,7 +122,7 @@ const uint8_t configDescriptor[] = {
 	USB16(USB_AUDIO_TERMINAL_USB_STREAMING),			//wTerminalType
 	0,													//bAssocTerminal
 	1,													//bNrChannels
-	USB16(0x0001),										//wChannelConfig (Front Left)
+	USB16(USB_AUDIO_CHANNELCONFIG_LEFT_FRONT),			//wChannelConfig (should use center front, just for fun here)
 	0,													//iChannelNames (none)
 	0,													//iTerminal (none)
 	
@@ -155,7 +155,7 @@ const uint8_t configDescriptor[] = {
 	USB16(USB_AUDIO_TERMINAL_IN_MICROPHONE),			//wTerminalType
 	0,													//bAssocTerminal
 	1,													//bNrChannels
-	USB16(0x0004),										//wChannelConfig (Front Center)
+	USB16(USB_AUDIO_CHANNELCONFIG_CENTER_FRONT),		//wChannelConfig
 	0,													//iChannelNames (none)
 	0,													//iTerminal (none)
 	
