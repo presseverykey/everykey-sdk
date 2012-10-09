@@ -1,6 +1,12 @@
 #include "pressanykey/pressanykey.h"
 #include "pressanykey_usb/keyboard.h"
 
+#define LED_PORT 0
+#define LED_PIN 7
+#define KEY_PORT 1
+#define KEY_PIN 4
+#define TYPING_DIVIDER 11
+
 /** these variables are needed by the Keyboard implementation. USB peripherals don't allocate
  memory by themselves, so we have to give some memory to them. They usually handle all related stuff. */
 USB_Device_Definition usbDeviceDefinition;
@@ -10,13 +16,6 @@ uint8_t inBuffer[8];
 uint8_t outBuffer[8];
 uint8_t idleValue;
 uint8_t currentProtocol;
-
-
-#define LED_PORT 0
-#define LED_PIN 7
-#define KEY_PORT 1
-#define KEY_PIN 4
-#define TYPING_DIVIDER 11
 
 /** remember when the button was down */
 bool buttonWasDown;
@@ -64,6 +63,25 @@ void outReportHandler (USB_Device_Struct* device,
 	GPIO_WriteOutput (LED_PORT, LED_PIN, ledOn);
 }
 
+void systick () {
+	bool buttonDown = !GPIO_ReadInput (KEY_PORT, KEY_PIN);
+	if (buttonDown && !buttonWasDown) counter = 0;
+	buttonWasDown = buttonDown;
+	
+	if (counter >= 0) {				//are we typing?
+		counter++;
+		if ((counter % TYPING_DIVIDER) == 1) {
+			uint16_t index = counter / TYPING_DIVIDER;
+			downKey = typeSequence[index];
+			if (downKey == 255) {	//end of typing sequence?
+				downKey = 0;
+				counter = -1;
+			} 
+			USBHID_PushReport (&usbDevice, &hidBehaviour, USB_HID_REPORTTYPE_INPUT, 0);
+		}
+    }
+}
+
 void main () {
 	GPIO_SetDir (LED_PORT, LED_PIN, GPIO_Output);
 	GPIO_WriteOutput (LED_PORT, LED_PIN, false);
@@ -83,33 +101,8 @@ void main () {
 				  &currentProtocol,
 				  inReportHandler,
 				  outReportHandler);
-
+	
 	USB_SoftConnect (&usbDevice);
 
 	SYSCON_StartSystick (71999);	// 1KHz
-}
-
-void systick () {
-	bool buttonDown = !GPIO_ReadInput (KEY_PORT, KEY_PIN);
-	if (buttonDown && !buttonWasDown)
-    {
-		counter = 0;
-    }
-	buttonWasDown = buttonDown;
-	
-	if (counter >= 0)
-    {
-		counter++;
-		if ((counter % TYPING_DIVIDER) == 1)
-		{
-			uint16_t index = counter / TYPING_DIVIDER;
-			downKey = typeSequence[index];
-			if (downKey == 255)
-			{
-				downKey = 0;
-				counter = -1;
-			}
-			USBHID_PushReport (&usbDevice, &hidBehaviour, USB_HID_REPORTTYPE_INPUT, 0);
-		}
-    }
 }

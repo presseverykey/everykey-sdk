@@ -15,7 +15,7 @@
  * device-related info can be added into the device struct and
  * the interrupt can look up the corresponding device structure. This way,
  * the lib can be used with multiple USB instances simultaneously. */
-USB_Device_Struct* usbDevice;
+USB_Device_Struct* _usbDevice;
 
 #pragma mark SIE functions
 
@@ -415,54 +415,55 @@ void USB_Control_WriteHostToDeviceStatus(USB_Device_Struct* device) {
 /** A command has arrived on the control endpoint. Dispatch by command. */
 void USB_Control_HandleSetup(USB_Device_Struct* device) {
 	USB_EP_Read(device, 0,(uint8_t*)(&(device->currentCommand)),sizeof(USB_Setup_Packet));
+
 	device->currentCommandDataBase = NULL;
 	device->currentCommandDataRemaining = 0;
 	device->controlOutDataCompleteCallback = NULL;
 	device->controlStatusCallback = NULL;
-	bool ok = false;
-	int i;
+	device->callbackRefcon = NULL;
+	
+	bool handled = false;
+	uint8_t i;
 	for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
 		const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
 		USBExtendedControlSetupCallback cb = behaviour->extendedControlSetupCallback;
-		if (cb && (*cb)(device, behaviour)) {
-			ok = true;
-			break;
-		}
+		if (cb) handled = (*cb)(device, behaviour);
+		if (handled) break;	
 	}
-	if (!ok) {
+	if (!handled) {
 		switch (device->currentCommand.bRequest) {
 			case USB_REQ_GET_STATUS:
-				ok = USB_HandleGetStatus(device);
+				handled = USB_HandleGetStatus(device);
 				break;
 			case USB_REQ_CLEAR_FEATURE:
-				ok = USB_HandleClearFeature(device);
+				handled = USB_HandleClearFeature(device);
 				break;
 			case USB_REQ_SET_FEATURE:
-				ok = USB_HandleClearFeature(device);
+				handled = USB_HandleClearFeature(device);
 				break;
 			case USB_REQ_SET_ADDRESS:
-				ok = USB_HandleSetAddress(device);
+				handled = USB_HandleSetAddress(device);
 				break;
 			case USB_REQ_GET_DESCRIPTOR:
-				ok = USB_HandleGetDescriptor(device);
+				handled = USB_HandleGetDescriptor(device);
 				break;
 			case USB_REQ_GET_CONFIGURATION:
-				ok = USB_HandleGetConfiguration(device);
+				handled = USB_HandleGetConfiguration(device);
 				break;
 			case USB_REQ_SET_CONFIGURATION:
-				ok = USB_HandleSetConfiguration(device);
+				handled = USB_HandleSetConfiguration(device);
 				break;
 			case USB_REQ_GET_INTERFACE:
-				ok = USB_HandleGetInterface(device);
+				handled = USB_HandleGetInterface(device);
 				break;
 			case USB_REQ_SET_INTERFACE:
-				ok = USB_HandleSetInterface(device);
+				handled = USB_HandleSetInterface(device);
 				break;
 			default:
 				break;
 		}
 	}
-	if (ok) {
+	if (handled) {
 		bool deviceToHost = device->currentCommand.bmRequestType & USB_RT_DIR_DEVICE_TO_HOST;
 		bool haveData = device->currentCommandDataRemaining > 0;
 		if (deviceToHost && haveData) USB_Control_WriteDeviceToHostData(device);
@@ -518,12 +519,12 @@ void USB_HandleData(USB_Device_Struct* device, int epIdx) {
 
 /** this function is added to the interrupt vector table - see startup.c */
 void usb_irq_handler(void) {
-	USB_Device_Struct* device = usbDevice;
+	USB_Device_Struct* device = _usbDevice;
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
 	
 	//We could test other USB interrupts here if we need to
-	
+
 	//Check frame interrupt
 	if (interruptMask & USB_DEVINT_FRAME) {
 		uint8_t i;
@@ -561,7 +562,7 @@ void usb_irq_handler(void) {
 void USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device) {
 
 	device->deviceDefinition = definition;
-	usbDevice = device;
+	_usbDevice = device;
 	
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON | SYSCON_SYSAHBCLKCTRL_USB_REG;

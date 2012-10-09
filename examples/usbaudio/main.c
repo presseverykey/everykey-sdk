@@ -528,13 +528,6 @@ const USB_Device_Definition deviceDefinition = {
 	{ (USB_Behaviour_Struct*)(&audioBehaviour) }
 };
 
-
-
-
-void endpointDataCallback(USB_Device_Struct* device, uint8_t epIdx) {
-	//Do nothing, just add a handler to prevent pipe from stalling (will stall if no handler is there)
-}
-
 void main(void) {
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
 	GPIO_WriteOutput(LED_PORT, LED_PIN, false);

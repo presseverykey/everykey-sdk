@@ -3,15 +3,19 @@
 
 #define LED_PORT 0
 #define LED_PIN  7
+
+USB_Device_Definition usbDeviceDefinition;
+USB_Device_Struct usbDevice;
+USBHID_Behaviour_Struct hidBehaviour;
 uint8_t inBuffer[8];
 uint8_t outBuffer[8];
-USB_Device_Struct device;
-HID_Device_Struct hid;
+uint8_t idleValue;
+uint8_t currentProtocol;
 
 uint8_t key;
 uint8_t mod;
 
-uint16_t inReportHandler(HID_Device_Struct* hid, uint8_t reportType, uint8_t reportId) {
+uint16_t inReportHandler(USB_Device_Struct* device, const USBHID_Behaviour_Struct* hid, uint8_t reportType, uint8_t reportId) {
 	inBuffer[0] = mod;
 	inBuffer[1] = 0;
 	inBuffer[2] = key;
@@ -23,7 +27,7 @@ uint16_t inReportHandler(HID_Device_Struct* hid, uint8_t reportType, uint8_t rep
 	return 8;
 }
 
-void outReportHandler (HID_Device_Struct* hid, uint8_t reportType, uint8_t reportId, uint16_t len) {}
+void outReportHandler (USB_Device_Struct* device, const USBHID_Behaviour_Struct* hid, uint8_t reportType, uint8_t reportId, uint16_t len) {}
 
 uint8_t map (char c) {
 	if (('a' <= c) && (c <= 'z')) {
@@ -122,16 +126,24 @@ void command (char * mes) {
 		key = map(curr);
 		mod = modifier(curr);
 		
-		HIDPushReport(&hid, USB_HID_REPORTTYPE_INPUT, 0);
+		USBHID_PushReport(&usbDevice, &hidBehaviour, USB_HID_REPORTTYPE_INPUT, 0);
 		delay(50000);
 		key = 0;
 		mod = 0;
-		HIDPushReport(&hid, USB_HID_REPORTTYPE_INPUT, 0);
+		USBHID_PushReport(&usbDevice, &hidBehaviour, USB_HID_REPORTTYPE_INPUT, 0);
 		delay(50000);
 	}
 }
 
 void init_keyboard () {
-	KeyboardInit(&device, &hid, inBuffer, outBuffer, inReportHandler, outReportHandler);
-	USB_SoftConnect(&device);
+	KeyboardInit (&usbDeviceDefinition,
+				  &usbDevice,
+				  &hidBehaviour,
+				  inBuffer,
+				  outBuffer,
+				  &idleValue,
+				  &currentProtocol,
+				  inReportHandler,
+				  outReportHandler);
+	USB_SoftConnect(&usbDevice);
 }

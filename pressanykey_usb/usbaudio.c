@@ -40,8 +40,10 @@ bool USBAudio_ExtendedControlSetupHandler2(USB_Device_Struct* device) {
 }
 
 bool USBAudio_ExtendedControlSetupHandler(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour) {
+
 	if ((device->currentCommand.bmRequestType & USB_RT_TYPE_MASK) != USB_RT_TYPE_CLASS) return false;
-	const USBAudio_Behaviour_Struct* audio = (const USBAudio_Behaviour_Struct*)(device->callbackRefcon);
+	
+	const USBAudio_Behaviour_Struct* audio = (const USBAudio_Behaviour_Struct*)behaviour;
 
 	bool result = false;
 	uint16_t len = (device->currentCommand.wLengthH << 8) | device->currentCommand.wLengthL;

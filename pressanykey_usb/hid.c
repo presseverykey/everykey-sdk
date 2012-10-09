@@ -18,38 +18,48 @@ bool USBHID_SetReportDataComplete(USB_Device_Struct* device) {
 /** handler for HID-specific USB commands */
 bool USBHID_ExtendedControlSetupHandler(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour) {
 
-	
-	// we only handle HID class specific requests to our interface
-	if ((device->currentCommand.bmRequestType & USB_RT_TYPE_MASK) != USB_RT_TYPE_CLASS) return false;
+	// we only handle requests to our interface	
 	if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_INTERFACE) return false;
 
 	const USBHID_Behaviour_Struct* hid = (const USBHID_Behaviour_Struct*)behaviour;
+	
 	if (device->currentCommand.wIndexL != hid->interfaceNumber) return false;
 
 	uint16_t maxTransferLen = (device->currentCommand.wLengthH << 8) | device->currentCommand.wLengthL;
 
+	//check extensions of standard requests (i.e. get interface)
+	if ((device->currentCommand.bmRequestType == USB_RT_DIR_DEVICE_TO_HOST | USB_RT_TYPE_STANDARD | USB_RT_RECIPIENT_INTERFACE) &&
+		(device->currentCommand.bRequest == USB_REQ_GET_DESCRIPTOR)) {
+		if (device->currentCommand.wIndexL == hid->interfaceNumber) {
+			switch (device->currentCommand.wValueH) {
+				case USB_DESC_HID_HID:
+					
+					//we remove const, but we promise to only read it
+					device->currentCommandDataBase = (uint8_t*)(hid->hidDescriptor);	
+					device->currentCommandDataRemaining = hid->hidDescriptor[0];
+					if (device->currentCommandDataRemaining > maxTransferLen) {
+						device->currentCommandDataRemaining = maxTransferLen;
+					}
+					return true;
+				case USB_DESC_HID_REPORT:
+					//we remove const, but we promise to only read it
+					device->currentCommandDataBase = (uint8_t*)(hid->reportDescriptor);
+					device->currentCommandDataRemaining = hid->reportDescriptorLen;
+					if (device->currentCommandDataRemaining > maxTransferLen) {
+						device->currentCommandDataRemaining = maxTransferLen;
+					}
+					return true;
+			}
+		}
+	}
+	
+	//From now, only handle class-specific requests
+	if ((device->currentCommand.bmRequestType & USB_RT_TYPE_MASK) != USB_RT_TYPE_CLASS) return false;
+	
 	switch (device->currentCommand.bRequest) {
 		case USB_REQ_GET_DESCRIPTOR:		
 			if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_DEVICE_TO_HOST) break;
 			if (device->currentCommand.wIndexL == hid->interfaceNumber) {
-				switch (device->currentCommand.wValueH) {
-					case USB_DESC_HID_HID:
-						//we remove const, but we promise to only read it
-						device->currentCommandDataBase = (uint8_t*)(hid->hidDescriptor);	
-						device->currentCommandDataRemaining = hid->hidDescriptor[0];
-						if (device->currentCommandDataRemaining > maxTransferLen) {
-							device->currentCommandDataRemaining = maxTransferLen;
-						}
-						return true;
-					case USB_DESC_HID_REPORT:
-						//we remove const, but we promise to only read it
-						device->currentCommandDataBase = (uint8_t*)(hid->reportDescriptor);
-						device->currentCommandDataRemaining = hid->reportDescriptorLen;
-						if (device->currentCommandDataRemaining > maxTransferLen) {
-							device->currentCommandDataRemaining = maxTransferLen;
-						}
-						return true;
-				}
 			}
 			break;
 		case USB_REQ_HID_GETIDLE:

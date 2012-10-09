@@ -139,9 +139,6 @@ typedef struct USB_Device_Struct {
 	/** a reference to our static device definition */
 	const USB_Device_Definition* deviceDefinition;
 	
-	/* Runtime state from here - don't need to be initialized, may change at runtime. If not stated
-	 * otherwise, behaviours and outside states should not modify their contents */
-	
 	/** callback when host-to-device has arrived - may be set by setup packet handlers */
 	USBControlOutDataCompleteCallback controlOutDataCompleteCallback;
 	
