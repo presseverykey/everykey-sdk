@@ -15,7 +15,7 @@
  * device-related info can be added into the device struct and
  * the interrupt can look up the corresponding device structure. This way,
  * the lib can be used with multiple USB instances simultaneously. */
-USB_Device_Struct* usbDeviceDefinition;
+USB_Device_Struct* usbDevice;
 
 #pragma mark SIE functions
 
@@ -232,18 +232,18 @@ bool USB_HandleGetDescriptor(USB_Device_Struct* device) {
 	uint16_t len = 0;
 	switch (device->currentCommand.wValueH) {
 		case USB_DESC_DEVICE:
-			base = device->deviceDescriptor;
+			base = device->deviceDefinition->deviceDescriptor;
 			len = base[0];
 			break;
 		case USB_DESC_CONFIGURATION:
-			if (device->currentCommand.wValueL < device->configurationCount) {
-				base = device->configurationDescriptors[device->currentCommand.wValueL];
+			if (device->currentCommand.wValueL < device->deviceDefinition->configurationCount) {
+				base = device->deviceDefinition->configurationDescriptors[device->currentCommand.wValueL];
 				len = (base[3] << 8) | base[2];
 			}
 			break;
 		case USB_DESC_STRING:
-			if (device->currentCommand.wValueL < device->stringCount) {
-				base = device->strings[device->currentCommand.wValueL];
+			if (device->currentCommand.wValueL < device->deviceDefinition->stringCount) {
+				base = device->deviceDefinition->strings[device->currentCommand.wValueL];
 				len =  base[0];
 			}
 			break;
@@ -316,6 +316,13 @@ bool USB_HandleSetConfiguration(USB_Device_Struct* device) {
 	if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_DEVICE) return false;
 	device->currentConfiguration = device->currentCommand.wValueL;
 	USB_SIE_ConfigureDevice(device, device->currentConfiguration != 0);
+
+	uint8_t i;
+	for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
+		const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
+		USBConfigChangeCallback cb = behaviour->configChangeCallback;
+		if (cb) cb(device, behaviour);
+	}
 	return true;
 }
 
@@ -351,14 +358,22 @@ bool USB_HandleGetInterface(USB_Device_Struct* device) {
 }
 
 bool USB_HandleSetInterface(USB_Device_Struct* device) {
-/*	if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_RECIPIENT_INTERFACE)) return false;
+/*	TODO: Put this back in and check if it works, was temporarily taken out ***************
+	if (device->currentCommand.bmRequestType != (USB_RT_DIR_HOST_TO_DEVICE | USB_RT_RECIPIENT_INTERFACE)) return false;
 	if (device->currentCommand.wValueH != 0) return false;
 	if (device->currentCommand.wIndexH != 0) return false;
 	if (device->currentCommand.wIndexL >= USB_MAX_INTERFACES_PER_DEVICE) return false;
 	if (device->currentCommand.wLengthH != 0) return false;
 	if (device->currentCommand.wLengthL != 0) return false;
-*/	if (device->interfaceAltCallback == NULL) return false;
-	if (!(device->interfaceAltCallback(device, device->currentCommand.wIndexL, device->currentCommand.wValueL))) return false;
+*/	
+	uint8_t i;
+	for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
+		const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
+		USBInterfaceAltCallback cb = behaviour->interfaceAltCallback;
+		if (cb && cb(device, behaviour, device->currentCommand.wIndexL, device->currentCommand.wValueL)) break;
+	}
+	if (i >= device->deviceDefinition->behaviourCount) return false;	//none of them accepted it
+	
 	device->interfaceAltSetting[device->currentCommand.wIndexL] = device->currentCommand.wValueL;
 	return true;
 }
@@ -405,8 +420,14 @@ void USB_Control_HandleSetup(USB_Device_Struct* device) {
 	device->controlOutDataCompleteCallback = NULL;
 	device->controlStatusCallback = NULL;
 	bool ok = false;
-	if (device->extendedControlSetupCallback) {
-		ok = device->extendedControlSetupCallback(device);
+	int i;
+	for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
+		const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
+		USBExtendedControlSetupCallback cb = behaviour->extendedControlSetupCallback;
+		if (cb && (*cb)(device, behaviour)) {
+			ok = true;
+			break;
+		}
 	}
 	if (!ok) {
 		switch (device->currentCommand.bRequest) {
@@ -481,26 +502,39 @@ void USB_Control_HandleIn(USB_Device_Struct* device) {
 }
 
 
-/** Handle data on a non-control endpoint */
+/** Handle data on a non-control endpoint (in data available or out data sent) */
 void USB_HandleData(USB_Device_Struct* device, int epIdx) {
-	if (device->endpointDataCallback) {
-		device->endpointDataCallback(device, epIdx);
+	uint8_t i;
+	for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
+		const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
+		USBEndpointDataCallback cb = behaviour->endpointDataCallback;
+		if (cb && cb(device, behaviour, epIdx)) break;
 	}
-	else USB_EP_SetStall(device, epIdx, true);
+	if (i >= device->deviceDefinition->behaviourCount) {
+		//No behaviour handled this data message - stall endpoint
+		USB_EP_SetStall(device, epIdx, true);
+	}
 }
 
 /** this function is added to the interrupt vector table - see startup.c */
 void usb_irq_handler(void) {
-	USB_Device_Struct* device = usbDeviceDefinition;
+	USB_Device_Struct* device = usbDevice;
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
 	
 	//We could test other USB interrupts here if we need to
+	
+	//Check frame interrupt
 	if (interruptMask & USB_DEVINT_FRAME) {
-		if (device->frameCallback) device->frameCallback(device);
-
+		uint8_t i;
+		for (i=0; i<device->deviceDefinition->behaviourCount; i++) {
+			const USB_Behaviour_Struct* behaviour = device->deviceDefinition->behaviours[i];
+			USBFrameCallback cb = behaviour->frameCallback;
+			if (cb) cb(device, behaviour);
+		}
 	}
 
+	//Check endpoint interrupts
 	int epIdx;
 	for (epIdx = 0; epIdx < 8; epIdx++) {
 		uint32_t epIntMask = 2 << epIdx;
@@ -524,9 +558,10 @@ void usb_irq_handler(void) {
 
 #pragma mark USB high level API
 
-void USB_Init(USB_Device_Struct* device) {
+void USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device) {
 
-	usbDeviceDefinition = device;
+	device->deviceDefinition = definition;
+	usbDevice = device;
 	
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON | SYSCON_SYSAHBCLKCTRL_USB_REG;

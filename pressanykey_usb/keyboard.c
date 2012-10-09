@@ -56,7 +56,7 @@ const uint8_t kbd_configDescriptor[] = {
 	0x0a          				//bInterval: Poll interval in ms
 };
 
-const uint8_t reportDescriptor[] = {
+const uint8_t kbd_reportDescriptor[] = {
 	0x05, 0x01,	// Usage Page (Generic Desktop)
 	0x09, 0x06,	// Usage (Keyboard)
 	0xa1, 0x01,	// Collection (Application)
@@ -91,6 +91,12 @@ const uint8_t reportDescriptor[] = {
 	0xc0 		    // End Collection
 };
 
+const uint8_t kbd_languages[] = {
+	0x04,					//bLength: length of this descriptor in bytes (4)
+	USB_DESC_STRING,		//bDescriptorType: string descriptor
+	0x09, 0x04				//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
+};
+	
 const uint8_t kbd_manufacturerName[] = {
 	0x22,							      //bLength: length of this descriptor in bytes (34)
 	USB_DESC_STRING,				//bDescriptorType: string descriptor
@@ -109,27 +115,40 @@ const uint8_t kbd_serialName[] = {
 	'V',0,'1',0,'.',0,'0',0		//bString[]: String (UTF16LE, not terminated)
 };
 
-
-void KeyboardInit(USB_Device_Struct* device,
-				  HID_Device_Struct* hid,
+void KeyboardInit(USB_Device_Definition* deviceDefinition,
+				  USB_Device_Struct* device,
+				  USBHID_Behaviour_Struct* hid,
 				  uint8_t* inBuffer, 
-                  uint8_t* outBuffer, 
+                  uint8_t* outBuffer,
+				  uint8_t* idleValue,
+				  uint8_t* currentProtocol,
                   HidInReportHandler inReportHandler, 
                   HidOutReportHandler outReportHandler) {
 
-	HIDInit(device,
-			hid,
-			0,
-			kbd_deviceDescriptor, 
-			kbd_configDescriptor, 
-			kbd_manufacturerName, 
-			kbd_deviceName, 
-			kbd_serialName, 
-			kbd_configDescriptor+0x12,
-			reportDescriptor, 
-			sizeof(reportDescriptor), 
-			inBuffer, 
-			outBuffer, 
-			inReportHandler, 
-			outReportHandler);
+	deviceDefinition->deviceDescriptor = kbd_deviceDescriptor;
+	deviceDefinition->configurationCount = 1;
+	deviceDefinition->configurationDescriptors[0] = kbd_configDescriptor;
+	deviceDefinition->stringCount = 4;
+	deviceDefinition->strings[0] = kbd_languages;
+	deviceDefinition->strings[1] = kbd_manufacturerName;
+	deviceDefinition->strings[2] = kbd_deviceName;
+	deviceDefinition->strings[3] = kbd_serialName;
+	deviceDefinition->behaviourCount = 1;
+	deviceDefinition->behaviours[0] = (USB_Behaviour_Struct*)hid;
+	hid->baseBehaviour.extendedControlSetupCallback = USBHID_ExtendedControlSetupHandler;
+	hid->baseBehaviour.endpointDataCallback = USBHID_EndpointDataHandler;
+	hid->baseBehaviour.frameCallback = NULL;
+	hid->baseBehaviour.interfaceAltCallback = NULL;
+	hid->baseBehaviour.configChangeCallback = USBHID_ConfigChangeHandler;
+	hid->interfaceNumber = 0;
+	hid->hidDescriptor = kbd_configDescriptor+18;
+	hid->reportDescriptor = kbd_reportDescriptor;
+	hid->reportDescriptorLen = sizeof(kbd_reportDescriptor);
+	hid->inReportHandler = inReportHandler;
+	hid->outReportHandler = outReportHandler;
+	hid->inBuffer = inBuffer;
+	hid->outBuffer = outBuffer;
+	hid->idleValue = idleValue;
+	hid->currentProtocol = currentProtocol;
+	USB_Init(deviceDefinition,device);
 }

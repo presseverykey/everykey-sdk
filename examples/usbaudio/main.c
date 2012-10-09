@@ -1,6 +1,6 @@
 #include "pressanykey/pressanykey.h"
 #include "pressanykey_usb/usb.h"
-#include "pressanykey_usb/usbaudiospec.h"
+#include "pressanykey_usb/usbaudio.h"
 
 #define AUDIO_CONTROL_INTERFACE 0
 
@@ -301,70 +301,16 @@ const uint8_t configDescriptor[] = {
 	I16_TO_LE_BA(0)										//bLockDelay
 };
 
-
-/** called when the host wants to write a control value. 
- @param request indicates which type is to be set. Usually only SET_CUR.
- @param nodeId node containing the control to set
- @param channelIdx index of channel to set
- @param selector selector of control to set
- @param channelId affected channel or 0 for master
- @param paramBlock pointer to buffer containing the value to be set
- @param paramBlockLength length of param block
- @return true if the request was handled, false otherwise */
-typedef bool (*USBAudio_SetControlValue)(USB_AUDIO_REQUEST request,
-										 uint8_t nodeId,
-										 uint8_t channelId,
-										 USB_AUDIO_CONTROL_SELECTOR selector,
-										 uint8_t* paramBlock,
-										 uint8_t paramBlockLength);
-
-/** called when the host wants to read a control value. 
- @param request indicates which type is to be read. GET_CUR, GET_MIN, GET_MAX or GET_RES.
- @param nodeId node containing the control to be read
- @param channelIdx index of channel to read
- @param selector selector of control to be read
- @param channelId affected channel or 0 for master
- @param paramBlock pointer to buffer to be filled with return value
- @param paramBlockLength length to fill
- @return true if the request was handled, false otherwise */
-typedef bool (*USBAudio_GetControlValue)(USB_AUDIO_REQUEST request,
-										 uint8_t nodeId,
-										 uint8_t channelId,
-										 USB_AUDIO_CONTROL_SELECTOR selector,
-										 uint8_t* paramBlock,
-										 uint8_t paramBlockLength);
-
-/** called when the host wants to write an endpoint value. 
- @param request indicates which type is to be set. Usually only SET_CUR.
- @param endpoint the endpoint number (USB logical)
- @param selector selector of control to be set
- @param paramBlock pointer to buffer containing the value to be set
- @param paramBlockLength length of param block
- @return true if the request was handled, false otherwise */
-typedef bool (*USBAudio_SetEndpointValue)(USB_AUDIO_REQUEST request,
-										  uint8_t endpoint,
-										  USB_AUDIO_CONTROL_SELECTOR selector,
-										  uint8_t* paramBlock,
-										  uint8_t paramBlockLength);
-
-/** called when the host wants to read an endpoint value. 
- @param request indicates which type is to be read. GET_CUR, GET_MIN, GET_MAX or GET_RES.
- @param endpoint the endpoint number (USB logical)
- @param selector selector of control to be read
- @param paramBlock pointer to buffer to be filled with return value
- @param paramBlockLength length to fill
- @return true if the request was handled, false otherwise */
-typedef bool (*USBAudio_GetEndpointValue)(USB_AUDIO_REQUEST request,
-										  uint8_t endpoint,
-										  USB_AUDIO_CONTROL_SELECTOR selector,
-										  uint8_t* paramBlock,
-										  uint8_t paramBlockLength);
-
-
 int16_t speakerVolume;
 int16_t micVolume;
+bool micStreaming;
+bool speakerStreaming;
+USB_Device_Struct device;
+uint32_t counter;
 
-bool AudioGetControlValue(USB_AUDIO_REQUEST request,
+bool AudioGetControlValue(USB_Device_Struct* device,		
+						  const USBAudio_Behaviour_Struct* behaviour,
+						  USB_AUDIO_REQUEST request,
 						  uint8_t nodeId,
 						  uint8_t channelId,
 						  USB_AUDIO_CONTROL_SELECTOR selector,
@@ -429,7 +375,9 @@ bool AudioGetControlValue(USB_AUDIO_REQUEST request,
 	return false;
 }
 	
-bool AudioSetControlValue(USB_AUDIO_REQUEST request,
+bool AudioSetControlValue(USB_Device_Struct* device,		
+						  const USBAudio_Behaviour_Struct* behaviour,
+						  USB_AUDIO_REQUEST request,
 						  uint8_t nodeId,
 						  uint8_t channelId,
 						  USB_AUDIO_CONTROL_SELECTOR selector,
@@ -468,7 +416,9 @@ bool AudioSetControlValue(USB_AUDIO_REQUEST request,
 	return false;
 }
 
-bool AudioSetEndpointValue(USB_AUDIO_REQUEST request,
+bool AudioSetEndpointValue(USB_Device_Struct* device,		
+						   const USBAudio_Behaviour_Struct* behaviour,
+						   USB_AUDIO_REQUEST request,
 						   uint8_t endpoint,
 						   USB_AUDIO_CONTROL_SELECTOR selector,
 						   uint8_t* paramBlock,
@@ -478,7 +428,9 @@ bool AudioSetEndpointValue(USB_AUDIO_REQUEST request,
 }
 
 
-bool AudioGetEndpointValue(USB_AUDIO_REQUEST request,
+bool AudioGetEndpointValue(USB_Device_Struct* device,		
+						   const USBAudio_Behaviour_Struct* behaviour,
+						   USB_AUDIO_REQUEST request,
 						   uint8_t endpoint,
 						   USB_AUDIO_CONTROL_SELECTOR selector,
 						   uint8_t* paramBlock,
@@ -492,78 +444,27 @@ bool AudioGetEndpointValue(USB_AUDIO_REQUEST request,
 	} else return false;		//unsupported query
 }
 
-
-USB_Device_Struct device;
-bool micStreaming;
-bool speakerStreaming;
-
-/** OUT data transferred */
-bool USBAudio_ExtendedControlSetupCallback2(USB_Device_Struct* device) {
-	if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_HOST_TO_DEVICE) return false;
-	switch (device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) {
-		case USB_RT_RECIPIENT_INTERFACE:
-			//TODO: check wIndexL against control interface *********
-			return AudioSetControlValue(device->currentCommand.bRequest,
-										device->currentCommand.wIndexH,
-										device->currentCommand.wValueL,
-										device->currentCommand.wValueH,
-										device->commandDataBuffer,
-										(device->currentCommand.wLengthH << 8) |
-										device->currentCommand.wLengthL);
-		case USB_RT_RECIPIENT_ENDPOINT:
-			return AudioSetEndpointValue(device->currentCommand.bRequest,
-										 device->currentCommand.wIndexL,
-										 device->currentCommand.wValueL,
-										 device->commandDataBuffer,
-										 (device->currentCommand.wLengthH << 8) |
-										 device->currentCommand.wLengthL);
-	}
-	return false;
-}
-							  
-
-bool USBAudio_ExtendedControlSetupCallback(USB_Device_Struct* device) {
-	if ((device->currentCommand.bmRequestType & USB_RT_TYPE_MASK) != USB_RT_TYPE_CLASS) return false;
-
-	bool result = false;
-	uint16_t len = (device->currentCommand.wLengthH << 8) | device->currentCommand.wLengthL;
-
-	if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) == USB_RT_DIR_HOST_TO_DEVICE) {
-		if ((len >= 1) && (len <= USB_MAX_COMMAND_DATA_SIZE)) {
-			device->currentCommandDataBase = device->commandDataBuffer;
-			device->currentCommandDataRemaining = len;
-			device->controlOutDataCompleteCallback = USBAudio_ExtendedControlSetupCallback2;
-			result = true;
-		}
-	} else {
-		switch (device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) {
-			case USB_RT_RECIPIENT_INTERFACE:
-				result = AudioGetControlValue(device->currentCommand.bRequest,
-											  device->currentCommand.wIndexH,
-											  device->currentCommand.wValueL,
-											  device->currentCommand.wValueH,
-											  device->commandDataBuffer,
-											  len);
-				break;
-			case USB_RT_RECIPIENT_ENDPOINT:
-				result = AudioGetEndpointValue(device->currentCommand.bRequest,
-											   device->currentCommand.wIndexL,
-											   device->currentCommand.wValueL,
-											   device->commandDataBuffer,
-											   len);
-				break;
-		}
-		if (result) {
-			device->currentCommandDataBase = device->commandDataBuffer;
-			device->currentCommandDataRemaining = len;
-		}	
-	}
-	return result;
+bool AudioInterfaceAltChange(USB_Device_Struct* device, const USBAudio_Behaviour_Struct* behaviour, uint8_t interface, uint8_t value) {
+	if (interface == SPEAKER_STREAM_INTERFACE) {
+		if (value >= 2) return false;
+		speakerStreaming = (value > 0);
+		return true;
+	} else if (interface == MIC_STREAM_INTERFACE) {
+		if (value >= 2) return false;
+		micStreaming = (value > 0);
+		return true;
+	} else return false;
 }
 
-uint32_t counter;
+void AudioConfigChange(USB_Device_Struct* device, const USBAudio_Behaviour_Struct* behaviour) {
+	//we use config changes to reset our state
+	micStreaming = false;
+	speakerStreaming = false;
+	micVolume = 0;
+	speakerVolume = 0;
+}	
 
-void frameCallback(USB_Device_Struct* device) {
+void AudioFrame(USB_Device_Struct* device, const USBAudio_Behaviour_Struct* behaviour) {
 	int16_t buffer[BYTES_PER_FRAME/2];
 	uint16_t i;
 	
@@ -592,7 +493,7 @@ void frameCallback(USB_Device_Struct* device) {
 		
 		uint32_t level = (max > min) ? (max - min) : 0;
 		level = level * (speakerVolume+0x8000) / 0x10000;	//scale by speaker volume
-
+		
 		//turn audio level into brightness of LED (by very ugly PWM, just 10 levels, but hey, it's just an example)
 		level /= 800;
 		counter++;
@@ -601,17 +502,34 @@ void frameCallback(USB_Device_Struct* device) {
 	}
 }
 
-bool interfaceAltCallback(USB_Device_Struct* device, uint8_t interface, uint8_t value) {
-	if (interface == SPEAKER_STREAM_INTERFACE) {
-		if (value >= 2) return false;
-		speakerStreaming = (value > 0);
-		return true;
-	} else if (interface == MIC_STREAM_INTERFACE) {
-		if (value >= 2) return false;
-		micStreaming = (value > 0);
-		return true;
-	} else return false;
-}
+const USBAudio_Behaviour_Struct audioBehaviour = {
+	MAKE_USBAUDIO_BASE_BEHAVIOUR,
+	AudioGetControlValue,
+	AudioSetControlValue,
+	AudioGetEndpointValue,
+	AudioSetEndpointValue,
+	AudioInterfaceAltChange,
+	AudioConfigChange,
+	AudioFrame,
+	0,
+	1,
+	2,
+	0x84,
+	0x04
+};
+
+const USB_Device_Definition deviceDefinition = {
+	deviceDescriptor,
+	1,
+	{ configDescriptor },
+	4,
+	{ languages, manufacturerName, deviceName, serialName },
+	1,
+	{ (USB_Behaviour_Struct*)(&audioBehaviour) }
+};
+
+
+
 
 void endpointDataCallback(USB_Device_Struct* device, uint8_t epIdx) {
 	//Do nothing, just add a handler to prevent pipe from stalling (will stall if no handler is there)
@@ -623,29 +541,7 @@ void main(void) {
 	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
 	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 
-	micStreaming = false;
-	speakerStreaming = false;
-	micVolume = 0;
-	speakerVolume = 0;
-	
-	device.deviceDescriptor = deviceDescriptor;
-	device.configurationCount = 1;
-	device.configurationDescriptors[0] = configDescriptor;
-	device.stringCount = 4;
-	device.strings[0] = languages;
-	device.strings[1] = manufacturerName;
-	device.strings[2] = deviceName;
-	device.strings[3] = serialName;
-	device.extendedControlSetupCallback = USBAudio_ExtendedControlSetupCallback;
-	device.endpointDataCallback = endpointDataCallback;
-	device.frameCallback = frameCallback;
-	device.interfaceAltCallback = interfaceAltCallback;
-	USBAudio_SetControlValue setControlValueHandler;
-	USBAudio_GetControlValue getControlValueHandler;
-	USBAudio_SetEndpointValue setEndpointValueHandler;
-	USBAudio_GetEndpointValue getEndpointValueHandler;
-	
-	USB_Init(&device);
+	USB_Init(&deviceDefinition, &device);
 	
 	USB_SoftConnect(&device);
 }

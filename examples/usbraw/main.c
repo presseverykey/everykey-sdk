@@ -65,22 +65,19 @@ const uint8_t configDescriptor[] = {
 	//add endpoint descriptors here...
 };
 	
+const USB_Device_Definition myUSBDeviceDefinition = {
+	deviceDescriptor,
+	1,
+	{ configDescriptor },
+	4,
+	{languages, manufacturerName, deviceName, serialName },
+	0,
+	{ NULL }
+};
+
 USB_Device_Struct myUSBDevice;
 
 void main(void) {
-	myUSBDevice.deviceDescriptor = deviceDescriptor;
-	myUSBDevice.configurationCount = 1;
-	myUSBDevice.configurationDescriptors[0] = configDescriptor;
-	myUSBDevice.stringCount = 4;
-	myUSBDevice.strings[0] = languages;
-	myUSBDevice.strings[1] = manufacturerName;
-	myUSBDevice.strings[2] = deviceName;
-	myUSBDevice.strings[3] = serialName;
-	myUSBDevice.extendedControlSetupCallback = NULL;
-	myUSBDevice.endpointDataCallback = NULL;
-	myUSBDevice.frameCallback = NULL;
-	myUSBDevice.interfaceAltCallback = NULL;
-	
-	USB_Init(&myUSBDevice);
+	USB_Init(&myUSBDeviceDefinition, &myUSBDevice);
 	USB_SoftConnect(&myUSBDevice);
 }

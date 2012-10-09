@@ -25,10 +25,11 @@
 #define USB_MAX_COMMAND_PACKET_SIZE 64
 #define USB_MAX_COMMAND_DATA_SIZE 64
 
-#pragma mark USB Types
+#pragma mark Function prototypes
 
-// forward declaration of device struct
+// forward declarations of structs
 typedef struct USB_Device_Struct USB_Device_Struct;
+typedef struct USB_Behaviour_Struct USB_Behaviour_Struct;
 
 /** Set extendedControlSetupCallback when you want to respond to class- or
  * device-specific commands (setup packets on the control out pipe). Otherwise, set to NULL.
@@ -41,7 +42,7 @@ typedef struct USB_Device_Struct USB_Device_Struct;
  * direction bit in currentCommand.bmRequestType) and the number of bytes to transfer into
  * currentCommandBytesRemaining. Additionally, it may set controlOutDataCompleteCallback or/and
  * controlStatusCallback to be notified when the data or status phase of the command has completed. */
-typedef	bool (*USBExtendedControlSetupCallback)(USB_Device_Struct* device);
+typedef	bool (*USBExtendedControlSetupCallback)(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour);
 
 /** Set endpointDataCallback to handle data transfer on non-control endpoints.
  * The physical endpoint index is passed as parameter. Out (host-to-device) endpoints
@@ -50,85 +51,106 @@ typedef	bool (*USBExtendedControlSetupCallback)(USB_Device_Struct* device);
  * the buffer is not filled, read requests by the host are silently NAK-ed.
  * In (device-to-host) endpoints have uneven indexes. For them, the callback is called
  * when data has arrived, ready to be read via USB_EP_Read(). */
-typedef	void (*USBEndpointDataCallback)(USB_Device_Struct* device, uint8_t epIdx);
+typedef	bool (*USBEndpointDataCallback)(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour, uint8_t epIdx);
 
 /** Set frameCallback to be notified on every USB frame. This callback is mainly useful for
  * isochronous endpoints - data flow on isochronous pipes is not notified by endpointDataCallback.
  * Instead, they must be read and written each frame. */
-typedef void (*USBFrameCallback)(USB_Device_Struct* device);
+typedef void (*USBFrameCallback)(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour);
 
 /** Set interfaceAltCallback to be notified on changes of interface alt settings. This callback is
  * useful for changing alt-setting-dependent functionality such as starting or stopping isochronous
  * streaming. Return true if the new alt setting is ok, false otherwise.
  * If unused, alt changes will fail. */
-typedef bool (*USBInterfaceAltCallback)(USB_Device_Struct* device, uint8_t interface, uint8_t newAlt);
+typedef bool (*USBInterfaceAltCallback)(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour, uint8_t interface, uint8_t newAlt);
 
+/** Set configChangeCallback to be notified about USB device configuration changes. This callback can
+ * be used for setting up internal state variables. The new config value can be read from the device struct */
+typedef void (*USBConfigChangeCallback)(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour);
 
-/** this structure devines callbacks for class- or vendor-specific functionality. One or multiple
+/** temporary callback for setup packet handlers - used to be called back after the data stage of an out control transfer */
+typedef bool (*USBControlOutDataCompleteCallback)(USB_Device_Struct* device);	
+
+/** temporary callback for setup packet handlers - used to be called back after the status stage of a control transfer */
+typedef bool (*USBControlStatusCallback)(USB_Device_Struct* device);
+
+#pragma mark Structures
+
+/** This structure defines callbacks for class- or vendor-specific functionality. One or multiple
  * behaviours can be attached to a USB device. Typical behaviour implementations create a new
- * struct that starts with this substructure and continues with their own state variables,
- * so that pointers can be cast back and forth. */
+ * struct that starts with this substructure and continues with their own entries so that pointers
+ can be typecast back and forth (sort of poor man's subclassing). If behaviours want to keep state information,
+ they should do so using pointers to RAM so that this struct (and its wrappers) may be const to keep them in Flash. */
 typedef struct USB_Behaviour_Struct {
 
-	/** callback for handling device-specific USB commands - set to NULL if not used */
+	/** callback for handling device-specific USB commands - setting to NULL will not accept any control requests.
+	 The request is first offered to all behaviours until one handles it. If none of them returns true, the request
+	 is tried to be handled by the standard USB request handlers. If that fails, the OUT pipe will be stalled. */
 	USBExtendedControlSetupCallback extendedControlSetupCallback;
 	
-	/** callback for handling data transfers - set to NULL if not used */
+	/** callback for handling data transfers - called either when OUT data is available or when prior queued IN data
+	 was sent. Behaviours responsible for a non-control endpoint should implement this method, trigger other activities
+	 if necessary and return true. Setting to NULL will act as always returning false. The message is passed to all
+	 registered behaviours until one of them returns true. If none of them handles this message, the endpoint will stall. */
 	USBEndpointDataCallback endpointDataCallback;
 	
 	/** callback invoked each USB frame - set to NULL if not used */
 	USBFrameCallback frameCallback;
 	
-	/** callback invoked on interface alt changes - set to NULL if not used */
+	/** callback invoked on interface alt changes - setting to NULL will not accept any alt setting change for this behaviour */
 	USBInterfaceAltCallback interfaceAltCallback;
+	
+	/** callback invoked on device config changes - set to NULL if not used */
+	USBConfigChangeCallback configChangeCallback;
 	
 } USB_Behaviour_Struct;
 
-
-/** A structure describing the device to be implemented plus runtime state. Therefore, it has to
- * be in RAM. Initialize the first fields up to the runtime state, then pass it to USB_Init(). */
-typedef struct USB_Device_Struct {
+/** A structure describing the static properties of a USB device. May be in RAM or Flash, if initialized at compile-time.
+ Must be initialized before passing it to USB_Init(). */
+typedef struct USB_Device_Definition {
 	/** main device descriptor. Length is taken from [0]. Must not be NULL. */
 	const uint8_t* deviceDescriptor;
-
+	
 	/** number of valid configurations */
 	uint8_t configurationCount;
-
+	
 	/** configuration descriptors, including interfaces and endpoints.
 	 * Entries 0..configurationCount-1 must not be NULL. Length is taken from [2] and [3] */
 	const uint8_t* configurationDescriptors[USB_MAX_CONFIGURATION_COUNT];
-
+	
 	/** number of valid string descriptors, including language string descriptor */
 	uint8_t stringCount;
-
+	
 	/** all string descriptors, including language string descriptor.
 	 * Entries 0..stringCount-1 must not be NULL. Length is taken from [0]. */
 	const uint8_t* strings[USB_MAX_STRING_COUNT];
+	
+	/** number of currently attached behaviours */
+	uint8_t behaviourCount;
+	
+	/** a list of attached behaviours */
+	USB_Behaviour_Struct* behaviours[USB_MAX_BEHAVIOURS_PER_DEVICE];
+	
+} USB_Device_Definition;
 
-	/** callback for handling device-specific USB commands - set to NULL if not used */
-	USBExtendedControlSetupCallback extendedControlSetupCallback;
+/* A structure defining the runtime state of a USB device. Must be in RAM. Can be uninitialized before passing it to USB_Init(). */
+typedef struct USB_Device_Struct {
 
-	/** callback for handling data transfers - set to NULL if not used */
-	USBEndpointDataCallback endpointDataCallback;
-	
-	/** callback invoked each USB frame - set to NULL if not used */
-	USBFrameCallback frameCallback;
-	
-	/** callback invoked on interface alt changes - set to NULL if not used */
-	USBInterfaceAltCallback interfaceAltCallback;
-	
-	/** may be set and used by the user */
-	void* refcon;
+	/** a reference to our static device definition */
+	const USB_Device_Definition* deviceDefinition;
 	
 	/* Runtime state from here - don't need to be initialized, may change at runtime. If not stated
 	 * otherwise, behaviours and outside states should not modify their contents */
 	
-	/** callback when host-to-device has arrived - may be set by behaviours on a per-command basis */
-	bool (*controlOutDataCompleteCallback)(USB_Device_Struct* device);	
+	/** callback when host-to-device has arrived - may be set by setup packet handlers */
+	USBControlOutDataCompleteCallback controlOutDataCompleteCallback;
 	
-	/** callback when status was sent - may be set by behaviours on a per-command basis */
-	bool (*controlStatusCallback)(USB_Device_Struct* device);
+	/** callback when status was sent - may be set by setup packet handlers */
+	USBControlStatusCallback controlStatusCallback;
 
+	/** reference for per-command callbacks above, may be set by setup packet handlers to be read back from callbacks */
+	void* callbackRefcon;
+	
 	/** Data buffer for USB command OUT data phase */
 	uint8_t commandDataBuffer[USB_MAX_COMMAND_DATA_SIZE];
 	
@@ -149,14 +171,7 @@ typedef struct USB_Device_Struct {
 	
 	/** Number of remaining bytes to transfer in data phase */
 	uint32_t currentCommandDataRemaining;
-	
-	/** number of currently attached behaviours */
-	uint8_t behaviourCount;
-
-	/** a list of attached behaviours */
-	USB_Behaviour_Struct* behaviours[USB_MAX_BEHAVIOURS_PER_DEVICE];
-	
-	
+		
 } USB_Device_Struct;
 
 #pragma mark USB Functions
@@ -191,9 +206,10 @@ bool USB_EP_GetStall(USB_Device_Struct* device, uint8_t epIdx);
 
 /** powers up required blocks, sets up clock etc. Leaves soft-connect disconnected.
  * If used before, clears out all runtime state and previously attached behaviours.
- * @param device Pointer to correctly filled USB_Device_Struct. Must not be NULL.
+ * @param definition Pointer to correctly filled USB_Device_Definition. Must not be NULL.
+ * @param device Pointer to uninitialized USB_Device_Struct. Memory must be kept during existence of USB device. Must not be NULL.
  */
-void USB_Init(USB_Device_Struct* device);
+void USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device);
 
 /** enable connection from client side (soft-connect) 
   * @param device device to connect */
@@ -211,9 +227,5 @@ bool USB_Connected(USB_Device_Struct* device);
  @param index usb endpoint index
  @return physical endpoint index */
 uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
-
-/** add a behaviour to a USB device. Make sure you don't exceed USB_MAX_BEHAVIOURS_PER_DEVICE.
- @param behaviour behaviour to be added */
-void USB_AddBehaviour(USB_Device_Struct* device, USB_Behaviour_Struct* behaviour);
 
 #endif
