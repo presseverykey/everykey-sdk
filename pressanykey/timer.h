@@ -23,11 +23,11 @@ typedef struct {
 	HW_RW PWMC;  // PWM Control Register
 } TMR_STRUCT;
 
-#define TMR16B0 ((TMR16_STRUCT*)(0x4000C000))
-#define TMR16B1 ((TMR16_STRUCT*)(0x40010000))
+#define TMR16B0 ((TMR_STRUCT*)(0x4000C000))
+#define TMR16B1 ((TMR_STRUCT*)(0x40010000))
 
-#define TMR32B0 ((TMR16_STRUCT*)(0x40014000))
-#define TMR32B1 ((TMR16_STRUCT*)(0x40018000))
+#define TMR32B0 ((TMR_STRUCT*)(0x40014000))
+#define TMR32B1 ((TMR_STRUCT*)(0x40018000))
 
 // UM Chap 15.8.1 , Table 255, bits for IR
 typedef enum TMR_IR {
