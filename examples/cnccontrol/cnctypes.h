@@ -26,10 +26,13 @@ typedef enum StateFlags {
 typedef enum CommandId {
 	CMD_STOP				= 0,	//needs to be 0 - start state
 	CMD_MOVE_DIR			= 1,
-	CMD_MOVE_TO				= 2,
-	CMD_SET_HOME			= 3,
-	CMD_SPINDLE_ON			= 4,
-	CMD_SPINDLE_OFF			= 5
+	CMD_SET_HOME			= 2,
+	CMD_SPINDLE_ON			= 3,
+	CMD_SPINDLE_OFF			= 4,
+	CMD_MOVE_TO_IMM			= 5,
+	IMMEDIATE_SEPARATOR		= 999,	//No actual command, just a separator. Everything below is immediate mode
+	CMD_MOVE_TO				= 1000,
+	CMD_WAIT				= 1001
 } CommandId;
 
 typedef struct CommandStruct {
@@ -40,8 +43,15 @@ typedef struct CommandStruct {
 		} MOVE_DIR;
 		struct {
 			int32_t target[NUM_AXES];
+			uint16_t speed;
+		} MOVE_TO_IMM;
+		struct {
+			int32_t target[NUM_AXES];
 			uint32_t ticks;
 		} MOVE_TO;
+		struct {
+			uint32_t ticks;
+		} WAIT;
 	} args;
 } __attribute__((packed)) CommandStruct;
 
