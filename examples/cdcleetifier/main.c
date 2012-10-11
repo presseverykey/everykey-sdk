@@ -79,7 +79,7 @@ const uint8_t configDescriptor[] = {
 	//ACM desc
 	4,								//bLength
 	0x24,							//bDescriptorType: Class-specific (0x20) + interface (0x04)
-	USB_CDC_ABSTRACT_CALL_MODEL_FUNC_DESC,	//bDescriptorSubtype
+	USB_CDC_ABSTRACT_CONTROL_MODEL_FUNC_DESC,	//bDescriptorSubtype
 	0x02,							//bmCapabilities (none) (set control line state, set/get line coding)
 	
 	//Union func desc
@@ -87,9 +87,15 @@ const uint8_t configDescriptor[] = {
 	0x24,							//bDescriptorType: Class-specific (0x20) + interface (0x04)
 	USB_CDC_UNION_FUNC_DESC,		//bDescriptorSubtype
 	0x00,							//bMasterInterface - this is the master interface
-	0x01,							//bMasterInterface - this is the first (and only) slave interface
+	0x01,							//bSlaveInterface0 - this is the first (and only) slave interface
 	
-	//Should we have a notification endpoint?
+	//Notification endpoint (physical index: 5)
+	7,								//bLength
+	USB_DESC_ENDPOINT,				//bDescriptorType
+	0x82,							//in endpoint 2
+	USB_EPTYPE_INTERRUPT,			//bmAttributes
+	I16_TO_LE_BA(0x0010),			//wMaxPacketSize
+	2,								//bInterval: 2ms
 	
 	//interface 1: Data interface
 	9,								//bLength: length of this descriptor in bytes (9)
@@ -102,7 +108,7 @@ const uint8_t configDescriptor[] = {
 	USB_CDC_DI_PROTOCOL_NONE,		//bInterfaceProtocol
 	0x00,							//iInterface: String index (0x00 = not available)
 	
-	//endpoint 1: data out
+	//endpoint 1: data out (physical index: 2)
 	7,								//bLength
 	USB_DESC_ENDPOINT,				//bDescriptorType
 	0x01,							//bEndpointAddres: endpoint 1 (out)
@@ -110,7 +116,7 @@ const uint8_t configDescriptor[] = {
 	I16_TO_LE_BA(64),				//wMaxPacketSize
 	0,								//bInterval
 
-	//endpoint 1: data out
+	//endpoint 2: data in (physical index: 3)
 	7,								//bLength
 	USB_DESC_ENDPOINT,				//bDescriptorType
 	0x81,							//bEndpointAddres: endpoint 1 (in)
