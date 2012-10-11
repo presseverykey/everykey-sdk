@@ -59,7 +59,7 @@ typedef struct USBHID_Behaviour_Struct {
  * @param reportId report ID */
 
 void USBHID_PushReport(USB_Device_Struct* device,
-				   USBHID_Behaviour_Struct* behaviour,
+				   const USBHID_Behaviour_Struct* behaviour,
 				   USB_HID_REPORTTYPE reportType,
 				   uint8_t reportId);
 

@@ -123,7 +123,7 @@ void USBHID_ConfigChangeHandler(USB_Device_Struct* device, const USB_Behaviour_S
 }
 
 void USBHID_PushReport(USB_Device_Struct* device,
-					   USBHID_Behaviour_Struct* hid,
+					   const USBHID_Behaviour_Struct* hid,
 					   USB_HID_REPORTTYPE reportType,
 					   uint8_t reportId) {
 	if ((hid->inReportHandler) && (hid->inBuffer)) {
