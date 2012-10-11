@@ -22,6 +22,11 @@ void SetSpindle(bool on) {
 	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, !on);
 }				
 
+void GetNextCommand() {
+	currentCommand.command = CMD_STOP;
+	//TODO ************
+}
+
 
 void Downstream_Init() {
 	GPIO_SETFUNCTION(0, 10, PIO, IOCON_IO_ADMODE_DIGITAL);
@@ -70,11 +75,36 @@ void Downstream_Tick() {
 				currentPosition[i] += currentCommand.args.MOVE_DIR.delta[i];
 			}
 			break;
+		case CMD_SET_HOME:
+			for (i=0; i< NUM_AXES; i++) {
+				currentPosition[i] = 0;
+			}
+			currentCommand.command = CMD_STOP;
+			break;
 		case CMD_SPINDLE_ON:
 			stateFlags |= State_SpindleOn;
+			currentCommand.command = CMD_STOP;
 			break;
 		case CMD_SPINDLE_OFF:
 			stateFlags &= ~State_SpindleOn;
+			currentCommand.command = CMD_STOP;
+			break;
+		case CMD_MOVE_TO_IMM:
+		{
+			bool arrived = true;
+			for (i=0; i< NUM_AXES; i++) {
+				int32_t delta = currentCommand.args.MOVE_TO_IMM.target[i] - currentPosition[i];
+				if (delta) {
+					arrived = false;
+					bool neg = delta < 0;
+					if (neg) delta = -delta;
+					if (delta > currentCommand.args.MOVE_TO_IMM.speed) delta = currentCommand.args.MOVE_TO_IMM.speed;
+					if (neg) delta = -delta;
+					currentPosition[i] += delta;
+				}
+			}
+			if (arrived) currentCommand.command = CMD_STOP;
+		}
 			break;
 	}
 	
@@ -86,29 +116,24 @@ void Downstream_Tick() {
 			SetDir(i, false);
 		}
 	}
-
-	//set spinle (put as much delay as possible between set dir and set step)
+			
+	//put as much delay as possible between set dir and set step - do everything we can here
+	
+	//update immediate mode flag
+	if (currentCommand.command > IMMEDIATE_SEPARATOR) stateFlags |= State_ImmediateMode;
+	else stateFlags &= ~State_ImmediateMode;
+	
+	//set spindle
 	SetSpindle(stateFlags & State_SpindleOn);
+
+	//Blink the LED to show we're alive
+	counter++;
+	GPIO_WriteOutput(LED_PORT, LED_PIN, counter & 0x800);
 	
 	//set step bits
 	for (i=0; i<NUM_AXES; i++) {
 		SetStep(i, (currentPosition[i] >> 8) & 1);
 	}
-	
-	counter++;
-	GPIO_WriteOutput(LED_PORT, LED_PIN, counter & 0x800);
-/*
-	bool enable = (counter / 2000) & 1;
-	bool dir = (counter / 1000) & 1;
-	bool step = counter & 1;
-	
-	int i;
-	for (i=0;i<NUM_AXES;i++) {
-		GPIO_WriteOutput(axes[i].enablePort, axes[i].enablePin, enable);
-		GPIO_WriteOutput(axes[i].stepPort, axes[i].stepPin, step);
-		GPIO_WriteOutput(axes[i].dirPort, axes[i].dirPin, dir);
-	}
-*/
 	
 }
 
