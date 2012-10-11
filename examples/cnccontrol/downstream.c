@@ -5,6 +5,7 @@
 int counter;
 
 void SetEnable(uint8_t axis, bool on) {
+	if (ENABLE_IS_LOW_ACTIVE) on = !on;
 	GPIO_WriteOutput(axes[axis].enablePort, axes[axis].enablePin, on); 
 }
 
@@ -17,7 +18,8 @@ void SetStep(uint8_t axis, bool value) {
 }
 
 void SetSpindle(bool on) {
-	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, on); 
+	if (SPINDLE_IS_LOW_ACTIVE) on = !on;
+	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, !on);
 }				
 
 
@@ -37,6 +39,9 @@ void Downstream_Init() {
 		GPIO_SetDir(axes[i].enablePort, axes[i].enablePin, GPIO_Output);
 		SetEnable(i, true);	//Right now, we enable all drivers - should be made dynamic later
 	}
+
+	GPIO_SetDir(SPINDLE_PORT, SPINDLE_PIN, GPIO_Output);
+	SetSpindle(false);
 	
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
 	GPIO_WriteOutput(LED_PORT, LED_PIN, false);

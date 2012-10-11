@@ -33,14 +33,13 @@ typedef enum CommandId {
 } CommandId;
 
 typedef struct CommandStruct {
-	uint32_t commandId;
 	uint32_t command;
 	union {
 		struct {
-			uint8_t delta[NUM_AXES];
+			int16_t delta[NUM_AXES];
 		} MOVE_DIR;
 		struct {
-			uint32_t target[NUM_AXES];
+			int32_t target[NUM_AXES];
 			uint32_t ticks;
 		} MOVE_TO;
 	} args;

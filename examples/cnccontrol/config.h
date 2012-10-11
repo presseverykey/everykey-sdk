@@ -55,6 +55,8 @@ extern const Axis axes[NUM_AXES];
 
 #define HEARTBEAT_HZ 10000
 
+#define ENABLE_IS_LOW_ACTIVE true
+#define SPINDLE_IS_LOW_ACTIVE true
 
 #endif
 

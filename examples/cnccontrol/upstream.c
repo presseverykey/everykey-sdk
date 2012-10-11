@@ -205,6 +205,8 @@ void receiveCommand(USB_Device_Struct* device,
 					USB_HID_REPORTTYPE reportType,
 					uint8_t reportId,
 					uint16_t len) {
+	if (reportId != 0) return;
+	if (reportType != USB_HID_REPORTTYPE_OUTPUT) return;
 	disableInterrupts();
 	pressanykeymemmove(&currentCommand, outBuffer, OUT_REPORT_SIZE);
 	enableInterrupts();

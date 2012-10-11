@@ -22,4 +22,5 @@ void main(void) {
 
 void systick() {
 	Downstream_Tick();
+	Upstream_Tick();
 }
