@@ -11,6 +11,10 @@ void main(void);// DEFAULTS_TO(deadend);
 void systick(void) DEFAULTS_TO(deadend);
 void usb_fiq_handler(void) DEFAULTS_TO(deadend);
 void usb_irq_handler(void) DEFAULTS_TO(deadend);
+void ct16b0_handler(void) DEFAULTS_TO(deadend);
+void ct16b1_handler(void) DEFAULTS_TO(deadend);
+void ct32b0_handler(void) DEFAULTS_TO(deadend);
+void ct32b1_handler(void) DEFAULTS_TO(deadend);
 
 // Define the vector table - make sure it's mapped to 0x0.
 __attribute__ ((section("vectors")))
@@ -73,10 +77,10 @@ const VECTOR_TABLE vtable = {
 	deadend,		//PIO3_2  Wakeup
 	deadend,		//PIO3_3  Wakeup
 	deadend,		//I2C
-	deadend,		//16-bit Timer 0 handler
-	deadend,		//16-bit Timer 1 handler
-	deadend,		//32-bit Timer 0 handler
-	deadend,		//32-bit Timer 1 handler
+	ct16b0_handler,		//16-bit Timer 0 handler
+	ct16b1_handler,		//16-bit Timer 1 handler
+	ct32b0_handler,		//32-bit Timer 0 handler
+	ct32b1_handler,		//32-bit Timer 1 handler
 	deadend,		//SSP
 	deadend,		//UART
 	usb_irq_handler,	//USB IRQ

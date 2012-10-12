@@ -9,5 +9,6 @@
 #include "utils.h"
 #include "../pressanykey_usb/usb.h"
 #include "ssp.h"
+#include "timer.h"
 
 #endif

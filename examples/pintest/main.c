@@ -6,19 +6,19 @@
 // Pressing the key will turn on one pad after the next in numerical
 // order:
 //
-           26     (...)     14
-				+---------------------+
-				|                     |
-			1	|  O                  |
-	(...)	|                    +---
-				|     TOP            | U
-				|                    | S
-				|    +----+          | B
-				|    |    |          +---
-				|    |Proc|           |
-		 13 |    +----+           |
-				+---------------------+
-
+//           26     (...)     14
+//				+---------------------+
+//				|O                    |
+//			1	|                     |
+//	(...)	|                    +---
+//				|     TOP            | U
+//				|                    | S
+//				|    +----+          | B
+//				|    |    |          +---
+//				|    |Proc|           |
+//		 13 |    +----+           |
+//				+---------------------+
+//
 // Pads are "numbered" counterclockwise, starting at the left (looking a
 // the key form the top, i.e processor, side so left pads (top to
 // bottom) are 1 - 13 and the top pads (from left to right) 14-26
@@ -90,7 +90,9 @@ const uint8_t pinports[] = {
 
 #define NUM_PIN_PORT 22
 void set_functions() {
-	// some pads aren't 
+	// some pads aren't in PIO mode per default,
+	// i.e. PIO1_0, pad 6, proc pin 33
+	// set all of them.
 	GPIO_SETFUNCTION(1,7,PIO,IOCON_IO_ADMODE_DIGITAL)
 	GPIO_SETFUNCTION(1,6,PIO,IOCON_IO_ADMODE_DIGITAL)
 	GPIO_SETFUNCTION(0,1,PIO,IOCON_IO_ADMODE_DIGITAL)
@@ -124,41 +126,46 @@ void initialize_ports (void) {
 	int i;
 	uint8_t pp, pin, port;
 	set_functions();
+	// turn all pads on ...
 	for (i=0; i!=NUM_PIN_PORT; ++i) {
 		pp = pinports[i];
+		
+		// split entry into port and pin halves
 		port = 0x0f & (pp>>4);
-		pin = 0x0f & pp;
+		pin  = 0x0f & pp;
 		
 		GPIO_SetDir(port,pin, GPIO_Output);
 		GPIO_WriteOutput(port, pin, true);
 	}
+	// ... except the key pad
 	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
 	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 }
 
-bool key_state;
-int pad;
-
-
+// turn on pad number `pad+1`, the pad parameter is
+// an offset into the `pinports` array.
 void set_pad(int * pad) {
+	
 	uint8_t i, port, pin;
 	uint8_t pp; 
 	bool val;
-	
 
 	for (i = 0; i!= NUM_PIN_PORT; ++i) {
 		pp = pinports[i];
+		// split apart port/pin info
 		port = 0x0f & (pp >> 4);
 		pin  = 0x0f & pp;
 
 		if (i == *pad) {
-			val = true;	
+			val = true;	    // turn on the current pad
 		} else {
-			val = false;	
+			val = false;	  // and everything else off
 		}
 		GPIO_WriteOutput(port, pin, val);
 	}
-
+	
+	// once we've reached the last pad, turn the the
+	// pad connected to the button on. (pad 20)
 	if (*pad == NUM_PIN_PORT) {
 		GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Output);
 		GPIO_WriteOutput(KEY_PORT, KEY_PIN, true);
@@ -168,17 +175,28 @@ void set_pad(int * pad) {
 	
 }
 
+// key_state keeps track of whether button was pushed or not the last
+// time we checked.
+bool key_state;
+// `pad` keeps track of the pad we're currently testing.
+int pad;
 #define pressed false
+
+// systick is run once every 10ms ...
 void systick(void) {
 	bool curr_state;	
-
+	
+	// check whether the button is pressed ...
 	curr_state = GPIO_ReadInput(KEY_PORT, KEY_PIN);
 
 	if (key_state != curr_state) {
 		if (curr_state == pressed) {
+			// light the led when pressed
 			GPIO_WriteOutput(LED_PORT, LED_PIN, true);
 		} else {
+			// and then turn it back off when releasing...
 			GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+			// ... and finally light the next pad.
 			set_pad(&pad);
 		}
 	}
