@@ -58,9 +58,15 @@ extern const Axis axes[NUM_AXES];
 #define ENABLE_IS_LOW_ACTIVE true
 #define SPINDLE_IS_LOW_ACTIVE true
 
-// size of command queue
+/** size of command queue */
 #define CQ_LENGTH 10
 
+/** Number of bits in positions considered to be below one phyiscal step.
+ Positions have a fixed point representation, with SUBSTEP_BITS fractional bits.
+ Microstepping is considered to be one step. For example, 8 bits means that changes
+ in the lower 8 bits of positions do not cause output changes to the steppers.
+ This leaves us space for dealing with speed, for example. */
+#define SUBSTEP_BITS 8
 
 #endif
 
