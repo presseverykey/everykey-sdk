@@ -33,6 +33,8 @@ typedef enum CommandId {
 	IMMEDIATE_SEPARATOR		= 999,	//No actual command, just a separator. Everything below is immediate mode
 	CMD_MOVE_TO				= 1000,
 	CMD_WAIT				= 1001,	
+	CMD_SPINDLE_ON_SCRIPT	= 1002,	
+	CMD_SPINDLE_OFF_SCRIPT	= 1003	
 } CommandId;
 
 typedef struct CommandStruct {

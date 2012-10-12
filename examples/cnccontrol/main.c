@@ -11,9 +11,10 @@ uint32_t counter;
 
 void main(void) {
 	State_Init();
+	CQ_Init();
 	Downstream_Init();
 	Upstream_Init();
-	
+
 	SYSCON_StartSystick(SYSTICK_INTERVAL);
 
 	Upstream_Start();
