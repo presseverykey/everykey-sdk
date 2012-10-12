@@ -32,10 +32,11 @@ typedef enum CommandId {
 	CMD_MOVE_TO_IMM			= 5,
 	IMMEDIATE_SEPARATOR		= 999,	//No actual command, just a separator. Everything below is immediate mode
 	CMD_MOVE_TO				= 1000,
-	CMD_WAIT				= 1001
+	CMD_WAIT				= 1001,	
 } CommandId;
 
 typedef struct CommandStruct {
+	uint32_t transactionId;
 	uint32_t command;
 	union {
 		struct {
@@ -59,6 +60,8 @@ typedef struct CommandStruct {
 typedef struct ResponseStruct {
 	uint32_t currentPos[NUM_AXES];
 	uint32_t stateFlags;
+	uint32_t freeSlots;
+	uint32_t lastTransactionId;
 } ResponseStruct;
 
 #endif
