@@ -37,6 +37,7 @@ bool CQ_GetCommand() {
 	bool ok = (readIdx != writeIdx);
 	if (ok) {
 		pressanykeymemmove(&currentCommand, &(queue[readIdx]), sizeof(CommandStruct));
+		currentCommandTicks = 0;
 		readIdx = (readIdx+1) % CQ_LENGTH;
 	}
 	enableInterrupts();
@@ -56,6 +57,7 @@ bool CQ_AddCommand(CommandStruct* cmd) {
 		} else ok = false;
 	} else {									//immediate command
 		pressanykeymemmove(&currentCommand, cmd, sizeof(CommandStruct));
+		currentCommandTicks = 0;
 		readIdx = 0;
 		writeIdx = 0;
 	}

@@ -20,7 +20,7 @@ void SetStep(uint8_t axis, bool value) {
 
 void SetSpindle(bool on) {
 	if (SPINDLE_IS_LOW_ACTIVE) on = !on;
-	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, !on);
+	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, on);
 }				
 
 
@@ -52,7 +52,8 @@ void Downstream_Init() {
 
 void Downstream_Tick() {
 	int i;
-
+	bool wantNewCommand = false;	//if true after handling our command, we will try to find a new one
+	
 	//power steppers on
 	for (i=0; i<NUM_AXES; i++) {
 		SetEnable(i, true);
@@ -65,7 +66,7 @@ void Downstream_Tick() {
 	//handle command
 	switch (currentCommand.command) {
 		case CMD_STOP:
-			CQ_GetCommand();	//This is the place where we start a script
+			wantNewCommand = true;
 			break;
 		case CMD_MOVE_DIR:
 			for (i=0; i< NUM_AXES; i++) {
@@ -76,15 +77,15 @@ void Downstream_Tick() {
 			for (i=0; i< NUM_AXES; i++) {
 				currentPosition[i] = 0;
 			}
-			currentCommand.command = CMD_STOP;
+			wantNewCommand = true;
 			break;
 		case CMD_SPINDLE_ON:
 			stateFlags |= State_SpindleOn;
-			currentCommand.command = CMD_STOP;
+			wantNewCommand = true;
 			break;
 		case CMD_SPINDLE_OFF:
 			stateFlags &= ~State_SpindleOn;
-			currentCommand.command = CMD_STOP;
+			wantNewCommand = true;
 			break;
 		case CMD_MOVE_TO_IMM:
 		{
@@ -100,8 +101,31 @@ void Downstream_Tick() {
 					currentPosition[i] += delta;
 				}
 			}
-			if (arrived) currentCommand.command = CMD_STOP;
+			if (arrived) {
+				wantNewCommand = true;
+			}
 		}
+			break;
+		case CMD_MOVE_TO:
+			if (currentCommandTicks < currentCommand.args.MOVE_TO.ticks) {	//Moving on path
+				uint32_t remaining = currentCommand.args.MOVE_TO.ticks - currentCommandTicks;
+				for (i=0; i<NUM_AXES; i++) {	//make sure we're exactly on target
+					int32_t delta = currentCommand.args.MOVE_TO.target[i] - currentPosition[i];
+					currentPosition[i] += delta / (remaining+1);
+				}
+			} else {														//we're at the end
+				for (i=0; i<NUM_AXES; i++) {	//make sure we're exactly on target
+					currentPosition[i] = currentCommand.args.MOVE_TO.target[i];
+				}
+				wantNewCommand = true;
+			}
+			
+			//TODO
+			break;
+		case CMD_WAIT:
+			if (currentCommandTicks > currentCommand.args.WAIT.ticks) {
+				wantNewCommand = true;
+			}
 			break;
 	}
 	
@@ -116,6 +140,15 @@ void Downstream_Tick() {
 			
 	//put as much delay as possible between set dir and set step - do everything we can here
 	
+	//update current command ticks
+	currentCommandTicks++;
+				
+	//poll new command if needed
+	if (wantNewCommand) {
+		if (!(CQ_GetCommand())) currentCommand.command = CMD_STOP;
+		currentCommandTicks = 0;
+	}
+
 	//update immediate mode flag
 	if (currentCommand.command > IMMEDIATE_SEPARATOR) stateFlags |= State_ImmediateMode;
 	else stateFlags &= ~State_ImmediateMode;
@@ -129,7 +162,7 @@ void Downstream_Tick() {
 	
 	//set step bits
 	for (i=0; i<NUM_AXES; i++) {
-		SetStep(i, (currentPosition[i] >> 8) & 1);
+		SetStep(i, (currentPosition[i] >> SUBSTEP_BITS) & 1);
 	}
 	
 }
