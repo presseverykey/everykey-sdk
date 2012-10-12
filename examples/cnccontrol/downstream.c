@@ -51,6 +51,7 @@ void Downstream_Init() {
 }
 
 void Downstream_Tick() {
+
 	int i;
 	bool wantNewCommand = false;	//if true after handling our command, we will try to find a new one
 	
@@ -108,7 +109,7 @@ void Downstream_Tick() {
 			break;
 		case CMD_MOVE_TO:
 			if (currentCommandTicks < currentCommand.args.MOVE_TO.ticks) {	//Moving on path
-				uint32_t remaining = currentCommand.args.MOVE_TO.ticks - currentCommandTicks;
+				int32_t remaining = currentCommand.args.MOVE_TO.ticks - currentCommandTicks;
 				for (i=0; i<NUM_AXES; i++) {	//make sure we're exactly on target
 					int32_t delta = currentCommand.args.MOVE_TO.target[i] - currentPosition[i];
 					currentPosition[i] += delta / (remaining+1);
@@ -126,6 +127,14 @@ void Downstream_Tick() {
 			if (currentCommandTicks > currentCommand.args.WAIT.ticks) {
 				wantNewCommand = true;
 			}
+			break;
+		case CMD_SPINDLE_ON_SCRIPT:
+			stateFlags |= State_SpindleOn;
+			wantNewCommand = true;
+			break;
+		case CMD_SPINDLE_OFF_SCRIPT:
+			stateFlags &= ~State_SpindleOn;
+			wantNewCommand = true;
 			break;
 	}
 	
