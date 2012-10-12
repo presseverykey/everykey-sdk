@@ -4,27 +4,13 @@
 #include "pressanykey_usb/hid.h"
 #include "cnctypes.h"
 #include "state.h"
+#include "cmdqueue.h"
 
 #define IN_REPORT_SIZE sizeof(ResponseStruct)
 #define OUT_REPORT_SIZE sizeof(CommandStruct)
 
 #define POLL_INTERVAL 3
 
-void* pressanykeymemmove (void* s1, const void* s2, size_t n) {
-	size_t i;
-	if (s1 < s2) {
-		for (i=0; i<n; i++) {
-			((uint8_t*)s1)[i] = ((const uint8_t*)s2)[i];
-		}
-	} else {
-		i = n;
-		while (i > 0) {
-			i--;
-			((uint8_t*)s1)[i] = ((const uint8_t*)s2)[i];
-		}
-	}
-	return s1;
-}
 	
 	
 	
@@ -197,6 +183,7 @@ uint16_t returnStatus(USB_Device_Struct* device,
 		((ResponseStruct*)inBuffer)->currentPos[i] = currentPosition[i];
 	}
 	((ResponseStruct*)inBuffer)->stateFlags = stateFlags;
+	((ResponseStruct*)inBuffer)->freeSlots = CQ_EmptySlots(&(((ResponseStruct*)inBuffer)->lastTransactionId));
 	return IN_REPORT_SIZE;
 }
 
@@ -207,9 +194,8 @@ void receiveCommand(USB_Device_Struct* device,
 					uint16_t len) {
 	if (reportId != 0) return;
 	if (reportType != USB_HID_REPORTTYPE_OUTPUT) return;
-	disableInterrupts();
-	pressanykeymemmove(&currentCommand, outBuffer, OUT_REPORT_SIZE);
-	enableInterrupts();
+	CQ_AddCommand((CommandStruct*)outBuffer);
+	
 }
 
 

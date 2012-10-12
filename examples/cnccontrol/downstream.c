@@ -1,6 +1,7 @@
 #include "downstream.h"
 #include "cnctypes.h"
 #include "state.h"
+#include "cmdqueue.h"
 
 int counter;
 
@@ -21,11 +22,6 @@ void SetSpindle(bool on) {
 	if (SPINDLE_IS_LOW_ACTIVE) on = !on;
 	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, !on);
 }				
-
-void GetNextCommand() {
-	currentCommand.command = CMD_STOP;
-	//TODO ************
-}
 
 
 void Downstream_Init() {
@@ -69,6 +65,7 @@ void Downstream_Tick() {
 	//handle command
 	switch (currentCommand.command) {
 		case CMD_STOP:
+			CQ_GetCommand();	//This is the place where we start a script
 			break;
 		case CMD_MOVE_DIR:
 			for (i=0; i< NUM_AXES; i++) {

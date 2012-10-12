@@ -58,5 +58,9 @@ extern const Axis axes[NUM_AXES];
 #define ENABLE_IS_LOW_ACTIVE true
 #define SPINDLE_IS_LOW_ACTIVE true
 
+// size of command queue
+#define CQ_LENGTH 10
+
+
 #endif
 
