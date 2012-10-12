@@ -64,5 +64,20 @@ uint8_t NVIC_GetInterruptPriority(NVIC_INTERRUPT_INDEX interrupt);
 void NVIC_TriggerInterrupt(NVIC_INTERRUPT_INDEX interrupt);
 
 
+/* The following functions are not really NVIC, but SCB. Anyway, since it's related to interrupts,
+ we put it here so it's easier to find. */
+
+/** returns the number of bits within interrupt priorities used for interrupt group priority. Interrupt priorities are separated into group priority and subpriority (priority within the group). Interrupts priority is still chosen among the whole priority field, but preemption only happens among priority groups. In other words: Interrupts with the same priority groups do not interrupt each other. Note that not all processors support all priority bits. In this case, the lowest bits are ignored.
+	@return number of bits used for interrupt group priority (0..7). */
+uint8_t NVIC_GetInterruptGroupPriorityBits();
+
+/** sets the number of bits within interrupt priorities used for interrupt group priority. See NVIC_GetInterruptGroupPriorityBits.
+ @param groupLength number of bits to be used for interrupt group priority (0..7). */
+void NVIC_SetInterruptGroupPriorityBits(uint8_t groupLength);
+
+/** requests a system reset */
+void NVIC_ResetSystem();
+	
+
 
 #endif

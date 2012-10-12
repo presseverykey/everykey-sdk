@@ -61,3 +61,16 @@ void NVIC_TriggerInterrupt(NVIC_INTERRUPT_INDEX interrupt) {
 	NVIC->STIR = interrupt;
 }
 
+uint8_t NVIC_GetInterruptGroupPriorityBits() {
+	return 7 - ((SCB->AIRCR & AIRCR_PRIGROUP_MASK) >> 8);
+}
+
+void NVIC_SetInterruptGroupPriorityBits(uint8_t groupLength) {
+	SCB->AIRCR = AIRCR_VECTKEY | ((7-groupLength) << 8);
+}
+
+void NVIC_ResetSystem() {
+	SCB->AIRCR = AIRCR_VECTKEY | AIRCR_SYSRESETREQ;
+}
+
+

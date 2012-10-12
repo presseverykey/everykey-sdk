@@ -690,5 +690,47 @@ typedef struct {
 	void* PIOINT0_HANDLER;		//PIO INT0
 } VECTOR_TABLE;
 
+/* ---------------------------------
+   --- System Control Block (SCB ---
+   ---------------------------------
+ 
+ Low level interrupt, exception and handler configuration, overall system control.
+ This information is not taken from the LPC datasheet, but from ARM's info center.
+ It is identical for most (all?) Cortex M3s. */
+
+typedef struct SCB_STRUCT {
+	HW_RO CPUID;	//CPUID base register
+	HW_RW ICSR;		//Interrupt Control and State Register
+	HW_RW VTOR;		//Vector Table Offset register
+	HW_RW AIRCR;	//Application Interrupt and Reset Control Register
+	HW_RW SCR;		//System Control Register
+	HW_RW CCR;		//Configuration and Control Register
+	HW_RW SHPR1;	//System Handler Priority Register 1
+	HW_RW SHPR2;	//System Handler Priority Register 2
+	HW_RW SHPR3;	//System Handler Priority Register 3
+	HW_RW SHCRS;	//System Handler Control and State Register
+	HW_RW CFSR;		//Configurable Fault Status Register
+	HW_RW MMSR;		//MemManage Fault Status Register
+} SCB_STRUCT;
+
+typedef enum AIRCR_BITS {
+	AIRCR_VECTKEY = (0xFA05 << 16),
+	AIRCR_ENDIAN_MASK = 1 << 15,
+	AIRCR_LITTLE_ENDIAN = 0,
+	AIRCR_BIG_ENDIAN = 1,
+	AIRCR_PRIGROUP_MASK = 0x7 << 8,
+	AIRCR_PRIGROUP_BASE = 1 << 8,
+	AIRCR_SYSRESETREQ = 1 << 2
+} AIRCR_BITS;
+
+#define SCB ((SCB_STRUCT*)0xe00ed00)
+
+/** SCB_ACTLR (Auxiliary Control Register)
+ is off the other block, so it's addressed separately */
+#define SCB_ACTLR ((HW_RW*)0xe00e008)
+
+
+
+
 
 #endif
