@@ -36,7 +36,9 @@ typedef void (*HidOutReportHandler)(USB_Device_Struct* device,
 									uint16_t len);
 
 
-/** our HID behaviour representation - state variables are added as pointers to RAM, so this struct may be const */
+/** our HID behaviour representation - state variables are added as
+ *  pointers to RAM, so this struct may be const */
+
 typedef struct USBHID_Behaviour_Struct {
 	USB_Behaviour_Struct baseBehaviour;
 	uint8_t interfaceNumber;
@@ -51,12 +53,11 @@ typedef struct USBHID_Behaviour_Struct {
 	uint8_t* currentProtocol;
 } USBHID_Behaviour_Struct;
 
-/** may be called to push an IN report when inputs have changed. Will trigger the in report handler in the near
- future.
- * @param device USB device to use
- * @param behaviour behaviour to use
- * @param reportType 
- * @param reportId report ID */
+/** may be called to push an IN report when inputs have changed. Will
+ *  trigger the in report handler in the near
+ *  future.
+ *  @param device USB device to use @param behaviour behaviour to use
+ *  @param reportType @param reportId report ID */
 
 void USBHID_PushReport(USB_Device_Struct* device,
 				   const USBHID_Behaviour_Struct* behaviour,
@@ -64,8 +65,10 @@ void USBHID_PushReport(USB_Device_Struct* device,
 				   uint8_t reportId);
 
 
-/* USBHID base behaviour handlers. May be used to manually initialize a USB_Behaviour_Struct at runtime,
- for compile time initialization, you may use the MAKE_USBHID_BASE_BEHAVIOUR macro. */
+/* USBHID base behaviour handlers. May be used to manually initialize a
+ * USB_Behaviour_Struct at runtime,
+ * for compile time initialization, you may use the
+ * MAKE_USBHID_BASE_BEHAVIOUR macro. */
 
 bool USBHID_ExtendedControlSetupHandler(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour);
 
