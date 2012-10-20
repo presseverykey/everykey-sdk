@@ -28,8 +28,9 @@
 #pragma mark Function prototypes
 
 // forward declarations of structs
-typedef struct USB_Device_Struct USB_Device_Struct;
-typedef struct USB_Behaviour_Struct USB_Behaviour_Struct;
+typedef struct _USB_Device_Definition USB_Device_Definition;
+typedef struct _USB_Device_Struct USB_Device_Struct;
+typedef struct _USB_Behaviour_Struct USB_Behaviour_Struct;
 
 /** Set `extendedControlSetupCallback` when you want to respond to class-
  *  or device-specific commands (setup packets on the CONTROL OUT pipe).
@@ -112,7 +113,7 @@ typedef bool (*USBControlStatusCallback)(USB_Device_Struct* device);
  *  should do so using pointers to RAM so that this struct (and its
  *  wrappers) may be const to keep them in Flash. */
 
-typedef struct USB_Behaviour_Struct {
+struct _USB_Behaviour_Struct {
 
 	/** callback for handling device-specific USB commands - setting to
 	 * NULL will not accept any control requests.  The request is offered
@@ -151,14 +152,14 @@ typedef struct USB_Behaviour_Struct {
 
 	USBConfigChangeCallback configChangeCallback;
 	
-} USB_Behaviour_Struct;
+};
 
 
 /** A structure describing the static properties of a USB device. May be
  * in RAM or Flash, if initialized at compile-time.  Must be initialized
  * before passing it to `USB_Init`. */
 
-typedef struct USB_Device_Definition {
+struct _USB_Device_Definition {
 
 	/** main device descriptor. Length is taken from [0]. Must not be
 	 *  NULL. Device descriptors are defined in usb_20.pdf Table 9-8
@@ -191,12 +192,12 @@ typedef struct USB_Device_Definition {
 	/** a list of attached behaviours */
 	USB_Behaviour_Struct* behaviours[USB_MAX_BEHAVIOURS_PER_DEVICE];
 	
-} USB_Device_Definition;
+};
 
 /* A structure defining the runtime state of a USB device. Must be in
  * RAM. Can be uninitialized before passing it to `USB_Init`. */
 
-typedef struct USB_Device_Struct {
+struct _USB_Device_Struct {
 
 	/** a reference to our static device definition */
 	const USB_Device_Definition* deviceDefinition;
@@ -234,7 +235,7 @@ typedef struct USB_Device_Struct {
 	/** Number of remaining bytes to transfer in data phase */
 	uint32_t currentCommandDataRemaining;
 		
-} USB_Device_Struct;
+};
 
 #pragma mark USB Functions
 

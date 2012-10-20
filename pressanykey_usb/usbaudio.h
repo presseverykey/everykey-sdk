@@ -7,7 +7,7 @@
 #include "usbaudiospec.h"
 
 /** forward declaration of audio behaviour struct */
-typedef struct USBAudio_Behaviour_Struct USBAudio_Behaviour_Struct;
+typedef struct _USBAudio_Behaviour_Struct USBAudio_Behaviour_Struct;
 
 /** called when the host wants to write a control value. 
  @param device the USB device that originates this call
@@ -116,7 +116,7 @@ typedef void (*USBAudio_FrameCallback)(USB_Device_Struct* device,
 
 
 /** Our audio device behaviour struct. Contents may change, must be in RAM. */
-typedef struct USBAudio_Behaviour_Struct {
+struct _USBAudio_Behaviour_Struct {
 	/** all custom behaviours must start with a base behaviour - pointers will be typecast */
 	USB_Behaviour_Struct baseBehaviour;			
 
@@ -158,7 +158,7 @@ typedef struct USBAudio_Behaviour_Struct {
 	/** the logical endpoint of the audio out stream (always 0x04 for LPC1343, if used). set to 0xff if unused. */
 	uint8_t outStreamEndpoint;
 
-} USBAudio_Behaviour_Struct;
+};
 
 /** USB Audio base behaviour handlers. May be used for initalizing a USBAudio_Behaviour_Struct
  at runtime. If you want to initialize a const USBAudio_Behaviour_Struct at compile,

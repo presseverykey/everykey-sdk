@@ -4,8 +4,8 @@
 #include "usb.h"
 #include "usbhidspec.h"
 
-//forward declaration of USBHID_Behaviour_Struct
-typedef struct USBHID_Behaviour_Struct USBHID_Behaviour_Struct;
+//forward typedef of USBHID_Behaviour_Struct
+typedef struct _USBHID_Behaviour_Struct USBHID_Behaviour_Struct;
 
 /** called when a device-to-host report is requested. Implementations should
  * fill outBuffer with current values.
@@ -39,7 +39,7 @@ typedef void (*HidOutReportHandler)(USB_Device_Struct* device,
 /** our HID behaviour representation - state variables are added as
  *  pointers to RAM, so this struct may be const */
 
-typedef struct USBHID_Behaviour_Struct {
+struct _USBHID_Behaviour_Struct {
 	USB_Behaviour_Struct baseBehaviour;
 	uint8_t interfaceNumber;
 	const uint8_t* hidDescriptor;
@@ -51,7 +51,7 @@ typedef struct USBHID_Behaviour_Struct {
 	uint8_t* outBuffer;
 	uint8_t* idleValue;
 	uint8_t* currentProtocol;
-} USBHID_Behaviour_Struct;
+};
 
 /** may be called to push an IN report when inputs have changed. Will
  *  trigger the in report handler in the near
