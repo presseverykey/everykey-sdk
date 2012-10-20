@@ -16,7 +16,7 @@ typedef struct _USBCDC_Behaviour_Struct USBCDC_Behaviour_Struct;
 #pragma mark Structs
 
 /** description of a CDC class behaviour */
-struct USBCDC_Behaviour_Struct {
+struct _USBCDC_Behaviour_Struct {
 	
 	/** must be first in behaviour implementations */
 	USB_Behaviour_Struct baseBehaviour;
