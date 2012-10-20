@@ -8,18 +8,20 @@
 
 #pragma mark CDC-specific callbacks
 
-//CDC behaviour forward declaration
-typedef struct USBCDC_Behaviour_Struct USBCDC_Behaviour_Struct;
+//CDC behaviour forward typedef
+typedef struct _USBCDC_Behaviour_Struct USBCDC_Behaviour_Struct;
+
+//CDC callbacks go here
 
 #pragma mark Structs
 
 /** description of a CDC class behaviour */
-typedef struct USBCDC_Behaviour_Struct {
+struct USBCDC_Behaviour_Struct {
 	
 	/** must be first in behaviour implementations */
 	USB_Behaviour_Struct baseBehaviour;
 
-} USBCDC_Behaviour_Struct;
+};
 
 #pragma mark CDC class USB behaviour callbacks
 
