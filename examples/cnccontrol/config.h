@@ -54,6 +54,7 @@ extern const Axis axes[NUM_AXES];
 #define SPINDLE_PIN 5
 
 #define HEARTBEAT_HZ 10000
+#define SPINDLE_PWM_RESOLUTION 100
 
 #define ENABLE_IS_LOW_ACTIVE true
 #define SPINDLE_IS_LOW_ACTIVE true

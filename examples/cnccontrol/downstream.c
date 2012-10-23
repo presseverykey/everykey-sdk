@@ -3,26 +3,33 @@
 #include "state.h"
 #include "cmdqueue.h"
 
-int counter;
+int ledCounter;
+uint16_t spindlePhase;
+uint16_t spindleCompare;
 
-void SetEnable(uint8_t axis, bool on) {
+void SetEnablePin(uint8_t axis, bool on) {
 	if (ENABLE_IS_LOW_ACTIVE) on = !on;
 	GPIO_WriteOutput(axes[axis].enablePort, axes[axis].enablePin, on); 
 }
 
-void SetDir(uint8_t axis, bool increasing) {
+void SetDirPin(uint8_t axis, bool increasing) {
 	GPIO_WriteOutput(axes[axis].dirPort, axes[axis].dirPin, increasing); 
 }
 
-void SetStep(uint8_t axis, bool value) {
+void SetStepPin(uint8_t axis, bool value) {
 	GPIO_WriteOutput(axes[axis].stepPort, axes[axis].stepPin, value); 
 }
 
-void SetSpindle(bool on) {
+void SetSpindlePin(bool on) {
 	if (SPINDLE_IS_LOW_ACTIVE) on = !on;
 	GPIO_WriteOutput(SPINDLE_PORT, SPINDLE_PIN, on);
 }				
 
+/** set the spindleSpeed value and our internal PWM compare value according to spindle speed value (0-65535) */
+void SetSpindleSpeed(uint16_t speed) {
+	spindleSpeed = speed;
+	spindleCompare = (uint16_t)((((uint32_t)speed) * (SPINDLE_PWM_RESOLUTION + 1)) / 0xffff);
+}
 
 void Downstream_Init() {
 	GPIO_SETFUNCTION(0, 10, PIO, IOCON_IO_ADMODE_DIGITAL);
@@ -32,22 +39,24 @@ void Downstream_Init() {
 	for (i=0;i<NUM_AXES;i++) {
 		
 		GPIO_SetDir(axes[i].dirPort, axes[i].dirPin, GPIO_Output);
-		SetDir(i, false);
+		SetDirPin(i, false);
 
 		GPIO_SetDir(axes[i].stepPort, axes[i].stepPin, GPIO_Output);
-		SetStep(i, false);
+		SetStepPin(i, false);
 
 		GPIO_SetDir(axes[i].enablePort, axes[i].enablePin, GPIO_Output);
-		SetEnable(i, true);	//Right now, we enable all drivers - should be made dynamic later
+		SetEnablePin(i, true);	//Right now, we enable all drivers - should be made dynamic later
 	}
 
 	GPIO_SetDir(SPINDLE_PORT, SPINDLE_PIN, GPIO_Output);
-	SetSpindle(false);
+	SetSpindlePin(false);
 	
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
 	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
 
-	counter = 0;
+	ledCounter = 0;
+	spindlePhase = 0;
+	SetSpindleSpeed(0);
 }
 
 void Downstream_Tick() {
@@ -57,7 +66,7 @@ void Downstream_Tick() {
 	
 	//power steppers on
 	for (i=0; i<NUM_AXES; i++) {
-		SetEnable(i, true);
+		SetEnablePin(i, true);
 	}
 	
 	//remember last position
@@ -80,13 +89,16 @@ void Downstream_Tick() {
 			}
 			wantNewCommand = true;
 			break;
-		case CMD_SPINDLE_ON:
-			stateFlags |= State_SpindleOn;
-			wantNewCommand = true;
-			break;
-		case CMD_SPINDLE_OFF:
-			stateFlags &= ~State_SpindleOn;
-			wantNewCommand = true;
+		case CMD_SPINDLE_IMM:
+			if (currentCommandTicks < currentCommand.args.SPINDLE_IMM.ticks) {	//Ramping speed up or down
+				int32_t remaining = currentCommand.args.SPINDLE_IMM.ticks - currentCommandTicks;
+				int32_t delta = currentCommand.args.SPINDLE_IMM.speed - spindleSpeed;	
+				uint16_t newSpeed = spindleSpeed + (delta/(remaining+1));
+				SetSpindleSpeed(newSpeed);
+			} else {														//we're at the end
+				SetSpindleSpeed(currentCommand.args.SPINDLE_IMM.speed);
+				wantNewCommand = true;
+			}
 			break;
 		case CMD_MOVE_TO_IMM:
 		{
@@ -120,30 +132,31 @@ void Downstream_Tick() {
 				}
 				wantNewCommand = true;
 			}
-			
-			//TODO
 			break;
 		case CMD_WAIT:
 			if (currentCommandTicks > currentCommand.args.WAIT.ticks) {
 				wantNewCommand = true;
 			}
 			break;
-		case CMD_SPINDLE_ON_SCRIPT:
-			stateFlags |= State_SpindleOn;
-			wantNewCommand = true;
-			break;
-		case CMD_SPINDLE_OFF_SCRIPT:
-			stateFlags &= ~State_SpindleOn;
-			wantNewCommand = true;
+		case CMD_SPINDLE:
+			if (currentCommandTicks < currentCommand.args.SPINDLE.ticks) {	//Ramping speed up or down
+				int32_t remaining = currentCommand.args.SPINDLE.ticks - currentCommandTicks;
+				int32_t delta = currentCommand.args.SPINDLE.speed - spindleSpeed;	
+				uint16_t newSpeed = spindleSpeed + (delta/(remaining+1));
+				SetSpindleSpeed(newSpeed);
+			} else {														//we're at the end
+				SetSpindleSpeed(currentCommand.args.SPINDLE.speed);
+				wantNewCommand = true;
+			}
 			break;
 	}
 	
 	//set dir bits
 	for (i=0; i<NUM_AXES; i++) {
 		if (currentPosition[i] > lastPosition[i]) {	//increasing movement
-			SetDir(i, true);
+			SetDirPin(i, true);
 		} else if (currentPosition[i] < lastPosition[i]) { //decreasing movement
-			SetDir(i, false);
+			SetDirPin(i, false);
 		}
 	}
 			
@@ -163,15 +176,17 @@ void Downstream_Tick() {
 	else stateFlags &= ~State_ImmediateMode;
 	
 	//set spindle
-	SetSpindle(stateFlags & State_SpindleOn);
+	spindlePhase = (spindlePhase + 1) % SPINDLE_PWM_RESOLUTION;
+	SetSpindlePin(spindlePhase < spindleCompare);
+//	GPIO_WriteOutput(LED_PORT, LED_PIN, spindlePhase < spindleCompare);
 
 	//Blink the LED to show we're alive
-	counter++;
-	GPIO_WriteOutput(LED_PORT, LED_PIN, counter & 0x800);
+	ledCounter++;
+	GPIO_WriteOutput(LED_PORT, LED_PIN, ledCounter & 0x800);
 	
 	//set step bits
 	for (i=0; i<NUM_AXES; i++) {
-		SetStep(i, (currentPosition[i] >> SUBSTEP_BITS) & 1);
+		SetStepPin(i, (currentPosition[i] >> SUBSTEP_BITS) & 1);
 	}
 	
 }
