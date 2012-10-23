@@ -184,6 +184,7 @@ uint16_t returnStatus(USB_Device_Struct* device,
 	}
 	((ResponseStruct*)inBuffer)->stateFlags = stateFlags;
 	((ResponseStruct*)inBuffer)->freeSlots = CQ_EmptySlots(&(((ResponseStruct*)inBuffer)->lastTransactionId));
+	((ResponseStruct*)inBuffer)->spindleSpeed = spindleSpeed;
 	return IN_REPORT_SIZE;
 }
 
