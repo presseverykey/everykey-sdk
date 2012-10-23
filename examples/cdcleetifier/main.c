@@ -45,7 +45,7 @@ const uint8_t serialName[] = {
 const uint8_t configDescriptor[] = {
 	9,								//bLength: length of this descriptor in bytes (9)
 	USB_DESC_CONFIGURATION,			//bDescriptorType: configuration descriptor
-	I16_TO_LE_BA(60),				//wTotalLen: Total length, including attached interface and endpoint descriptors
+	I16_TO_LE_BA(67),				//wTotalLen: Total length, including attached interface and endpoint descriptors
 	0x02,							//bNumInterfaces: Number of interfaces (1)
 	0x01,							//bConfigurationValue: Number to set to activate this config
 	0x00,							//iConfiguration: configuration string index (0 = not available)
