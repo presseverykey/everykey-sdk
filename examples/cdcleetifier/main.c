@@ -1,5 +1,19 @@
 #include "pressanykey/pressanykey.h"
 #include "pressanykey_usb/cdc.h"
+#include "pressanykey_usb/usb.h"
+
+#define LED_PORT 0
+#define LED_PIN 7
+
+#define CONTROL_INTERFACE 0
+#define DATA_INTERFACE 1
+#define INTERRUPT_ENDPOINT_LOGICAL 0x82
+#define INTERRUPT_ENDPOINT_PHYSICAL 5
+#define DATA_OUT_ENDPOINT_LOGICAL 0x01
+#define DATA_OUT_ENDPOINT_PHYSICAL 2
+#define DATA_IN_ENDPOINT_LOGICAL 0x81
+#define DATA_IN_ENDPOINT_PHYSICAL 3
+#define FIFO_SIZE 256
 
 const uint8_t deviceDescriptor[] = {
 	18,								//bLength: length of this structure in bytes (18)
@@ -52,10 +66,10 @@ const uint8_t configDescriptor[] = {
 	0x80,							//bmAttributes: Not self-powered, no remote wakeup
 	0x32,							//bMaxPower: Max power in 2mA steps (0x32 = 50 = 100mA)
 	
-	//interface 0: Communication interface
+	//interface 0: Control interface
 	9,								//bLength: length of this descriptor in bytes (9)
 	USB_DESC_INTERFACE,				//bDescriptor type: constant indicating that this is an interface descriptor
-	0x00,							//bInterfaceNumber: Interface index, 0-based
+	CONTROL_INTERFACE,				//bInterfaceNumber: Interface index, 0-based
 	0x00,							//bAlternateSetting
 	0x01,							//bNumEndpoints: One interrupt endpoint
 	USB_CDC_INTERFACE_COMMUNICATION_INTERFACE,	//bInterfaceClass: CDC comm
@@ -74,7 +88,7 @@ const uint8_t configDescriptor[] = {
 	0x24,							//bDescriptorType: Class-specific (0x20) + interface (0x04)
 	USB_CDC_CALL_MGMT_FUNC_DESC,	//bDescriptorSubtype
 	0x01,							//bmCapabilities (call management is done by device)
-	0x01,							//bDataInterface (our associated data interface)
+	DATA_INTERFACE,					//bDataInterface (our associated data interface)
 
 	//ACM desc
 	4,								//bLength
@@ -86,13 +100,13 @@ const uint8_t configDescriptor[] = {
 	5,								//bLength
 	0x24,							//bDescriptorType: Class-specific (0x20) + interface (0x04)
 	USB_CDC_UNION_FUNC_DESC,		//bDescriptorSubtype
-	0x00,							//bMasterInterface - this is the master interface
-	0x01,							//bSlaveInterface0 - this is the first (and only) slave interface
+	CONTROL_INTERFACE,				//bMasterInterface - this is the master interface
+	DATA_INTERFACE,					//bSlaveInterface0 - this is the first (and only) slave interface
 	
 	//Notification endpoint (physical index: 5)
 	7,								//bLength
 	USB_DESC_ENDPOINT,				//bDescriptorType
-	0x82,							//in endpoint 2
+	INTERRUPT_ENDPOINT_LOGICAL,		//in endpoint
 	USB_EPTYPE_INTERRUPT,			//bmAttributes
 	I16_TO_LE_BA(0x0010),			//wMaxPacketSize
 	2,								//bInterval: 2ms
@@ -100,7 +114,7 @@ const uint8_t configDescriptor[] = {
 	//interface 1: Data interface
 	9,								//bLength: length of this descriptor in bytes (9)
 	USB_DESC_INTERFACE,				//bDescriptor type: constant indicating that this is an interface descriptor
-	0x01,							//bInterfaceNumber: Interface index, 0-based
+	DATA_INTERFACE,					//bInterfaceNumber: Interface index, 0-based
 	0x00,							//bAlternateSetting
 	0x02,							//bNumEndpoints: Number of endpoints excluding control endpoint
 	USB_CDC_INTERFACE_DATA_INTERFACE,	//bInterfaceClass: CDC data
@@ -111,23 +125,46 @@ const uint8_t configDescriptor[] = {
 	//endpoint 1: data out (physical index: 2)
 	7,								//bLength
 	USB_DESC_ENDPOINT,				//bDescriptorType
-	0x01,							//bEndpointAddres: endpoint 1 (out)
+	DATA_OUT_ENDPOINT_LOGICAL,		//bEndpointAddress
 	USB_EPTYPE_BULK,				//bmAttributes
-	I16_TO_LE_BA(64),				//wMaxPacketSize
+	I16_TO_LE_BA(USB_MAX_BULK_DATA_SIZE),				//wMaxPacketSize
 	0,								//bInterval
 
 	//endpoint 2: data in (physical index: 3)
 	7,								//bLength
 	USB_DESC_ENDPOINT,				//bDescriptorType
-	0x81,							//bEndpointAddres: endpoint 1 (in)
+	DATA_IN_ENDPOINT_LOGICAL,		//bEndpointAddress
 	USB_EPTYPE_BULK,				//bmAttributes
-	I16_TO_LE_BA(64),				//wMaxPacketSize
+	I16_TO_LE_BA(USB_MAX_BULK_DATA_SIZE),				//wMaxPacketSize
 	0								//bInterval
 	
 };
 
+
+USB_CDC_Linecoding_Struct currentLineCoding;
+uint8_t outBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE - 1];
+uint8_t inBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE - 1];
+bool serialIdle;
+uint8_t controlLineState;
+
 const USBCDC_Behaviour_Struct cdcBehaviour = {
-	MAKE_USBCDC_BASE_BEHAVIOUR
+	MAKE_USBCDC_BASE_BEHAVIOUR,
+	NULL,	//break callback
+	NULL,	//line coding change callback
+	NULL,	//idle change callback
+	NULL,	//control line change callback
+	NULL,	//data available callback
+	{ 57600, USB_CDC_LINECODING_STOP_1, USB_CDC_PARITY_NONE, 8},	//defaultLineCoding
+	&currentLineCoding,
+	{ FIFO_SIZE, (RingBufferDynamic*)outBuffer },
+	{ FIFO_SIZE, (RingBufferDynamic*)inBuffer },
+	&serialIdle,
+	&controlLineState,
+	CONTROL_INTERFACE,		//control interface
+	DATA_INTERFACE,
+	DATA_IN_ENDPOINT_PHYSICAL,
+	DATA_OUT_ENDPOINT_PHYSICAL,
+	INTERRUPT_ENDPOINT_PHYSICAL
 };
 
 const USB_Device_Definition usbDefinition = {
@@ -136,13 +173,39 @@ const USB_Device_Definition usbDefinition = {
 	{ configDescriptor },
 	4,
 	{ languages, manufacturerName, deviceName, serialName },
-	0,
+	1,
 	{ (USB_Behaviour_Struct*)(&cdcBehaviour) }
 };
 	
 USB_Device_Struct usbDevice;
 
+int counter;
+
 void main(void) {	
+	USBCDC_ResetBehaviour(&cdcBehaviour);
 	USB_Init(&usbDefinition, &usbDevice);
 	USB_SoftConnect(&usbDevice);
+	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
+	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+	counter = 0;
+	
+	while (1) {
+		uint8_t ch;
+		if (USBCDC_ReadBytes(&usbDevice, &cdcBehaviour, &ch, 1)) {
+			counter++;
+			GPIO_WriteOutput(LED_PORT, LED_PIN, counter & 1);
+
+			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
+			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';
+			if ((ch == 'a') || (ch == 'A')) ch = '4';
+			if ((ch == 'i') || (ch == 'I')) ch = '1';
+			if ((ch == 'o') || (ch == 'O')) ch = '0';
+			if ((ch == 'e') || (ch == 'E')) ch = '3';
+			if ((ch == 'l') || (ch == 'L')) ch = '7';
+			if (ch == 's') ch = 'z';
+			if (ch == 'S') ch = 'Z';
+				
+			USBCDC_WriteBytes(&usbDevice, &cdcBehaviour, &ch, 1);
+		}
+	}
 }
