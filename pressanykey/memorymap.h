@@ -412,7 +412,7 @@ typedef enum USB_SIE_CommandID {
 
 //SIE Select Endpoint status bits
 typedef enum {
-	USB_SELEP_FE     = 0x01,	//FULL/EMPTY (IN: 0=One write buffer is empty, OUT: 1=One read buffer is full)
+	USB_SELEP_FE     = 0x01,	//FULL/EMPTY (IN: 0=At least one write buffer is empty, OUT: 1=at least one read buffer is full)
 	USB_SELEP_ST     = 0x02,	//STALL (endpoint is stalled)
 	USB_SELEP_STP    = 0x04,	//SETUP (last received packet was a setup packet)
 	USB_SELEP_PO     = 0x08,	//Packet Overwritten (at least one packet was overwritten)

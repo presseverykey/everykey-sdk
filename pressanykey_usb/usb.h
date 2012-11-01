@@ -25,6 +25,9 @@
 #define USB_MAX_COMMAND_PACKET_SIZE 64
 #define USB_MAX_COMMAND_DATA_SIZE 64
 
+#define USB_MAX_BULK_DATA_SIZE 64
+#define USB_MAX_ISOCH_DATA_SIZE 512
+
 #pragma mark Function prototypes
 
 // forward declarations of structs
@@ -265,8 +268,24 @@ void USB_EP_SetStall(USB_Device_Struct* device, uint8_t epIdx, bool stalled);
 /** returns the stall state of an endpoint
  * @param device device to check 
  * @param epIdx physical endpoint index
- * @return the corresponding native index - must still be checked for validity */
+ * @return true if the endpoint is stalled, false otherwise */
 bool USB_EP_GetStall(USB_Device_Struct* device, uint8_t epIdx);
+
+/** returns the full/empty state of an endpoint
+ * @param device device to check 
+ * @param epIdx physical endpoint index
+ * @return for IN endpoints, false if at least least one buffer is empty, for OUT endpoints, true if at least one buffer is full */
+bool USB_EP_GetFull(USB_Device_Struct* device, uint8_t epIdx);
+
+/** triggers an interrupt for a given Endpoint. Useful for triggering reads/writes from main code
+ * @param device device to use
+ * @param epIdx physical endpoint index */
+void USB_EP_TriggerInterrupt(USB_Device_Struct* device, uint8_t epIdx);
+
+/** converts usb endpoint indexes (dir at bit 7) to native indexes (dir at bit 0)
+ @param index usb endpoint index
+ @return physical endpoint index (0..7) - DON'T USE FOR ISOCH ENDPOINTS! */
+uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
 
 /** powers up required blocks, sets up clock etc. Leaves soft-connect disconnected.
  * If used before, clears out all runtime state and previously attached behaviours.
@@ -289,9 +308,6 @@ void USB_SoftDisconnect(USB_Device_Struct* device);
  * @param device device to check */
 bool USB_Connected(USB_Device_Struct* device);
 
-/** converts usb endpoint indexes (dir at bit 7) to native indexes (dir at bit 0)
- @param index usb endpoint index
- @return physical endpoint index */
-uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
+
 
 #endif
