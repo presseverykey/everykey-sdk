@@ -20,7 +20,7 @@ SECTIONS {
      * It contains stack top address, start code and
      * interrupt handler pointers.  */
     vectors : {
-        *(vectors)
+        *(.vectors)
     } >flash
  
     /* .text section contains code and readonly (const) globals */
@@ -30,20 +30,22 @@ SECTIONS {
 	_LD_END_OF_TEXT = .;     /* Remember position (=start of RAM mirror in FLASH) */
     } >flash
   
-    /* data section contains read-write (non-const) globals and static variables.
-     * The addresses are mapped to RAM (the code needs to write to it), but initial
-     * values put to a mirror region in FLASH (because we need to have the values
-     * at startup). Bootstrap code will copy the values from FLASH to RAM. 
-     * Note that bootstrap code wants this section to follow the text section directly. */
+    /* data section contains read-write (non-const) globals and static variables
+     * initialized to a value other than zero. The addresses are mapped to RAM
+     * (the code needs to write to it), but initial values put to a mirror region
+     * in FLASH (because we need to have the values at startup). Bootstrap code
+     * will copy the values from FLASH to RAM. Note that bootstrap code wants this
+     * section to follow the text section directly. */
     data : {
         _LD_START_OF_DATA = .;   /* Remember position (=start of initialized RAM) */
         *(.data);
         _LD_END_OF_DATA = .;     /* Remember position (=end of initialized RAM) */
     } >ram AT >flash
 
-    /* bss section contains uninitialized data (globals without assignment).
-     * We'll clear it in the bootstrap code. Note that bootstrap code wants this
-     * section to follow the data section directly. */
+    /* bss section contains globals and static variables either initialized to zero
+     * or not initialized at all. These are not mirrored in FLASH. Their memory
+     * needs to be zeroed at startup. We'll clear it in the bootstrap code. Note that
+     * bootstrap code wants this section to follow the data section directly. */
     bss : {
         _LD_START_OF_BSS = .;   /* Remember position (=start of uninitialized RAM) */
         *(.bss)
