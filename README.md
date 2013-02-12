@@ -65,7 +65,7 @@ for the makefile ("mac-install" target).
 Linux' FAT drivers apparently interfere with copying, you need to transfer
 the files directly onto the device:
 
-    dd if=firmware.bin of=/dev/<wherever the ANYKEY appears>
+    dd if=firmware.bin of=/dev/<wherever the ANYKEY appears> offset=4
 
 Examples
 ========
@@ -127,48 +127,9 @@ A HID-keyboard implementation of Nerd Pursuit - see https://github.com/Nerds/Ner
 Installing the compiler
 =======================
 
-The most common open source compiler toolchain in use for ARM based systems is
-the gnu compiler toolchain. [Mentor
-Graphics](http://www.mentor.com/embedded-software/codesourcery), formerly
-CodeSourcery, provide and maintain the ARM version of GCC.
-
-Linux
------
-
-Check your distributions package manager, it will probably contain a
-package called something like `arm-none-eabi`.
-
-Alternatively, you can download an installer directly from CodeSourcery
-[here](http://www.codesourcery.com/sgpp/lite/arm/portal/package8736/public/arm-none-eabi/arm-2011.03-42-arm-none-eabi.bin) (
-[mirror](ftp://pr0n.club.muc.ccc.de/incoming/arm-2011.03-42-arm-none-eabi.bin)).
-You'll need to make the installer executable, using `chmod +x`, and then
-just run it.
+Please see [Setting up the Toolchain](https://github.com/anykey0xde/anykey-sdk/wiki/Setting-up-the-Toolchain) on our Wiki.
 
 
-OSX
----
-
-Both `MacPorts` and `HomeBrew` have the ARM gcc compiler as packages:
-
-    $ sudo port install arm-none-eabi-gcc
-
-or
-
-    $ brew install arm-none-eabi-gcc
-
-
-Windows
--------
-
-We're currently looking into this.
-
-Others
-------
-
-You can find some helpful hints on how to install the toolchain at the
-[r0cket](http://r0ket.badge.events.ccc.de/build) website. We're
-currently putting together a VM that contains all necessary tools
-preinstalled.
 
 
 

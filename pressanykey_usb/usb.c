@@ -100,6 +100,7 @@ void USB_SIE_ValidateBuffer(USB_Device_Struct* device, uint8_t epIdx) {
 #pragma mark Endpoint functions
 
 uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, uint32_t maxLen) {
+	if (!USB_EP_GetFull(device,epIdx)) return 0;				//cannot read - all buffers empty
 	uint8_t logEpIdx = epIdx >> 1;
 	USB->CTRL = USB_CTRL_LOG_EP * logEpIdx + USB_CTRL_RD_EN;	//we want to read the number of bytes available
 	NOP;					//wait a bit to get len
@@ -108,7 +109,7 @@ uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, 
 	uint32_t readBytes;
 	readBytes = USB->RXPLEN;
 	if (readBytes & USB_RXPLEN_DV) {
-		readBytes & USB_RXPLEN_LENGTH_MASK;
+		readBytes &= USB_RXPLEN_LENGTH_MASK;
 		if (maxLen < readBytes) readBytes = maxLen;
 		uint16_t readWords = (readBytes + 3) >> 2;				//round up, convert to words
 		uint16_t i;
@@ -122,15 +123,19 @@ uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, 
 }
 
 uint32_t USB_EP_Write(USB_Device_Struct* device, uint8_t epIdx, const uint8_t* buffer, uint32_t length) {
-//	if (USB_EP_GetStall(epIdx)) return length;					//EP is stalled: Do not write but flush output
+	if (USB_EP_GetFull(device,epIdx)) return 0;					//cannot write - all buffers full
+	//	if (USB_EP_GetStall(epIdx)) return length;					//EP is stalled: Do not write but flush output
 	uint8_t logEpIdx = epIdx >> 1;
 	USB->CTRL = USB_CTRL_LOG_EP * logEpIdx + USB_CTRL_WR_EN;	//enable writing for this ep
 	NOP;					//wait a bit, just to be safe
 	NOP;
 	NOP;
-	uint16_t epPacketSize = (epIdx < 8) ? 64 : 512;
+	uint16_t epPacketSize = (epIdx < 8) ? USB_MAX_BULK_DATA_SIZE : USB_MAX_ISOCH_DATA_SIZE;
 	if (epPacketSize < length) length = epPacketSize;
 	USB->TXPLEN = length;
+	NOP;					//wait a bit, just to be safe
+	NOP;
+	NOP;
 	uint16_t writeWords = (length + 3) >> 2;
 	uint16_t i;
 	uint32_t* wordBuf = (uint32_t*)buffer;
@@ -151,9 +156,22 @@ bool USB_EP_GetStall(USB_Device_Struct* device, uint8_t epIdx) {
 	return (epStat & USB_SELEP_ST) ? true : false;
 }
 
+bool USB_EP_GetFull(USB_Device_Struct* device, uint8_t epIdx) {
+	uint8_t epStat = USB_SIE_SelectEndpoint(device, epIdx);
+	return (epStat & USB_SELEP_FE) ? true : false;
+}
+
+void USB_EP_TriggerInterrupt(USB_Device_Struct* device, uint8_t epIdx) {
+	USB->DEVINTSET = 2 << epIdx;
+	NVIC_SetInterruptPending(NVIC_USBIRQ);
+}
+
+
 uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index) {
 	return ((index & 0x0f) < 1) | (index & 0x80 >> 7);
 }
+
+
 
 #pragma mark USB common command handlers
 
