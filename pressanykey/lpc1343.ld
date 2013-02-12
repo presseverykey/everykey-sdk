@@ -7,7 +7,7 @@ MEMORY {
   ram   (rwx) : ORIGIN = 0x10000000, LENGTH =  8K
 }
 
-_BOOTSTRAP_END_OF_TEXT = 0x1001ff0; /* Stack should start here */
+_LD_STACK_TOP = 0x10001ff0; /* Stack should start here */
 
 /* SECTIONS lists where various parts data and code should go.
    Since they all just relate to the addressed defined above,
@@ -27,7 +27,7 @@ SECTIONS {
     text : {   
         *(.text)
         *(.rodata)
-	_BOOTSTRAP_END_OF_TEXT = .;     /* Remember position (=start of RAM mirror in FLASH) */
+	_LD_END_OF_TEXT = .;     /* Remember position (=start of RAM mirror in FLASH) */
     } >flash
   
     /* data section contains read-write (non-const) globals and static variables.
@@ -36,17 +36,17 @@ SECTIONS {
      * at startup). Bootstrap code will copy the values from FLASH to RAM. 
      * Note that bootstrap code wants this section to follow the text section directly. */
     data : {
-        _BOOTSTRAP_START_OF_DATA = .;   /* Remember position (=start of initialized RAM) */
+        _LD_START_OF_DATA = .;   /* Remember position (=start of initialized RAM) */
         *(.data);
-        _BOOTSTRAP_END_OF_DATA = .;     /* Remember position (=end of initialized RAM) */
+        _LD_END_OF_DATA = .;     /* Remember position (=end of initialized RAM) */
     } >ram AT >flash
 
     /* bss section contains uninitialized data (globals without assignment).
      * We'll clear it in the bootstrap code. Note that bootstrap code wants this
      * section to follow the data section directly. */
     bss : {
-        _BOOTSTRAP_START_OF_BSS = .;   /* Remember position (=start of uninitialized RAM) */
+        _LD_START_OF_BSS = .;   /* Remember position (=start of uninitialized RAM) */
         *(.bss)
-        _BOOTSTRAP_END_OF_BSS = .;     /* Remember position (=end of uninitialized RAM) */
+        _LD_END_OF_BSS = .;     /* Remember position (=end of uninitialized RAM) */
     } > ram
 }

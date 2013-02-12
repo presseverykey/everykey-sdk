@@ -3,6 +3,13 @@
 void bootstrap(void);	//bootstrap that will call main later
 void deadend(void);	//neverending handler
 
+/* These variables are used to pass memory locations from the linker script to our code. */
+extern unsigned int _LD_STACK_TOP;
+extern unsigned int _LD_START_OF_DATA;
+extern unsigned int _LD_END_OF_DATA;
+extern unsigned int _LD_END_OF_TEXT;
+extern unsigned int _LD_END_OF_DATA;
+
 /* we define some standard handler names here - they all default to deadend but may be changed by implementing a real function with that name. So if they are triggered but undefined, we'll just stop. DEFAULT_IMP defines a weak alias. */
 
 #define DEFAULTS_TO(func) __attribute__ ((weak, alias (#func)))
@@ -19,11 +26,11 @@ void ct32b1_handler(void) DEFAULTS_TO(deadend);
 /* The vector table - contains the initial stack pointer and
  pointers to boot code as well as interrupt and fault handler pointers.
  The processor will expect this to be located at address 0x0, so
- we put it into a separate linker section. 
+ we put it into a separate linker section. */
 __attribute__ ((section(".vectors")))
 
 const VECTOR_TABLE vtable = {
-	&_BOOTSTRAP_END_OF_TEXT, //Stack top
+	(void*)(0x10001ff0), //&_LD_STACK_TOP,          //Stack top
 	bootstrap,               //boot code
 	deadend,                 //NMI
 	deadend,                 //Hard fault
@@ -107,15 +114,16 @@ void bootstrap(void) {
 	// turn up the speed
 	SYSCON_InitCore72MHzFromExternal12MHz();	
 
+
 	//copy initial values of variables (non-const globals and static variables) from FLASH to RAM
-	uint8_t* ram = &_BOOTSTRAP_START_OF_DATA;
-	uint8_t* dataEnd = &_BOOTSTRAP_END_OF_DATA;
-	uint8_t* mirror = &_BOOTSTRAP_END_OF_TEXT;
-	while (ram < dataEnd) *(ram++) = *(mirror++);
+//	uint8_t* ram = &_LD_START_OF_DATA;
+//	uint8_t* dataEnd = &_LD_END_OF_DATA;
+//	uint8_t* mirror = &_LD_END_OF_TEXT;
+//	while (ram < dataEnd) *(ram++) = *(mirror++);
 
 	//set uninitialized variables to zero
-	uint8_t* bssEnd = &_BOOTSTRAP_END_OF_DATA;
-	while (ram < bssEnd) *(ram++) = 0;
+//	uint8_t* bssEnd = &_LD_END_OF_DATA;
+//	while (ram < bssEnd) *(ram++) = 0;
 
 	//turn on power for some common peripherals (IO, IOCON)
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON; // Enable common clocks: GPIO and IOCON
