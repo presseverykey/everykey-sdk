@@ -64,13 +64,11 @@ for the makefile ("mac-install" target).
 
 Linux' FAT drivers apparently interfere with copying, you need to transfer
 the files directly onto the block device (after unmounting the USB mass
-storage device in case it got mounted automatically by udev):
+storage device in case it got mounted automatically by udev, this will 
+typically be mounted under `/media/NO\ CRP`):
 
     dd if=firmware.bin of=/dev/<wherever the ANYKEY appears> seek=4
     
-In case your Linux distribution automatically mount the `/dev/sdb<whatever>`
-device (typically to `/media/No\ CRP`) you'll need to umount the drive.
-
 Alternatively, you can use the `simpleflash` python script from the
 r0ket project:
 
