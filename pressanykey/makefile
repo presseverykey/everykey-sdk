@@ -43,6 +43,11 @@ mac-install: $(NAME).bin
 	cp $(NAME).bin /Volumes/CRP\ DISABLD/
 	diskutil umount /Volumes/CRP\ DISABLD/
 	
+# Flash the firmware using the simpleflash Python script
+# https://raw.github.com/r0ket/r0ket/master/tools/bootloader/simpleflash
+simpleflash: $(NAME).bin
+	simpleflash $(NAME).bin
+
 # clean all generated files
 .PHONY: clean
 clean:

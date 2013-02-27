@@ -63,12 +63,18 @@ The build system should work in OSX without modifications. For other
 for the makefile ("mac-install" target).
 
 Linux' FAT drivers apparently interfere with copying, you need to transfer
-the files directly onto the device:
+the files directly onto the block device (after unmounting the USB mass
+storage device in case it got mounted automatically by udev):
 
     dd if=firmware.bin of=/dev/<wherever the ANYKEY appears> seek=4
     
 In case your Linux distribution automatically mount the `/dev/sdb<whatever>`
 device (typically to `/media/No\ CRP`) you'll need to umount the drive.
+
+Alternatively, you can use the `simpleflash` python script from the
+r0ket project:
+
+https://raw.github.com/r0ket/r0ket/master/tools/bootloader/simpleflash
 
 Examples
 ========
