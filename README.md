@@ -66,6 +66,9 @@ Linux' FAT drivers apparently interfere with copying, you need to transfer
 the files directly onto the device:
 
     dd if=firmware.bin of=/dev/<wherever the ANYKEY appears> seek=4
+    
+In case your Linux distribution automatically mount the `/dev/sdb<whatever>`
+device (typically to `/media/No\ CRP`) you'll need to umount the drive.
 
 Examples
 ========
