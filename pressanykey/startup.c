@@ -22,6 +22,10 @@ void ct16b0_handler(void) DEFAULTS_TO(deadend);
 void ct16b1_handler(void) DEFAULTS_TO(deadend);
 void ct32b0_handler(void) DEFAULTS_TO(deadend);
 void ct32b1_handler(void) DEFAULTS_TO(deadend);
+void gpio0_handler(void) DEFAULTS_TO(deadend);
+void gpio1_handler(void) DEFAULTS_TO(deadend);
+void gpio2_handler(void) DEFAULTS_TO(deadend);
+void gpio3_handler(void) DEFAULTS_TO(deadend);
 
 /* The vector table - contains the initial stack pointer and
  pointers to boot code as well as interrupt and fault handler pointers.
@@ -99,10 +103,10 @@ const VECTOR_TABLE vtable = {
 	deadend,                 //WDT
 	deadend,                 //BOD
 	deadend,                 //Flash
-	deadend,                 //PIO INT3
-	deadend,                 //PIO INT2
-	deadend,                 //PIO INT1
-	deadend                  //PIO INT0
+	gpio3_handler,           //PIO INT3
+	gpio2_handler,           //PIO INT2
+	gpio1_handler,           //PIO INT1
+	gpio0_handler            //PIO INT0
 };
 
 void bootstrap(void) {

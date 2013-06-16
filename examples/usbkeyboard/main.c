@@ -3,8 +3,8 @@
 
 #define LED_PORT 0
 #define LED_PIN 7
-#define KEY_PORT 1
-#define KEY_PIN 4
+#define KEY_PORT 0
+#define KEY_PIN 1
 #define TYPING_DIVIDER 11
 
 /** these variables are needed by the Keyboard implementation. USB peripherals don't allocate

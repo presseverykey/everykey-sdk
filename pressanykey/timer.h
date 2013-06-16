@@ -3,47 +3,49 @@
 
 #include "types.h"
 
-// Chapter 15 Tables: 253/4
+/** identifies one of the hardware timers / counters */
+typedef enum {
+	CT16B0 = 0,
+	CT16B1 = 1,
+	CT32B0 = 2,
+	CT32B1 = 3
+} TimerId;
+
+/** Timer registers - Chapter 15 Tables: 253/4 */
 typedef struct {
 	HW_RW IR;    // Interrupt register
 	HW_RW TCR;   // Timer control register
-	HW_RW TC;    // lower 16 bits = Timer counter
+	HW_RW TC;    // Timer counter (16 bit counters: lower bits)
 	HW_RW PR;    // max value for PC
 	HW_RW PC;    // Prescale counter
 	HW_RW MCR;   // Match Control Register
-	HW_RW MR0;   // Match Registers
-	HW_RW MR1;
-	HW_RW MR2;
-	HW_RW MR3;
+	HW_RW MR[4];   // Match Registers
 	HW_RW CCR;   // Capture Control Register
 	HW_RO CR0;   // Capture Register
+	HW_RS RESERVED1[3];
 	HW_RW EMR;   // External Match Register
-	HW_RS RESERVED[0xC];
+	HW_RS RESERVED2[12];
 	HW_RW CTCR;  // Count Control Register
 	HW_RW PWMC;  // PWM Control Register
-} TMR_STRUCT;
+	HW_RS PADDING[4066];	//increase struct size to 0x4000
+} TIMER_STRUCT;
 
-#define TMR16B0 ((TMR_STRUCT*)(0x4000C000))
-#define TMR16B1 ((TMR_STRUCT*)(0x40010000))
+#define TIMER ((TIMER_STRUCT*)(0x4000C000))
 
-#define TMR32B0 ((TMR_STRUCT*)(0x40014000))
-#define TMR32B1 ((TMR_STRUCT*)(0x40018000))
+/** Timer interrupt register bits - UM Chap 15.8.1 , Table 255 */
+typedef enum {
+	TIMER_MR0INT = 1,		// Interrupt flag for channel 0
+	TIMER_MR1INT = 1 << 1,  //         "                  1
+	TIMER_MR2INT = 1 << 2,  //         "                  2
+	TIMER_MR3INT = 1 << 3,  //         "                  3
+	TIMER_CR0INT = 1 << 4   // Interrupt flag for capture channel 0 event
+} TIMER_INTERRUPT;
 
-// UM Chap 15.8.1 , Table 255, bits for IR
-typedef enum TMR_IR {
-	MR0INT = 1,				// Interrupt flag for channel 0
-	MR1INT = 1 << 1,  //         "                  1
-	MR2INT = 1 << 2,  //         "                  2
-	MR3INT = 1 << 3,  //         "                  3
-	CR0INT = 1 << 4   // Interrupt flag for capture channel 0 event
-} TMR_IR;
-
-// UM 15.8.2 Table 256
-typedef enum TMR_TCR {
-	CEN   = 1,     // 1 = TC and PC are enabled for counting 0=disabled
-	CREST = 1 << 1 //1= TC and PC synchronously reset on next positive edge of PCLK,
-	               // counters remain reset until TCR/CREST is set to 0
-} TMR_TCR;
+/** Timer control register (TCR) bits - UM 15.8.2 Table 256 */
+typedef enum {
+	TIMER_CEN 	  	= 1,     // 1 = TC and PC are enabled for counting 0=disabled
+	TIMER_CRESET	= 1 << 1 //1= TC and PC synchronously reset on next positive edge of PCLK, counters remain reset until TCR/CREST is set to 0
+} TIMER_CONTROL;
 
 typedef enum TMR_MCR {
 	MR0I = 1 ,       // Interrupt on MR0: an interrupt is generated when MR0 matches the value in the TC. 
@@ -108,26 +110,91 @@ typedef enum TMR_EMR_CTRL {
 	EMC3_TOGGLE  = 3 << 10,
 } TMR_EMR_CTRL;
 
-typedef enum TMR_CTCR {
-	CTM = 0x3, // Counter/Timer Mode. This field selects which rising PCLK edges 
-						 // can increment Timer’s Prescale Counter (PC), or clear PC and 
-						 // increment Timer Counter (TC).
-	CIS = 0x3 << 2 // Counter Input Select (de facto Reserved)
-} TMR_CCR;
+/** Timer count mode (CTCR register values) */
+typedef enum { 
+	COUNTMODE_TIMER   = 0,		//Timer mode: Count on clock
+	COUNTMODE_RISING  = 0x01,	//Count on rising edge
+	COUNTMODE_FALLING = 0x02,	//Count on falling edge
+	COUNTMODE_BOTH    = 0x03	//Count on both edges
+} TIMER_COUNTMODE;
 
-typedef enum TMR_CTCR_CTM {
-	TIMER       = 0,
-	CTR_RISING  = 0x01,
-	CTR_FALLING = 0x02,
-	CTR_BOTH    = 0x03
-} TMR_CCR_CTM;
-
-typedef enum TMR_PWMC {
+/** Timer PWM control register values */
+typedef enum {
 	PWMEN0 = 1,         // 0 = CT16Bn_MAT0 is controlled by EM0.
-											// 1 = PWM mode is enabled for CT16Bn_MAT0.
+						// 1 = PWM mode is enabled for CT16Bn_MAT0.
 	PWMEN1 = 1 << 1,
 	PWMEN2 = 1 << 2,
 	PWMEN3 = 1 << 3     // Note: It is recommended to use to set the PWM cycle because it is not pinned out.
-} TMR_PWMC;
+} TIMER_PWMC_PWMC;
+
+
+typedef enum {
+	TIMER_MATCH_INTERRUPT = 1,
+	TIMER_MATCH_RESET = 2,
+	TIMER_MATCH_STOP = 4
+} TIMER_MATCH_BEHAVIOUR;
+
+/** enables or disables a timer. Note that this does not start it.
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+ 	@param on true to enable, false to disable */
+void Timer_Enable(TimerId timer, bool on);
+
+/** queries a timer's counter value.
+	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@return the timer's counter */
+uint32_t Timer_GetValue(TimerId timer);
+
+/** sets a timer's prescale counter (clock divider)
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+ 	@param prescale clock divider to set */
+void Timer_SetPrescale(TimerId timer, uint32_t prescale);
+
+/** sets a timer's match value
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+ 	@param matchIdx index of match value (0 to 3)
+ 	@param value match value (up to 65535 for 16 bit timers) */
+void Timer_SetMatchValue(TimerId timer, uint8_t matchIdx, uint32_t value);
+
+/** defines what to do when a timer hits a match value.
+	If interrupts are triggered, their handler has the signature "void ctXXbY_handler()" (XX=16 or 32bit, Y=Timer 0 or 1)
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+ 	@param matchIdx index of match value (0 to 3)
+ 	@param behaviour (ORed TIMER_BEHAVIOUR values: Interrupt, Reset and/or Stop - 0 for nothing) */
+void Timer_SetMatchBehaviour(TimerId timer, uint8_t matchIdx, uint8_t behaviour);
+
+/** starts a timer
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1) */
+void Timer_Start(TimerId timer);
+
+/** stops a timer
+ 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1) */
+void Timer_Stop(TimerId timer);
+
+/** resets a timer. Running state will not be changed.
+	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1) */
+void Timer_Reset(TimerId timer);
+
+/** Queries the interrupt mask - should be called from within an
+interrupt handler to determine the cause of the interrupt
+	@param timer timer to query (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@return an ORed mask of TIMER_INTERRUPT values */
+uint32_t Timer_GetInterruptMask(TimerId timer);
+
+/** Clears fields in the interrupt mask.
+Interrupt handlers should clear handled interrupts.
+	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@param mask ORed TIMER_INTERRUPT values to clear */
+void Timer_ClearInterruptMask(TimerId timer, uint32_t mask);
+
+/** Enable or disable a Timer's MAT output as PWM.
+	Note that additionally, the pin function must be set to MAT out
+	and the match behaviour should be set to 0.
+	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@param matIdx index of the MAT pin / register (e.g. 2 for MAT2)
+	@param enable true to turn PWM on, false to turn it off */
+
+void Timer_EnablePWM(TimerId timer, uint8_t matIdx, bool enable);
+
+
 
 #endif

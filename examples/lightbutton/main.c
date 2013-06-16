@@ -2,8 +2,8 @@
 
 #define LED_PORT 0
 #define LED_PIN 7
-#define KEY_PORT 1
-#define KEY_PIN 4
+#define KEY_PORT 0
+#define KEY_PIN 1
 
 void main(void) {
 	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
