@@ -23,15 +23,21 @@ project directory.
 We're currently building up the firmware utilities, so not all
 peripherals are working yet.
 
-Setup build environment
-=======================
+Build environment
+=================
 
-- Install gcc arm-none-eabi toolchain (see [below](#installing-the-compiler)) 
-- Go to checksum directory, build checksum tool (`make`)
-- Move checksum tool or adjust $PATH so that it can be found
+For developing and building Anykey software, you will need:
 
-Alternatively, the examples can be built with clang/llvm (experimental -
-more info coming).
+- a computer and a text editor of your choice
+- gcc arm-none-eabi toolchain (see [below](#installing-the-compiler)) 
+- gnu make
+- checksum tool (go to checksum directory, build checksum tool (`make`))
+
+For compiling the checksum tool, you might also need a gcc for your development computer.
+
+Make sure that the toolchain's tools, make and checksum are found by your terminal (adjust $PATH so that they can be found).
+
+Alternatively, the examples can be built with clang/llvm (experimental - more info coming).
 
 Setting up a project
 ====================
@@ -49,9 +55,9 @@ following steps to create a project directory from scratch:
 - link, symlink or copy lpc1343.ld (inside pressanykey dir) to project
   directory
 - run `make` (will compile and link all c files in project dir and subdirs)
-- connect target board in USB programming mode
+- connect target board in USB programming mode (Anykey V1: Short-circuit the programming pins while connecting the USB cable, Anykey V2: Hold the application button while pressing the reset button)
 - run `make mac-install` (optionally copy the resulting .bin file manually)
-- disconnect and re-plug target board
+- Reset the board (Anykey V1: disconnect and re-plug, Anykey V2: press the reset button)
 
 In most cases, symlinking (or hard-linking, if you prefer) the
 pressanykey directory, makefile and linker script from your project
@@ -100,6 +106,12 @@ A smoothly pulsing LED. The LED is dimmed and animated using PWM (pulse
 width modulation) in the systick timer. Shows how to use the systick
 timer.
 
+smoothtimer
+-----------
+
+Same as smooth, but using a 16 bit timer instead of systick. This
+example should be updated to use timer-based PWM instead of software.
+
 colorbars
 ---------
 
@@ -129,6 +141,9 @@ nerdpursuit
 -----------
 A HID-keyboard implementation of Nerd Pursuit - see https://github.com/Nerds/NerdPursuit. Play it on a standard *NIX shell.
 
+i2c
+---
+Illustrates I2C communication. Also contains functionality to use the API in a blocking fashion (the API itself is non-blocking, using a callback on completion). This example uses an ams TCS3471 RGB color senor chip attached to the I2C bus.
 
 
 Installing the compiler
