@@ -1,4 +1,5 @@
 #include "pressanykey/pressanykey.h"
+#include "pressanykey_usb/usb.h"
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)
