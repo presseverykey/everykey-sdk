@@ -1,3 +1,5 @@
+/* 16 and 32 bit timer functions */
+
 #ifndef _TIMER_
 #define _TIMER_
 
