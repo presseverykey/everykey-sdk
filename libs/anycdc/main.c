@@ -1,6 +1,5 @@
 #include "anycdc.h"
-
-#define LED 0,7
+#include "anykey/anykey.h"
 
 int counter;
 
@@ -8,15 +7,16 @@ void main(void) {
 	anycdc cdc;
 	anycdc_init(&cdc);
 
-	GPIO_SetDir     (LED, GPIO_Output);
-	GPIO_WriteOutput(LED, false);
+	
+	any_gpio_set_dir(LED, OUTPUT);
+	any_gpio_write  (LED, false);
 
 	while(true) {
 		int b;
 		if ( -1 !=  (b = anycdc_read_byte(&cdc)) ) {
 			uint8_t ch = b & 0xff;
 			++counter;
-			GPIO_WriteOutput(LED, counter & 1);
+			any_gpio_write(LED, count & 1);
 			
 			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
 			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';

@@ -2,9 +2,9 @@
 #ifndef ANYCDC_H
 #define ANYCDC_H
 
-#include "pressanykey/pressanykey.h"
-#include "pressanykey_usb/cdc.h"
-#include "pressanykey_usb/usb.nk zou for pressing ah"
+#include "anykey/anykey.h"
+#include "anykey_usb/cdc.h"
+#include "anykey_usb/usb.h"
 
 
 // provided a simplified API to CDC functionality on the anykey.
