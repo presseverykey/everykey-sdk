@@ -1,6 +1,6 @@
-#include "pressanykey/pressanykey.h"
-#include "pressanykey_usb/cdc.h"
-#include "pressanykey_usb/usb.h"
+#include "anykey/anykey.h"
+#include "anykey_usb/cdc.h"
+#include "anykey_usb/usb.h"
 
 #define LED_PORT 0
 #define LED_PIN 7

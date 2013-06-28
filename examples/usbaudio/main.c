@@ -1,6 +1,6 @@
-#include "pressanykey/pressanykey.h"
-#include "pressanykey_usb/usb.h"
-#include "pressanykey_usb/usbaudio.h"
+#include "anykey/anykey.h"
+#include "anykey_usb/usb.h"
+#include "anykey_usb/usbaudio.h"
 
 #define AUDIO_CONTROL_INTERFACE 0
 

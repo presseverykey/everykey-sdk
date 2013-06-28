@@ -3,7 +3,7 @@
 #ifndef _CONFIG_
 #define _CONFIG_
 
-#include "pressanykey/pressanykey.h"
+#include "anykey/anykey.h"
 #include "cnctypes.h"
 
 /* pin mapping:

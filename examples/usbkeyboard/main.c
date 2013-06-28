@@ -1,5 +1,5 @@
-#include "pressanykey/pressanykey.h"
-#include "pressanykey_usb/keyboard.h"
+#include "anykey/anykey.h"
+#include "anykey_usb/keyboard.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
