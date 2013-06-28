@@ -107,7 +107,7 @@ void any_gpio_set_pull(HW_RW* pin, any_gpio_pull_mode mode);
  * expansion. */
 
 #define _SETPULL2(port,pin,mode) {any_gpio_set_pull(&(IOCON->PIO ## port ## _ ## pin),mode); }
-#define ANY_GPIO_SETPULL(port,pin,mode) _SETPULL2(port,pin,mode)
+#define ANY_GPIO_SET_PULL(port,pin,mode) _SETPULL2(port,pin,mode)
 
 
 /** sets the hysteresis mode of an IO pin. 
@@ -141,8 +141,8 @@ void any_gpio_set_function(HW_RW* pin, IOCON_IO_FUNC mode, IOCON_IO_ADMODE admod
 
 e.g. GPIO_SETFUNCTION(0, 10, TMR, IOCON_IO_ADMODE_DIGITAL); */
 
-#define GPIO_SETFUNCTION(port,pin,func,admode) _SETFUNCTION2(port,pin,func,admode)
-#define _SETFUNCTION2(port,pin,func,admode) {any_gpio_set_function(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func ,admode); }
+#define ANY_GPIO_SET_FUNCTION(port,pin,func,admode) _SET_FUNCTION2(port,pin,func,admode)
+#define _SET_FUNCTION2(port,pin,func,admode) {any_gpio_set_function(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func ,admode); }
 
 
 

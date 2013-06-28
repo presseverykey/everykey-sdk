@@ -18,13 +18,13 @@
 
 void main (void) {
   volatile int i;
-  GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-  GPIO_SetDir(KEY_PORT, KEY_PIN , GPIO_Input);
+  any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+  any_gpio_set_dir(KEY_PORT, KEY_PIN , INPUT);
 
-  GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+  ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
   init_keyboard();
   init_game();
-  GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+  any_gpio_write(LED_PORT, LED_PIN, false);
   for (i=5000000; i!=0; --i) {}
   SYSCON_StartSystick(SYSTICK_CNTR);
 }
@@ -33,7 +33,7 @@ void systick(void) {
   static bool     key_state = false;
   static uint32_t count     = 0x00;
 
-  key_state = GPIO_ReadInput(KEY_PORT, KEY_PIN);
+  key_state = any_gpio_read(KEY_PORT, KEY_PIN);
 
   do_nerd_sm(!key_state, count);
 
