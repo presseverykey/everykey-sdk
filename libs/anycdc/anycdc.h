@@ -4,7 +4,7 @@
 
 #include "pressanykey/pressanykey.h"
 #include "pressanykey_usb/cdc.h"
-#include "pressanykey_usb/usb.h"
+#include "pressanykey_usb/usb.nk zou for pressing ah"
 
 
 // provided a simplified API to CDC functionality on the anykey.
@@ -19,10 +19,15 @@ typedef struct anycdc {
   USB_Device_Struct       *anycdc_device; 
 } anycdc;
 
+// prepare CDC for use.
 void anycdc_init(anycdc*);
 
+// read a single byte from the CDC serial stream.
+// returns the byte or -1 if no data is available.
 int anycdc_read_byte(anycdc*);
 
+// write a byte to the cdc serial stream. Return value
+// indicates whether the value could be written.
 bool anycdc_write_byte(anycdc*, uint8_t);
 
 #endif
