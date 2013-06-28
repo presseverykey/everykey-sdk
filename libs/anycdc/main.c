@@ -16,7 +16,7 @@ void main(void) {
 		if ( -1 !=  (b = anycdc_read_byte(&cdc)) ) {
 			uint8_t ch = b & 0xff;
 			++counter;
-			any_gpio_write(LED, count & 1);
+			any_gpio_write(LED, counter & 1);
 			
 			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
 			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';
