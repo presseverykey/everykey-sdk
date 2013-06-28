@@ -1,8 +1,9 @@
 #include "i2c.h"
 #include "gpio.h"
 
+#define POINTER_NOT_SET ((void*)-1)
 
-I2C_State* i2c_state = (void*)-1;
+I2C_State* i2c_state = POINTER_NOT_SET;
 
 void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 	i2c_state = inState;
@@ -159,7 +160,7 @@ I2C_STATUS I2C_WriteRead(uint8_t addr,
 						uint8_t* readBuf,
 						I2C_CompletionHandler handler,
 						uint32_t refcon) {
-	if (i2c_state == -1) return I2C_STATUS_UNINITIALIZED;
+	if (i2c_state == POINTER_NOT_SET) return I2C_STATUS_UNINITIALIZED;
 	if (I2C_TransactionRunning()) return I2C_STATUS_BUSY;
 	i2c_state->refcon = refcon;
 	i2c_state->slaveAddress = addr;

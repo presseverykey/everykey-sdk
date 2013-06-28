@@ -15,13 +15,13 @@
  * @param outReportHandler callback to fill OUT reports */
 
 void KeyboardInit(USB_Device_Definition* deviceDefinition,
-				  USB_Device_Struct* device,
-				  USBHID_Behaviour_Struct* hid,
-				  uint8_t* inBuffer, 
-                  uint8_t* outBuffer,
-				  uint8_t* idleValue,
-				  uint8_t* currentProtocol,
-                  HidInReportHandler inReportHandler, 
-                  HidOutReportHandler outReportHandler);
+    USB_Device_Struct* device,
+    USBHID_Behaviour_Struct* hid,
+    uint8_t* inBuffer, 
+    uint8_t* outBuffer,
+    uint8_t* idleValue,
+    uint8_t* currentProtocol,
+    HidInReportHandler inReportHandler, 
+    HidOutReportHandler outReportHandler);
 	
 #endif

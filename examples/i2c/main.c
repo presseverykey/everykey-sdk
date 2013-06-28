@@ -3,7 +3,7 @@ and turns the LED on and off based on the measured brightness. This example requ
 connected to the I2C port (SCL = PIO0_4, SDA = PIO0_5). Add 3.3V pullup resistors to both lines.
 See TCS3471 datasheet and NXP's I2C spec and notes for details. */
 
-#include "pressanykey/pressanykey.h"
+#include "anykey/anykey.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
