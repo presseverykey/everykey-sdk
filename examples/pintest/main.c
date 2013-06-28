@@ -41,7 +41,7 @@
 // after pad 26, of course afterwards the key will no longer work and
 // you'll need to reset it to test the key again.
 
-#include "pressanykey/pressanykey.h"
+#include "anykey/anykey.h"
 
 
 #define KEY_PORT 1

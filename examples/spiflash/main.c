@@ -1,4 +1,4 @@
-#include "pressanykey/pressanykey.h"
+#include "anykey/anykey.h"
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)

@@ -3,7 +3,7 @@
 #ifndef _CNCTYPES_
 #define _CNCTYPES_
 
-#include "pressanykey/pressanykey.h"
+#include "anykey/anykey.h"
 
 #define NUM_AXES 3
 
