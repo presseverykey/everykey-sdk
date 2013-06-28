@@ -1,4 +1,5 @@
 #include "anykey/anykey.h"
+#include "anykey_usb/usb.h"
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)
@@ -15,24 +16,6 @@ const uint8_t deviceDescriptor[] = {
 	0x02,                           //iProduct: Product string index
 	0x03,                           //iSerialNumber: Serial number string index
 	0x01                            //bNumConfigurations: Number of configurations
-};
-
-const uint8_t languages[] = {
-	0x04,							//bLength: length of this descriptor in bytes (4)
-	USB_DESC_STRING,				//bDescriptorType: string descriptor
-	0x09,0x04						//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
-};
-
-const uint8_t manufacturerName[] = {
-	0x22,							//bLength: length of this descriptor in bytes (34)
-	USB_DESC_STRING,				//bDescriptorType: string descriptor
-	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
-};
-
-const uint8_t deviceName[] = {
-	0x12,							//bLength: length of this descriptor in bytes (18)
-	USB_DESC_STRING,				//bDescriptorType: string descriptor
-	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t configDescriptor[] = {
@@ -57,6 +40,37 @@ const uint8_t configDescriptor[] = {
 	0x00							//iInterface: String index (0x00 = not available)
 	
 	//add endpoint descriptors here...
+};
+
+const uint8_t languages[] = {
+	0x04,							//bLength: length of this descriptor in bytes (4)
+	USB_DESC_STRING,				//bDescriptorType: string descriptor
+	0x09,0x04						//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
+};
+
+const uint8_t manufacturerName[] = {
+	0x22,							//bLength: length of this descriptor in bytes (34)
+	USB_DESC_STRING,				//bDescriptorType: string descriptor
+	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
+};
+
+const uint8_t deviceName[] = {
+	0x12,							//bLength: length of this descriptor in bytes (18)
+	USB_DESC_STRING,				//bDescriptorType: string descriptor
+	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
+};
+
+/* This is non-const - we'll replace the spaces according to the values we read from SPI */
+uint8_t versionString[14] = {14,USB_DESC_STRING,' ',0,' ',0,' ',0,' ',0,' ',0,' ',0};
+
+const USB_Device_Definition myUSBDeviceDefinition = {
+        deviceDescriptor,
+        1,
+        { configDescriptor },
+        4,
+        {languages, manufacturerName, deviceName, versionString },
+        0,
+        { NULL }
 };
 	
 USB_Device_Struct myUSBDevice;
@@ -126,39 +140,17 @@ void main(void) {
 
 	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
 
-//	while (true) {
-//		uint32_t deviceId = SPIFLASH_ReadDeviceId();
-//		delay(1000000);
-//	}
-	
 	uint32_t deviceId = SPIFLASH_ReadDeviceId();
 	
 	versionString[ 0] = 14;
 	versionString[ 1] = USB_DESC_STRING;
 	versionString[ 2] = NibbleToHexChar((deviceId >> 20) & 0x0f);
-	versionString[ 3] = 0;
 	versionString[ 4] = NibbleToHexChar((deviceId >> 16) & 0x0f);
-	versionString[ 5] = 0;
 	versionString[ 6] = NibbleToHexChar((deviceId >> 12) & 0x0f);
-	versionString[ 7] = 0;
 	versionString[ 8] = NibbleToHexChar((deviceId >> 8) & 0x0f);
-	versionString[ 9] = 0;
 	versionString[10] = NibbleToHexChar((deviceId >> 4) & 0x0f);
-	versionString[11] = 0;
 	versionString[12] = NibbleToHexChar(deviceId & 0x0f);
-	versionString[13] = 0;
 	
-	myUSBDevice.deviceDescriptor = deviceDescriptor;
-	myUSBDevice.configurationCount = 1;
-	myUSBDevice.configurationDescriptors[0] = configDescriptor;
-	myUSBDevice.stringCount = 4;
-	myUSBDevice.strings[0] = languages;
-	myUSBDevice.strings[1] = manufacturerName;
-	myUSBDevice.strings[2] = deviceName;
-	myUSBDevice.strings[3] = versionString;
-	myUSBDevice.extendedControlSetupCallback = NULL;
-	myUSBDevice.endpointDataCallback = NULL;
-	
-	USB_Init(&myUSBDevice);
-	USB_SoftConnect();
+	USB_Init(&myUSBDeviceDefinition, &myUSBDevice);
+	USB_SoftConnect(&myUSBDevice);
 }

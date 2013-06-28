@@ -30,7 +30,7 @@ void main(void) {	// main is used for setup and starting the systick timer
 }
 
 void ct16b0_handler(void) {	//systick is used for regular, repeating tasks
-	Timer_ClearInterruptMask(CT16B0);
+	Timer_ClearInterruptMask(CT16B0, TIMER_MR0INT);	//Clear our interrupt reason
 	counter++;
 
 	// calculate a smooth triangle ramp from counter

@@ -1,1 +1,1 @@
-../../pressanykey/lpc1343.ld
+anykey/lpc1343.ld
