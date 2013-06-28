@@ -12,38 +12,38 @@ typedef struct any_pin {
   HW_RW   *iocon;
 } any_pin;
 
-typedef enum any_direction {
+typedef enum {
 	INPUT = 0,
 	OUTPUT
-} any_direction;
+} any_gpio_direction;
 
-typedef enum any_pull_mode {
+typedef enum {
 	NONE = 0x00,
 	PULL_DOWN = 0x08,
 	PULL_UP = 0x10,
 	REPEAT = 0x18
-} any_pull_mode;
+} any_gpio_pull_mode;
 
-typedef enum any_hysteresis_mode {
+typedef enum {
 	HYSTERESIS_OFF = 0x00,
 	HYSTERESIS_ON = 0x20
-} any_hysteresis_mode;
+} any_gpio_hysteresis_mode;
 
-typedef enum any_ad_mode {
+typedef enum {
 	ADMODE_ANALOG  = 0x00,
 	ADMODE_DIGITAL = 0x80
-} any_ad_mode;
+} any_gpio_ad_mode;
 
 
 /** GPIO input events that can cause interrupts */
 typedef enum {
-	INTERRUPT_NONE = 0,		//No interrupt trigger
-	INTERRUPT_RISING_EDGE = 1,	//Rising edge triggers interrupt
-	INTERRUPT_FALLING_EDGE = 2,//Falling edge triggers interrupt
-	INTERRUPT_BOTH_EDGES = 3,	//Both edges trigger interrupts
-	INTERRUPT_HIGH_LEVEL = 4,	//High level causes interrupt
-	INTERRUPT_LOW_LEVEL = 5	//Low level causes interrupt
-} any_interrupt_mode;
+	TRIGGER_NONE = 0,		     //No interrupt trigger
+	TRIGGER_RISING_EDGE = 1, //Rising edge triggers interrupt
+	TRIGGER_FALLING_EDGE = 2,//Falling edge triggers interrupt
+	TRIGGER_BOTH_EDGES = 3,	 //Both edges trigger interrupts
+	TRIGGER_HIGH_LEVEL = 4,	 //High level causes interrupt
+	TRIGGER_LOW_LEVEL = 5	   //Low level causes interrupt
+} any_gpio_interrupt_mode;
 
 #define LED       (any_pin){0,7, &IOCON->PIO0_7}
 #define KEY_REV1  (any_pin){1,4, &IOCON->PIO1_4}
@@ -80,36 +80,48 @@ typedef enum {
 	@param port the pin
 	@param direction the direction
 */ 
-void any_gpio_set_dir(any_pin pin, any_direction dir);
+void any_gpio_set_dir(uint8_t port, uint8_t pin, any_gpio_direction dir);
 
 /** writes a bit to a GPIO output pin
 	@param port the port 
 	@param port the pin
 	@param value the value
 */ 
-void any_gpio_write(any_pin pin, bool value);
+void any_gpio_write(uint8_t port, uint8_t pin, bool value);
 
 /** reads the state of a GPIO output pin
 	@param port the port 
 	@param port the pin
 	@return the value
 */ 
-bool any_gpio_read(any_pin pin);
+bool any_gpio_read(uint8_t port, uint8_t pin);
 
 /** sets the pullup/pulldown resistors of an IO pin. 
 	@param pin pointer to a pin register in the IOCON struct. Must be a pin that supports pullup/pulldown, in a supported mode
 	@param mode mode to set to
 */
-void any_gpio_set_pull(any_pin pin, any_pull_mode mode);
+void any_gpio_set_pull(HW_RW* pin, any_gpio_pull_mode mode);
 
-/** define to call setPull in a syntax similar to other in/out calls if port and pin are known at compile time. Two-step for argument macro expansion. */
+/** define to call setPull in a syntax similar to other in/out calls if
+ * port and pin are known at compile time. Two-step for argument macro
+ * expansion. */
+
+#define _SETPULL2(port,pin,mode) {any_gpio_set_pull(&(IOCON->PIO ## port ## _ ## pin),mode); }
+#define ANY_GPIO_SETPULL(port,pin,mode) _SETPULL2(port,pin,mode)
+
 
 /** sets the hysteresis mode of an IO pin. 
-	@param pin pointer to a pin register in the IOCON struct. Must be a pin that supports hysteresis, in a supported mode
-	@param mode mode to set to
+  @param pin pointer to a pin register in the IOCON struct. Must be a
+  pin that supports hysteresis, in a supported mode @param mode mode to
+  set to
 */
-void any_gpio_set_hysteresis(any_pin pin, any_hysteresis_mode mode);
-/** define to call setHysteresis in a syntax similar to other in/out calls if port and pin are known at compile time. Two-step for argument macro expansion. */
+void any_gpio_set_hysteresis(HW_RW* pin, any_gpio_hysteresis_mode mode);
+
+/** define to call setHysteresis in a syntax similar to other in/out
+ * calls if port and pin are known at compile time. Two-step for
+ * argument macro expansion. */
+#define _SETHYSTERESIS2(port,pin,mode) {any_gpio_set_hysteresis(&(IOCON->PIO ## port ## _ ## pin),mode); }
+#define ANY_GPIO_SETHYSTERESIS(port,pin,mode) _SETHYSTERESIS2(port,pin,mode)
 
 /** sets the pin function of an IO pin
   sets the digital pin functions of an IO pin. precise functions support by the pins 
@@ -121,12 +133,16 @@ void any_gpio_set_hysteresis(any_pin pin, any_hysteresis_mode mode);
 	@param function pin function to use (e.g. ADC or TIMER). Obviously, the given pin must support that function
 	@param admode analog or digital pin mode (typically analog for ADC, digital for all others) 
 */
-void any_gpio_set_function(any_pin pin, IOCON_IO_FUNC mode);
+void any_gpio_set_function(HW_RW* pin, IOCON_IO_FUNC mode, IOCON_IO_ADMODE admode); 
 
-/*
-  set up a pin for analog reading.
-*/
-void any_gpio_set_analog(any_pin);
+/** define to call setFunction in a syntax similar to other in/out calls
+ * if port and pin are known at compile time. Two-step for argument
+ * macro expansion. 
+
+e.g. GPIO_SETFUNCTION(0, 10, TMR, IOCON_IO_ADMODE_DIGITAL); */
+
+#define GPIO_SETFUNCTION(port,pin,func,admode) _SETFUNCTION2(port,pin,func,admode)
+#define _SETFUNCTION2(port,pin,func,admode) {any_gpio_set_function(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func ,admode); }
 
 
 
@@ -136,7 +152,7 @@ void any_gpio_set_analog(any_pin);
 	@param pin the GPIO pin
 	@param mode the interrupt behaviour */
 
-void any_gpio_set_interrupt_mode(any_pin pin, any_interrupt_mode mode);
+void any_gpio_set_interrupt_mode(uint8_t port, uint8_t pin, any_gpio_interrupt_mode mode);
 
 /** returns the pins that caused an interrupt.
 	Interrupt handlers should call this to determine the cause of the interrupt.
