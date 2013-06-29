@@ -6,8 +6,22 @@ typedef struct any_pin {
   HW_RW   *iocon;
 } any_pin;
 
+// turns the indicated pin on or off.
 void anypio_write(any_pin, bool);
+
+// reads the value set at the indicated pin.
+// possible values for pull_mode are:
+//    NONE
+//    PULL_DOWN
+//    PULL_UP
+//    REPEAT 
 bool anypio_read(any_pin, any_gpio_pull_mode);
+
+// activates the ADC functionality for the pin
+void anypio_analog_set(any_pin, bool);
+
+// reads the analog values (voltage) set at the
+// pin. This reads a 10 bit value from the pin.
 int  anypio_analog_read(any_pin);
 
 
