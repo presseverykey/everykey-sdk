@@ -471,7 +471,7 @@ void AudioFrame(USB_Device_Struct* device, const USBAudio_Behaviour_Struct* beha
 	if (micStreaming) {
 		//generate a sawtooth waveform with 1 KHz
 		uint16_t outSampleCount = SAMPLE_RATE/1000;
-		uint32_t scale = ((GPIO_ReadInput(KEY_PORT, KEY_PIN) ? 0 : (micVolume+0x8000) / (outSampleCount+1)));
+		uint32_t scale = ((any_gpio_read(KEY_PORT, KEY_PIN) ? 0 : (micVolume+0x8000) / (outSampleCount+1)));
 		for (i=0;i<outSampleCount;i++) {
 			int32_t value = scale * (2*i+1-outSampleCount);
 			((int16_t*)(buffer))[i] = S16_TO_LE(value);
@@ -498,7 +498,7 @@ void AudioFrame(USB_Device_Struct* device, const USBAudio_Behaviour_Struct* beha
 		level /= 800;
 		counter++;
 		int phase = counter % 10;
-		GPIO_WriteOutput(0,7,phase<level);
+		any_gpio_write(0,7,phase<level);
 	}
 }
 
@@ -529,10 +529,10 @@ const USB_Device_Definition deviceDefinition = {
 };
 
 void main(void) {
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
-	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
-	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_write(LED_PORT, LED_PIN, false);
+	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
+	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 
 	USB_Init(&deviceDefinition, &device);
 	
