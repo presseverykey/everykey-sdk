@@ -27,15 +27,14 @@ typedef enum {
 	ADMODE_DIGITAL = 0x80
 } any_gpio_ad_mode;
 
-
 /** GPIO input events that can cause interrupts */
 typedef enum {
-	TRIGGER_NONE = 0,		     //No interrupt trigger
-	TRIGGER_RISING_EDGE = 1, //Rising edge triggers interrupt
-	TRIGGER_FALLING_EDGE = 2,//Falling edge triggers interrupt
-	TRIGGER_BOTH_EDGES = 3,	 //Both edges trigger interrupts
-	TRIGGER_HIGH_LEVEL = 4,	 //High level causes interrupt
-	TRIGGER_LOW_LEVEL = 5	   //Low level causes interrupt
+	TRIGGER_NONE         = 0,	//No interrupt trigger
+	TRIGGER_RISING_EDGE  = 1, //Rising edge triggers interrupt
+	TRIGGER_FALLING_EDGE = 2, //Falling edge triggers interrupt
+	TRIGGER_BOTH_EDGES   = 3,	//Both edges trigger interrupts
+	TRIGGER_HIGH_LEVEL   = 4,	//High level causes interrupt
+	TRIGGER_LOW_LEVEL    = 5	//Low level causes interrupt
 } any_gpio_interrupt_mode;
 
 /** sets the direction of a GPIO pin.
