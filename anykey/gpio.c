@@ -21,11 +21,11 @@ bool any_gpio_read(uint8_t port, uint8_t pin) {
 }
 
 void any_gpio_set_pull(HW_RW* pin, any_gpio_pull_mode mode) {
-	*pin = ((*pin) & (~IOCON_IO_PULL_REPEAT)) | mode;
+	*pin = ((*pin) & (~REPEAT)) | mode;
 }
 
 void any_gpio_set_hysteresis(HW_RW* pin, any_gpio_hysteresis_mode mode) {
-	*pin = ((*pin) & (~IOCON_IO_HYSTERESIS_ON)) | mode;
+	*pin = ((*pin) & (~HYSTERESIS_ON)) | mode;
 }
 
 void any_gpio_set_function(HW_RW* pin, IOCON_IO_FUNC func, IOCON_IO_ADMODE admode) {

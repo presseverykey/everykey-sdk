@@ -10,5 +10,6 @@
 #include "ssp.h"
 #include "timer.h"
 #include "i2c.h"
+#include "adc.h"
 
 #endif
