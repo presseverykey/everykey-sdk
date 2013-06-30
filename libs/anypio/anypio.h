@@ -6,25 +6,6 @@ typedef struct any_pin {
   HW_RW   *iocon;
 } any_pin;
 
-// turns the indicated pin on or off.
-void anypio_write(any_pin, bool);
-
-// reads the value set at the indicated pin.
-// possible values for pull_mode are:
-//    NONE
-//    PULL_DOWN
-//    PULL_UP
-//    REPEAT 
-bool anypio_read(any_pin, any_gpio_pull_mode);
-
-// activates the ADC functionality for the pin
-void anypio_analog_set(any_pin, bool);
-
-// reads the analog values (voltage) set at the
-// pin. This reads a 10 bit value from the pin.
-int  anypio_analog_read(any_pin);
-
-
 #define LED       (any_pin){0,7, &IOCON->PIO0_7}
 #define KEY_REV1  (any_pin){1,4, &IOCON->PIO1_4}
 #define KEY1_REV2 (any_pin){0,1, &IOCON->PIO0_1}
@@ -53,35 +34,24 @@ int  anypio_analog_read(any_pin);
 #define PIN_2_2   (any_pin){2,2, &IOCON->PIO2_2}
 #define PIN_2_3   (any_pin){2,3, &IOCON->PIO2_3}
 
-#define ANY_PIO_MAP_CHANNEL(pin, channel) \
-do {                                 \
-	switch((int)pin.iocon) {           \
-		case (int)&IOCON->PIO0_10:       \
-			channel = 0;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_0:        \
-			channel = 1;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_1:        \
-			channel = 2;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_2:        \
-			channel = 3;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_3:        \
-			channel = 4;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_4:        \
-			channel = 5;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_10:       \
-			channel = 6;                   \
-			break;                         \
-		case (int)&IOCON->PIO1_11:       \
-			channel = 7;                   \
-			break;                         \
-    default:                         \
-      channel = 8;                   \
-	}                                  \
-} while (0)                          \
+
+// turns the indicated pin on or off.
+void anypio_write(any_pin, bool);
+
+// reads the value set at the indicated pin.
+// possible values for pull_mode are:
+//    NONE
+//    PULL_DOWN
+//    PULL_UP
+//    REPEAT 
+bool anypio_read(any_pin, any_gpio_pull_mode);
+
+// activates the ADC functionality for the pin
+void anypio_analog_set(any_pin, bool);
+
+// reads the analog values (voltage) set at the
+// pin. This reads a 10 bit value from the pin.
+int  anypio_analog_read(any_pin);
+
+
 
