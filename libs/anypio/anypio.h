@@ -39,12 +39,10 @@ typedef struct any_pin {
 void anypio_write(any_pin, bool);
 
 // reads the value set at the indicated pin.
-// possible values for pull_mode are:
-//    NONE
-//    PULL_DOWN
-//    PULL_UP
-//    REPEAT 
-bool anypio_read(any_pin, any_gpio_pull_mode);
+// Before calling this function, pins need to be
+// configured as INPUT by calling `anypio_digital_input_set`
+// see below.
+bool anypio_read(any_pin);
 
 
 // configures the given pin as a digital input pin,
