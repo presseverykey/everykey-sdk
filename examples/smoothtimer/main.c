@@ -18,8 +18,8 @@
 uint32_t counter = 0;	//we count cycles
 
 void main(void) {	// main is used for setup and starting the systick timer
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_write(LED_PORT, LED_PIN, false);
 	Timer_Enable(CT16B0, true);
 	Timer_SetPrescale(CT16B0, 0);				//Use full clock speed
 	Timer_SetMatchValue(CT16B0, 0, 2000);
@@ -45,5 +45,5 @@ void ct16b0_handler(void) {	//systick is used for regular, repeating tasks
 	uint32_t pwmPhase = counter % PWM_SPEED;
 
 	// set output
-	GPIO_WriteOutput(LED_PORT, LED_PIN, brightness > pwmPhase);
+	any_gpio_write(LED_PORT, LED_PIN, brightness > pwmPhase);
 }

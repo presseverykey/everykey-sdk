@@ -20,12 +20,13 @@ void SSP_Init(uint8_t clockDiv, uint8_t datasize, SSP_CR0_VALUES frameformat, bo
 	SSP0->CPSR = 2;			//SSP peripheral clock is divided by this factor to get the prescaler clock
 
 	//Set pin functions (0_8 -> MISO, 0_9 -> MOSI, 2_11 -> SCK)
-	GPIO_SetFunction(&(IOCON->PIO0_8), IOCON_IO_FUNC_PIO0_8_SSP, IOCON_IO_ADMODE_DIGITAL);
-	GPIO_SetFunction(&(IOCON->PIO0_9), IOCON_IO_FUNC_PIO0_9_SSP, IOCON_IO_ADMODE_DIGITAL);
+	any_gpio_set_function(&(IOCON->PIO0_8), IOCON_IO_FUNC_PIO0_8_SSP, IOCON_IO_ADMODE_DIGITAL);
+	any_gpio_set_function(&(IOCON->PIO0_9), IOCON_IO_FUNC_PIO0_9_SSP, IOCON_IO_ADMODE_DIGITAL);
 	
+
 	//We use pin PIO2_11 for SSP clock
 	IOCON->SCK0_LOC = IOCON_SCK0_LOC_PIO2_11;
-	GPIO_SetFunction(&(IOCON->PIO2_11), IOCON_IO_FUNC_PIO2_11_SSP, IOCON_IO_ADMODE_DIGITAL);
+	any_gpio_set_function(&(IOCON->PIO2_11), IOCON_IO_FUNC_PIO2_11_SSP, IOCON_IO_ADMODE_DIGITAL);
 
 	uint32_t cr0 = (SSP_CR0_DSS_4BIT + (datasize - 4)) |
 		frameformat	|

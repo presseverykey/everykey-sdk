@@ -1,7 +1,6 @@
 #include "anykey/anykey.h"
+#include "anypio/anypio.h"
 
-#define LED_PORT 0
-#define LED_PIN 7
 
 //simple wait routine
 void delay(int count) {
@@ -10,12 +9,10 @@ void delay(int count) {
 }
 
 void main(void) {
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-
 	while (true) {
-		GPIO_WriteOutput(LED_PORT, LED_PIN, true);
+		anypio_write(LED, true);
 		delay(1000000);
-		GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+		anypio_write(LED, false);
 		delay(1000000);
 	}
 }

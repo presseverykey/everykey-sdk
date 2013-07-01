@@ -188,33 +188,33 @@ I2C_State i2cState;
 void main () {
 	sleep(100000); //For some reason, this seems to be a good thing to do
 
-	GPIO_SetDir (LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_WriteOutput (LED_PORT, LED_PIN, false);
-	GPIO_SetDir (KEY_PORT, KEY_PIN, GPIO_Input);
-	GPIO_SETPULL (KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	any_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_write   (LED_PORT, LED_PIN, false);
+	any_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
+	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 
 	//Start I2C in slow mode. Just pass in an empty I2C_Struct - used by I2C engine.
 	I2C_Init(I2C_MODE_STANDARD, &i2cState); 
 	
 	if (!TCS3471_PowerOn()) {
-		GPIO_WriteOutput(0,7,true);
+		any_gpio_write(0,7,true);
 		while (1) {}
 	}
 	
 	if (!TCS3471_SetIntegrationTimeMS(100)) {
-		GPIO_WriteOutput(0,7,true);
+		any_gpio_write(0,7,true);
 		while (1) {}
 	}
 
 	if (!TCS3471_SetWaitTimeMS(300)) {
-		GPIO_WriteOutput(0,7,true);
+		any_gpio_write(0,7,true);
 		while (1) {}
 	}
 
 	while (1) {
 		uint16_t r,g,b,c;
 		if (TCS3471_GetColors(&c,&r,&g,&b)) {
-			GPIO_WriteOutput(0,7,c > 1000);
+			any_gpio_write(0,7,c > 1000);
 		}
 		sleep(100000);
 	}

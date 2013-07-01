@@ -185,15 +185,15 @@ void main(void) {
 	USBCDC_ResetBehaviour(&cdcBehaviour);
 	USB_Init(&usbDefinition, &usbDevice);
 	USB_SoftConnect(&usbDevice);
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_write(LED_PORT, LED_PIN, false);
 	counter = 0;
 	
 	while (1) {
 		uint8_t ch;
 		if (USBCDC_ReadBytes(&usbDevice, &cdcBehaviour, &ch, 1)) {
 			counter++;
-			GPIO_WriteOutput(LED_PORT, LED_PIN, counter & 1);
+			any_gpio_write(LED_PORT, LED_PIN, counter & 1);
 
 			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
 			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';
