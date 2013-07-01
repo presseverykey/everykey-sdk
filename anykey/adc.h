@@ -153,4 +153,4 @@ typedef struct {
 	volatile ADSTAT AD0STAT;
 } ADC_STRUCT;
 
-#define ADC ((ADC_STRUCT*)(0x4001C000))
+#define ADC_HW ((ADC_STRUCT*)(0x4001C000))

@@ -4,7 +4,7 @@ void ADC_Init() {
 	/* 2. Power and peripheral clock: In the SYSAHBCLKCTRL register, set bit
 	13 (Table 25). Power to the ADC at run-time is controlled through the
 	PDRUNCFG register (Table 55). */
-  ADC->AD0CR.CLKDIV = 16; /* TODO : this is the value for 72Mhz */
+  ADC_HW->AD0CR.CLKDIV = 16; /* TODO : this is the value for 72Mhz */
   
   SYSCON->PDRUNCFG      &= (~SYSCON_ADC_PD);
   SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_ADC;
@@ -45,16 +45,16 @@ void ADC_Disable() {
 int32_t ADC_Read(uint8_t channel) {
   ADDR addr;
 
-  ADC->AD0CR.SEL    = 1 << channel;
-  ADC->AD0CR.BURST  = ADC_BURST_SW;
-  ADC->AD0CR.CLKS   = ADC_CLKS_11C_10B;
-  ADC->AD0CR.START  = ADC_START_START;
+  ADC_HW->AD0CR.SEL    = 1 << channel;
+  ADC_HW->AD0CR.BURST  = ADC_BURST_SW;
+  ADC_HW->AD0CR.CLKS   = ADC_CLKS_11C_10B;
+  ADC_HW->AD0CR.START  = ADC_START_START;
   
   do {
-    addr = ADC->AD0DR[channel];
+    addr = ADC_HW->AD0DR[channel];
   } while (!addr.DONE);
   
-  ADC->AD0CR.START  = ADC_START_NOSTART;
+  ADC_HW->AD0CR.START  = ADC_START_NOSTART;
 //  if (addr.OVERRUN) {
 //    return -1;
 //  }
