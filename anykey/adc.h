@@ -26,7 +26,9 @@
 	PDRUNCFG register (Table 55).
 */
 
-void ADC_Init();
+void    ADC_Init();
+void    ADC_Disable();
+int32_t ADC_Read(uint8_t channel);
 
 /* A/D Control Register 20.6.1*/
 typedef struct {

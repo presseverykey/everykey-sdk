@@ -12,20 +12,20 @@ void delay(int count) {
 }
 
 int main(void) {
-  GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
+  any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
   
   ADC_Init();
-  GPIO_SETPULL(ADC_PORT, ADC_PIN, IOCON_IO_PULL_UP);
-  GPIO_SETFUNCTION(ADC_PORT, ADC_PIN, ADC, IOCON_IO_ADMODE_ANALOG);
+  ANY_GPIO_SET_PULL(ADC_PORT, ADC_PIN, IOCON_IO_PULL_UP);
+  ANY_GPIO_SET_FUNCTION(ADC_PORT, ADC_PIN, ADC, IOCON_IO_ADMODE_ANALOG);
 
-    GPIO_WriteOutput(LED_PORT, LED_PIN, true);
+    any_gpio_write(LED_PORT, LED_PIN, true);
     ADC_Read(5);
 	while (true) {
 		int i = ADC_Read(5);
     //int i = 512;
-    GPIO_WriteOutput(LED_PORT, LED_PIN, false);
+    any_gpio_write(LED_PORT, LED_PIN, false);
 		delay(50 * (i+100));
-		GPIO_WriteOutput(LED_PORT, LED_PIN, true);
+		any_gpio_write(LED_PORT, LED_PIN, true);
     delay(50 * (1124-i));
 	}
   return 0;

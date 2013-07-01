@@ -1,4 +1,5 @@
 #include "anykey/anykey.h"
+#include "anypio/anypio.h"
 
 
 //simple wait routine
@@ -8,13 +9,10 @@ void delay(int count) {
 }
 
 void main(void) {
-
-	any_gpio_set_dir(LED, OUTPUT);
-
 	while (true) {
-		any_gpio_write(LED, true);
+		anypio_write(LED, true);
 		delay(1000000);
-		any_gpio_write(LED, false);
+		anypio_write(LED, false);
 		delay(1000000);
 	}
 }

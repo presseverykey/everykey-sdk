@@ -67,12 +67,12 @@ void main(void) {
 
 	//set all our pins to digital output
 
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_SetDir(VGA_RGB_PORT, VGA_R_PIN, GPIO_Output);
-	GPIO_SetDir(VGA_RGB_PORT, VGA_G_PIN, GPIO_Output);
-	GPIO_SetDir(VGA_RGB_PORT, VGA_B_PIN, GPIO_Output);
-	GPIO_SetDir(VGA_SYNC_PORT, VGA_HSYNC_PIN, GPIO_Output);
-	GPIO_SetDir(VGA_SYNC_PORT, VGA_VSYNC_PIN, GPIO_Output);
+	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_set_dir(VGA_RGB_PORT, VGA_R_PIN, OUTPUT);
+	any_gpio_set_dir(VGA_RGB_PORT, VGA_G_PIN, OUTPUT);
+	any_gpio_set_dir(VGA_RGB_PORT, VGA_B_PIN, OUTPUT);
+	any_gpio_set_dir(VGA_SYNC_PORT, VGA_HSYNC_PIN, OUTPUT);
+	any_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
 
 	//line counter is used for syncing, frame counter just for LED blinking
 
@@ -148,14 +148,14 @@ void systick(void) {
 
 	lineCounter++;
 	if (lineCounter==622) {
-		GPIO_WriteOutput(VGA_SYNC_PORT, VGA_VSYNC_PIN, 0);
+		any_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 0);
 	} else if (lineCounter>=624) {
-		GPIO_WriteOutput(VGA_SYNC_PORT, VGA_VSYNC_PIN, 1);
+		any_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 1);
 		lineCounter = 0;
 		frameCounter++;
 	}
 
 	// blink LED with 1Hz. Because we can.
 
-	GPIO_WriteOutput(LED_PORT, LED_PIN, (frameCounter/28)&1);
+	any_gpio_write(LED_PORT, LED_PIN, (frameCounter/28)&1);
 }

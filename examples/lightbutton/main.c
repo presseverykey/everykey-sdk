@@ -6,12 +6,12 @@
 #define KEY_PIN 1
 
 void main(void) {
-	GPIO_SetDir(LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_SetDir(KEY_PORT, KEY_PIN, GPIO_Input);
-	GPIO_SETPULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
+	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 
 	while (true) {
-		bool button = GPIO_ReadInput(KEY_PORT, KEY_PIN);
-		GPIO_WriteOutput(LED_PORT, LED_PIN, button);
+		bool button = any_gpio_read(KEY_PORT, KEY_PIN);
+		any_gpio_write(LED_PORT, LED_PIN, button);
 	}
 }

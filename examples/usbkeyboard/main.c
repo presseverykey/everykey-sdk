@@ -60,11 +60,11 @@ void outReportHandler (USB_Device_Struct* device,
 					   uint8_t reportId,
 					   uint16_t len) {
 	bool ledOn = outBuffer[0] & 0x02;	//caps lock LED
-	GPIO_WriteOutput (LED_PORT, LED_PIN, ledOn);
+	any_gpio_write (LED_PORT, LED_PIN, ledOn);
 }
 
 void systick () {
-	bool buttonDown = !GPIO_ReadInput (KEY_PORT, KEY_PIN);
+	bool buttonDown = !any_gpio_read (KEY_PORT, KEY_PIN);
 	if (buttonDown && !buttonWasDown) counter = 0;
 	buttonWasDown = buttonDown;
 	
@@ -83,10 +83,10 @@ void systick () {
 }
 
 void main () {
-	GPIO_SetDir (LED_PORT, LED_PIN, GPIO_Output);
-	GPIO_WriteOutput (LED_PORT, LED_PIN, false);
-	GPIO_SetDir (KEY_PORT, KEY_PIN, GPIO_Input);
-	GPIO_SETPULL (KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	any_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
+	any_gpio_write (LED_PORT, LED_PIN, false);
+	any_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
+	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 	
 	buttonWasDown = false;
 	downKey = 0;
