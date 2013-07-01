@@ -1,17 +1,17 @@
-#include "anykey/anykey.h"
+#include "anypio.h"
 
-#define LED_PORT 0
-#define LED_PIN 7
-#define KEY_PORT 0
-#define KEY_PIN 1
 
 void main(void) {
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
 
+	// in case you are lucky (?) enough to own
+	// a vintage first edition anykey: the second
+	// edition got an extra button and the pins are
+	// mapped differently, so you'll need to replace
+	// KEY1_REV2 with KEY_REV1 in the code below.
+
+	anypio_digital_input_set(KEY1_REV2, PULL_UP);
 	while (true) {
-		bool button = any_gpio_read(KEY_PORT, KEY_PIN);
-		any_gpio_write(LED_PORT, LED_PIN, button);
+		bool button = anypio_read(KEY1_REV2);
+		anypio_write(LED, button);
 	}
 }
