@@ -139,7 +139,7 @@ void initialize_ports (void) {
 	}
 	// ... except the key pad
 	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
 }
 
 // turn on pad number `pad+1`, the pad parameter is

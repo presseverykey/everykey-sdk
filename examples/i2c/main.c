@@ -191,7 +191,7 @@ void main () {
 	any_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
 	any_gpio_write   (LED_PORT, LED_PIN, false);
 	any_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, PULL_UP);
 
 	//Start I2C in slow mode. Just pass in an empty I2C_Struct - used by I2C engine.
 	I2C_Init(I2C_MODE_STANDARD, &i2cState); 

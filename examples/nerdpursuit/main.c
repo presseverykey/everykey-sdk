@@ -21,7 +21,7 @@ void main (void) {
   any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
   any_gpio_set_dir(KEY_PORT, KEY_PIN , INPUT);
 
-  ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+  ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
   init_keyboard();
   init_game();
   any_gpio_write(LED_PORT, LED_PIN, false);

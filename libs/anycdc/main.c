@@ -1,5 +1,5 @@
 #include "anycdc.h"
-#include "anypio.h"
+#include "anykey/anykey.h"
 
 int counter;
 
@@ -8,14 +8,15 @@ void main(void) {
 	anycdc_init(&cdc);
 
 	
-	anypio_write  (LED, false);
+	any_gpio_set_dir(LED, OUTPUT);
+	any_gpio_write  (LED, false);
 
 	while(true) {
 		int b;
 		if ( -1 !=  (b = anycdc_read_byte(&cdc)) ) {
 			uint8_t ch = b & 0xff;
 			++counter;
-			anypio_write(LED, counter & 1);
+			any_gpio_write(LED, counter & 1);
 			
 			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
 			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';

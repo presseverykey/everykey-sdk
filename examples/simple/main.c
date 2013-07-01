@@ -1,5 +1,4 @@
-#include "anykey/anykey.h"
-#include "anypio/anypio.h"
+#include "anypio.h"
 
 
 //simple wait routine

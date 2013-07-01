@@ -1,4 +1,4 @@
-#include "../../anykey/anykey.h"
+#include "anykey/anykey.h"
 
 typedef struct any_pin {
   uint8_t port;

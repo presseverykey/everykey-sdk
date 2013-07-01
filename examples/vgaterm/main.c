@@ -87,7 +87,7 @@ void main(void) {
 	any_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
 
 	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, IOCON_IO_PULL_UP);
+	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
 
 	setScreen(screen1);
 
