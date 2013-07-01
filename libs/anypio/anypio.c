@@ -18,45 +18,49 @@ void anypio_write(any_pin pin, bool val){
 	any_gpio_write(pin.port, pin.pin, val);
 }
 
-bool anypio_read(any_pin pin, any_gpio_pull_mode mode){
+void anypio_digital_input_set(any_pin pin, any_gpio_pull_mode mode) {
 	_anypio_set_digital_pio(pin);
 	any_gpio_set_dir(pin.port, pin.pin, INPUT);
 	any_gpio_set_pull(pin.iocon, mode);
+
+}
+
+bool anypio_read(any_pin pin){
 	return any_gpio_read(pin.port, pin.pin);
 }
 
 static inline uint8_t _anypio_map_pin_to_channel (any_pin pin) {
-	switch((int)pin.iocon) {           
-		case (int)&IOCON->PIO0_10:       
-			return 0;                   
-			break;                         
-		case (int)&IOCON->PIO1_0:        
-			return 1;                   
-			break;                         
-		case (int)&IOCON->PIO1_1:        
-			return 2;                   
-			break;                         
-		case (int)&IOCON->PIO1_2:        
-			return 3;                   
-			break;                         
-		case (int)&IOCON->PIO1_3:        
-			return 4;                   
-			break;                         
-		case (int)&IOCON->PIO1_4:        
-			return 5;                   
-			break;                         
-		case (int)&IOCON->PIO1_10:       
-			return 6;                   
-			break;                         
-		case (int)&IOCON->PIO1_11:       
-			return 7;                   
-			break;                         
-    default:                         
-      return 8;                   
+	switch((int)pin.iocon) {
+		case (int)&IOCON->PIO0_10:
+			return 0;
+			break;
+		case (int)&IOCON->PIO1_0:
+			return 1;
+			break;
+		case (int)&IOCON->PIO1_1:
+			return 2;
+			break;
+		case (int)&IOCON->PIO1_2:
+			return 3;
+			break;
+		case (int)&IOCON->PIO1_3:
+			return 4;
+			break;
+		case (int)&IOCON->PIO1_4:
+			return 5;
+			break;
+		case (int)&IOCON->PIO1_10:
+			return 6;
+			break;
+		case (int)&IOCON->PIO1_11:
+			return 7;
+			break;
+    default:
+      return 8;
 	}
 }
 static uint8_t anypio_analog_config = 0;
-void anypio_analog_set(any_pin pin, bool on_off) {
+void anypio_analog_input_set(any_pin pin, bool on_off) {
 	uint8_t channel = _anypio_map_pin_to_channel(pin);
 	if (channel == 8) {
 		return;

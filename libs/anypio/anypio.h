@@ -46,8 +46,23 @@ void anypio_write(any_pin, bool);
 //    REPEAT 
 bool anypio_read(any_pin, any_gpio_pull_mode);
 
+
+// configures the given pin as a digital input pin,
+// the pin needs to be configured for input before
+// using `anypio_gpio_read`.
+// Along with the pin to configure, it's necessary to
+// provide a value of the pull_up/down mode. 
+//
+// Possible values are:
+//    NONE
+//    PULL_DOWN
+//    PULL_UP
+//    REPEAT
+//
+void anypio_digital_input_set(any_pin, any_gpio_pull_mode);
+
 // activates the ADC functionality for the pin
-void anypio_analog_set(any_pin, bool);
+void anypio_analog_input_set(any_pin, bool);
 
 // reads the analog values (voltage) set at the
 // pin. This reads a 10 bit value from the pin.

@@ -37,13 +37,11 @@ void any_gpio_set_interrupt_mode(uint8_t port, uint8_t pin, any_gpio_interrupt_m
     if (mode == TRIGGER_NONE){
 			GPIO[port].IE &= ~mask;
     } else {
-			
 			if ((mode == TRIGGER_HIGH_LEVEL) || (mode == TRIGGER_LOW_LEVEL)){
 				GPIO[port].IS |= mask;
 			} else {
 				GPIO[port].IS &= ~mask;
 			}
-			
 			if (mode == TRIGGER_BOTH_EDGES){
 				GPIO[port].IBE |= mask;
 			} else {

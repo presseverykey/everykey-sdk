@@ -91,7 +91,7 @@ void delay (uint32_t duration) {
 
 void SPIFLASH_Init() {
 	any_gpio_set_dir(FLASHSEL_PORT, FLASHSEL_PIN, OUTPUT);
-	any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	//deselect chip (low active)	
+	any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	//deselect chip (low active)
 	SSP_Init(4, 8, SSP_CR0_FRF_SPI, true, true, true);
 }
 
