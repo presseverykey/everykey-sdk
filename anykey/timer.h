@@ -131,9 +131,9 @@ typedef enum {
 
 
 typedef enum {
-	TIMER_MATCH_INTERRUPT = 1,
-	TIMER_MATCH_RESET = 2,
-	TIMER_MATCH_STOP = 4
+	TIMER_MATCH_INTERRUPT = MR0I,
+	TIMER_MATCH_RESET     = MR0R,
+	TIMER_MATCH_STOP      = MR0S
 } TIMER_MATCH_BEHAVIOUR;
 
 /** enables or disables a timer. Note that this does not start it.
