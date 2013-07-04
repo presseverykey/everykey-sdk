@@ -10,7 +10,7 @@ void main(void) {
 	ANY_GPIO_SET_FUNCTION(0,9,TMR, IOCON_IO_ADMODE_DIGITAL);
 	
 	Timer_Enable(CT16B0, true);
-	Timer_SetPrescale(CT16B0, 720);       // divider for the system clock: 72MHz 100kHz
+	Timer_SetPrescale(CT16B0, 719);       // divider for the system clock: 72MHz 100kHz
 																				// PWM pins start LOW and will switch to HIGH when
 																				// the value in the timer reaches the value
 																				// in their match register is reached
