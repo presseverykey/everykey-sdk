@@ -22,6 +22,12 @@ void SYSCON_StartSystick(uint32_t clocks) {
 	SYSTICK->CTRL = 7;
 }
 
+#define CLOCKS_10MS 0x000AFC7F
+
+void SYSCON_StartSystick_10ms() {
+	SYSCON_StartSystick(CLOCKS_10MS);
+}
+
 void SYSCON_StopSystick(void) {
 	SYSTICK->CTRL = 0;
 }
