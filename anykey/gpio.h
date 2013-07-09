@@ -100,8 +100,41 @@ void any_gpio_set_function(HW_RW* pin, IOCON_IO_FUNC mode, IOCON_IO_ADMODE admod
 /** define to call setFunction in a syntax similar to other in/out calls
  * if port and pin are known at compile time. Two-step for argument
  * macro expansion. 
-
-e.g. GPIO_SETFUNCTION(0, 10, TMR, IOCON_IO_ADMODE_DIGITAL); */
+ *
+ * e.g. ANY_GPIO_SET_FUNCTION(0, 10, TMR, IOCON_IO_ADMODE_DIGITAL); 
+ *
+ * The values for `func` depend on the capabilities of the pin and
+ * can be looked up in `memorymap.h`, every port/pin combination has constants of the form:
+ *    
+ *     IOCON_IO_FUNC_<port>_<pin>_<func>
+ *
+ * as well as section 7.4 in the User Manual.
+ *
+ * Possible values are are:
+ *     - R   : reserved (doesn't make sense to chose this)
+ *     - PIO : normal, digital PIN I/O
+ *     - ADC : analog, digital conversion
+ *     - TMR : timer
+ *     - SWD : debugging
+ *     - CLK : clock out
+ *     - USBTG : (usb toggle)
+ *     - SCL : i2c SCL
+ *     - SDA : i2c SDA
+ *     - CTS : UART clear to send
+ *     - RTS : UART Request to send
+ *     - RXD : UART Receive
+ *     - TXD : UART Transmit
+ *     - DTR : UART Data Terminal Reader
+ *     - DSR : UART Data Set Ready
+ *     - DCD : UART Data Carrier Select
+ *     - MISO: SPI MISO
+ *     - MOSI: SPI MOSI
+ *     - SSEL: SPI slave select
+ *     - SCK : SPI clock
+ *
+ * Note that most functionality will require more configuration than just setting the pin function!
+ *
+*/
 
 #define ANY_GPIO_SET_FUNCTION(port,pin,func,admode) _SET_FUNCTION2(port,pin,func,admode)
 #define _SET_FUNCTION2(port,pin,func,admode) {any_gpio_set_function(&(IOCON->PIO ## port ## _ ## pin),IOCON_IO_FUNC_PIO ## port ## _ ## pin ## _ ## func ,admode); }
