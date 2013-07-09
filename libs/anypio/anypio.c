@@ -4,7 +4,7 @@
 
 static void _anypio_set_digital_pio(any_pin pin) {
 	IOCON_IO_FUNC func = 0x00;
-	if (pin.port == 0 && (pin.pin == 10 || pin.pin == 11) ) {
+	if (pin.port == 0 && (pin.pin == 10 || pin.pin == 11 || pin.pin == 0) ) {
 		func = 0x01;
 	}
 	if (pin.port == 1 && (pin.pin < 4) ) {

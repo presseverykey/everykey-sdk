@@ -15,7 +15,7 @@ typedef struct any_pin {
 #define KEY_REV1  (any_pin){1,4, &IOCON->PIO1_4}
 #define KEY1_REV2 (any_pin){0,1, &IOCON->PIO0_1}
 #define KEY2_REV2 (any_pin){0,0, &IOCON->PIO0_0}
-#define PIN_0_0   (any_pin){0,1, &IOCON->PIO0_0}
+#define PIN_0_0   (any_pin){0,0, &IOCON->PIO0_0}
 #define PIN_0_1   (any_pin){0,1, &IOCON->PIO0_1}
 #define PIN_0_2   (any_pin){0,2, &IOCON->PIO0_2}
 #define PIN_0_4   (any_pin){0,4, &IOCON->PIO0_4}
