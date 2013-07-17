@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
   // Check for required arguments
   if (argc < 2)
   {
-    printf("syntax: lpcrc <firmware.bin>\n");
+    printf("syntax: checksum <firmware.bin>\n");
     return 1;
   }
   
