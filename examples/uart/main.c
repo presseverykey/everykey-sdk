@@ -179,7 +179,6 @@ const USB_Device_Definition usbDefinition = {
 	
 USB_Device_Struct usbDevice;
 
-int counter;
 
 void main(void) {	
 	USBCDC_ResetBehaviour(&cdcBehaviour);
@@ -187,8 +186,6 @@ void main(void) {
 	USB_SoftConnect(&usbDevice);
 	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
 	any_gpio_write(LED_PORT, LED_PIN, false);
-	counter = 0;
-	
 	UART_Init(9600, 8, UART_PARITY_NONE, 1, false, NULL);
 
 	while (1) {
@@ -196,13 +193,16 @@ void main(void) {
 
 		if (USBCDC_ReadBytes(&usbDevice, &cdcBehaviour, &ch, 1)) {
 			while (!UART_Write(&ch,1)) {};
-			counter++;
-		}
-		if (UART_Read(&ch, 1)) {
-			while (!USBCDC_WriteBytes(&usbDevice, &cdcBehaviour, &ch,1)) {};
-			counter++;
+			if (ch == 0x0d) {	//convert CR to CRLF
+				ch = 0x0a;
+				while (!UART_Write(&ch,1)) {};
+			}
+			any_gpio_write(LED_PORT, LED_PIN, !any_gpio_read(LED_PORT,LED_PIN));
 		}
 
-		any_gpio_write(LED_PORT, LED_PIN, counter & 1);
+		if (UART_Read(&ch, 1)) {
+			while (!USBCDC_WriteBytes(&usbDevice, &cdcBehaviour, &ch,1)) {};
+			any_gpio_write(LED_PORT, LED_PIN, !any_gpio_read(LED_PORT,LED_PIN));
+		}
 	}
 }
