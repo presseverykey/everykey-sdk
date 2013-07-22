@@ -125,7 +125,7 @@ void uart_handler() {
 			{
 				uint8_t lineStatus = UART_HW->LSR;
 				if (uartStatusHandler) {
-					if (lineStatus & UART_LS_OE) (*uartStatusHandler)(UART_STATUS_OVERRUN);
+					if (lineStatus & UART_LS_OE) uartStatusHandler(UART_STATUS_OVERRUN);
 					if (lineStatus & UART_LS_PE) uartStatusHandler(UART_STATUS_PARITY_ERROR);
 					if (lineStatus & UART_LS_FE) uartStatusHandler(UART_STATUS_FRAMING_ERROR);
 					if (lineStatus & UART_LS_BI) uartStatusHandler(UART_STATUS_BREAK);

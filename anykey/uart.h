@@ -22,7 +22,6 @@
  buffer reserve (16 bytes total). Allowed values: 1,4,8,14 */
 #define RX_TLVL UART_FCR_RXTLVL8
 
-
 /** combined values for parity enable and parity mode */
 typedef enum {
     UART_PARITY_NONE = 0x00,
