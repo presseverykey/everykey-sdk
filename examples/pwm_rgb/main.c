@@ -4,7 +4,7 @@
 // This is an example of creating a rainbow animation with an RGB LED.
 // You'll probably want to read the examples in `pwm` and `pwm_scale`
 // because we won't explain the basic of PWM and timers in the example.
-
+// Connect LEDs to the following pins (or, better, connect LED drivers).
 
 /*
 2_1  ( 1)       -
@@ -28,7 +28,7 @@
 2_3  (19)       - 
 1_4  (20)       -
 1_2  (24)       -
-1_1  (25)       - Button
+1_1  (25)       -
 2_2  (26)       - 
 */
 
@@ -36,7 +36,6 @@
 
 // Some defines to keep track of where the connections are located.
 
-#define BUTTON PIN_1_1
 #define R PIN_0_8
 #define G PIN_0_9
 #define B PIN_0_10
@@ -44,8 +43,6 @@
 void main(void) {
 	anypio_write(LED, false);
 
-	anypio_digital_input_set(BUTTON, PULL_DOWN);
-	
 	// prepare the RGB outputs for PWM (timer and digital mode)
 	ANY_GPIO_SET_FUNCTION(0,8,TMR,IOCON_IO_ADMODE_DIGITAL);
 	ANY_GPIO_SET_FUNCTION(0,9,TMR,IOCON_IO_ADMODE_DIGITAL);
@@ -129,40 +126,40 @@ void systick() {
 	// `counter` is used to keep track of which transition is
 	// currently active (e.g. RED to YELLOW) and the state of the current
 	// transistion (e.g. "still nearly RED", or "almost YELLOW")
-	// simultaneously.  The bottom six bits of counter keep track of where
-	// we are within the transition (the phase).  The top 26 bits keep
+	// simultaneously.  The bottom seven bits of counter keep track of where
+	// we are within the transition (the phase).  The top 25 bits keep
 	// track of the transition.
 	//
 	//     0000 0000  0000 0000  0000 0000  0000 0000
-	//     TTTT TTTT  TTTT TTTT  TTTT TTTT  TTPP PPPP
+	//     TTTT TTTT  TTTT TTTT  TTTT TTTT  TPPP PPPP
 	//
 	// We'll toggle the LED everytime we change to a new transition. Since
-	// the binary mask of the first transition bit is 0x40:
+	// the binary mask of the first transition bit is 0x80:
 	//
 	//     0000 0000  0000 0000  0000 0000  0000 0000
-	//     TTTT TTTT  TTTT TTTT  TTTT TTTT  TTPP PPPP
-	//     0000 0000  0000 0000  0000 0000  0100 0000
+	//     TTTT TTTT  TTTT TTTT  TTTT TTTT  TPPP PPPP
+	//     0000 0000  0000 0000  0000 0000  1000 0000
 	//
 	// and it will toggle every transition, we can use this mask to turn
 	// the LED on and off at each subsequent transition.
 
-	anypio_write(LED, counter & 0x40);
+	anypio_write(LED, counter & 0x80);
 
 	// Since this routine is called every ten ms and the counter needs to
-	// reach 0x40 (= 64 decimal) for a new transition to start, each
-	// transition takes 64 * 10ms or just over half a second.
+	// reach 0x80 (= 128 decimal) for a new transition to start, each
+	// transition takes 128 * 10ms or just over a second.
 	
 	// Now we need to figure out the current values for FROM and TO of the
 	// transition, to access the values in the transition array above.
 
-	int from = (counter >> 6) % 12;
+	int from = (counter >> 7) % 12;
 
-	// Since we bottom six bits indicate where we are WITHIN the
+	// Since we bottom seven bits indicate where we are WITHIN the
 	// transition we shift them out, leaving us with the value of the
 	// transition. Because we only have 12 transitions, but the transition
-	// portion of the counter can count to 67108863 (`counter` is 32 bits
-	// long, 6 bits are for the phase, leaves 26 bits -> 2**26-1 = 67108863
-	// we need to map values 0...67108863 to the range 0..11.
+	// portion of the counter can count to 33554431 (`counter` is 32 bits
+	// long, 7 bits are for the phase, leaves 25 bits -> 2**25-1 = 33554431
+	// we need to map values 0...33554431 to the range 0..11.
 	// To do this, we use the modulo operator ( '%' remainder after division)
 	
 	int to = (from + 1) % 12;
@@ -176,35 +173,37 @@ void systick() {
 	// Now that we know WHICH transition we are in, we need to figure out
 	// at what step within the transistion we are, the phase...
 	//
-	// As mentioned, the bottom six bits of `counter` keep track of this.
-	// These range from: 00 0000 to 11 1111.
-	// The values are basically the porportion of the 'to' color to the
+	// As mentioned, the bottom seven bits of `counter` keep track of this.
+	// These range from: 000 0000 to 111 1111.
+	// The values are basically the proportion of the 'to' color to the
 	// 'from' color. At the beginning of the cycle we use 0 of the 'to'
 	// color, the amount 'to' color increases each time `systick` is
 	// called until, at the end of the cycle, we're using 0 of the 'from'
 	// color. 
-	// 
 	
-	uint32_t weight_to   = counter & 0x3f;
-  uint32_t weight_from = 0x3F - weight_to;
+	uint32_t weight_to   = counter & 0x7f;
+	uint32_t weight_from = 0x80 - weight_to;
 
-	// The mask 0x3F corresponds to "all lower 6 bits set" (0011 1111)
+	// The mask 0x7F corresponds to "all lower 7 bits set" (0111 1111)
 	// and, if applied to `counter` with a logical AND, isolates the phase
-	// within our transition cycle.
+	// within our transition cycle. The weights always sum up to 0x80. Note
+	// that weight_from is never 0 - the full transition to the second
+	// position is the first step of the next phase.
 
-	uint32_t r = (weight_from * rgbValues[from].r + weight_to * rgbValues[to].r ) >> 6;
-	uint32_t g = (weight_from * rgbValues[from].g + weight_to * rgbValues[to].g ) >> 6;
-	uint32_t b = (weight_from * rgbValues[from].b + weight_to * rgbValues[to].b ) >> 6;
+	uint32_t r = (weight_from * rgbValues[from].r + weight_to * rgbValues[to].r ) >> 7;
+	uint32_t g = (weight_from * rgbValues[from].g + weight_to * rgbValues[to].g ) >> 7;
+	uint32_t b = (weight_from * rgbValues[from].b + weight_to * rgbValues[to].b ) >> 7;
 
 	// Since `proportion_from` and `proportion_to` always add up to
-	// 0x3F (0011 1111), we need to divide that factor out again.
-	// Shifting by 6 ( `>> 6` ) is equivalent to dividing by 2 ** 6
-	// (which is equals to 0x3F) 
+	// 0x80 (1000 0000), we need to divide that factor out again.
+	// Shifting by 7 ( `>> 7` ) is equivalent to dividing by 2 ** 7
+	// (which is equals to 0x80). Why shifting instead of dividing?
+	// Shifting is much easier for the processor (and therefore faster).
 
-	
+
 	// Finally, set the match value of the PWM. If you're not sure what
 	// this means, review the `pwm` and `pwm_scale` examples...
-	//
+
 	// Our timer-counter is configured to run from 0..0xffff (~66000).
 	// Whenever it reaches the match value, it switches the pin connected
 	// to it ON. Our RGB values also have the range of 0..0xffff, so
