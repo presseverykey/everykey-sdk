@@ -18,14 +18,12 @@ void anypio_write(any_pin pin, bool val){
 	any_gpio_write(pin.port, pin.pin, val);
 }
 
-static bool led = true;
 void anypio_led(bool on) {
-	led = on;
 	anypio_write(LED, on);
 }
 
 void anypio_led_toggle() {
-	anypio_led(!led);
+	anypio_led(!anypio_read(LED));
 }
 
 void anypio_digital_input_set(any_pin pin, any_gpio_pull_mode mode) {
