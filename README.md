@@ -1,4 +1,4 @@
-Short and Sweat
+Short and Sweet
 ===============
 
 The Anykey SDK is an SDK for the NXP LPC1343 processor, featuring access
