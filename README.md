@@ -24,9 +24,9 @@ This directory contains the following items:
 - `anykey`: The Anykey runtime for the LPC1343 / Anykey0x.de
   board, linker script and makefile
 - `anykey_usb` : USB firmware, this is quite large so we keep it seperated.
-- checksum: A tool to calculate and adjust the checksum of a firmware
+- `checksum`: A tool to calculate and adjust the checksum of a firmware
   file
-- several example projects (see below for descriptions)
+- several sample projects (see the README in the `examples` directory )
 
 In contrast to other runtimes, the Anykey SDK does not link against
 precompiled libraries. Instead, the runtime is included into projects as
@@ -52,7 +52,7 @@ For developing and building Anykey software, you will need:
 - gnu make
 - checksum tool (go to checksum directory, build checksum tool (`make`))
 
-For compiling the checksum tool, you might also need a gcc for your development computer.
+For compiling the checksum tool, you may also need to install a gcc for your development computer.
 
 Make sure that the toolchain's tools, make and checksum are found by your terminal (adjust $PATH so that they can be found).
 
