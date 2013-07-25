@@ -37,6 +37,7 @@ Homebrew PWM
 
 ## `pwm`
 ## `pwm_scale`
+## `pwm_rgb`
 
 PWM examples using the built in PWM and timer mechanism
 
