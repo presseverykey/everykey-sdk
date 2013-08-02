@@ -45,7 +45,7 @@ void ADC_Disable() {
 int32_t ADC_Read(uint8_t channel) {
   ADDR addr;
 
-  volatile uint32_t* CR = &(ADC_HW->AD0CR);
+  volatile uint32_t* CR = (uint32_t*)(&(ADC_HW->AD0CR));
   volatile uint32_t* DRx = (uint32_t*)(&(ADC_HW->AD0DR[channel]));
   uint32_t crVal = 0x1001000 | (1 << channel);
   *CR = crVal;
