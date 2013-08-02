@@ -19,6 +19,7 @@ void main(void) {
 		uint8_t ch;
 		int b = anycdc_read_byte(&cdc);
 		if (b > 0) {
+			ch = b;
 			while (!UART_Write(&ch,1)) {};
 			if (ch == 0x0d) {	//convert CR to CRLF
 				ch = 0x0a;
