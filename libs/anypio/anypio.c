@@ -18,14 +18,12 @@ void anypio_write(any_pin pin, bool val){
 	any_gpio_write(pin.port, pin.pin, val);
 }
 
-static bool led = true;
 void anypio_led(bool on) {
-	led = on;
 	anypio_write(LED, on);
 }
 
 void anypio_led_toggle() {
-	anypio_led(!led);
+	anypio_led(!anypio_read(LED));
 }
 
 void anypio_digital_input_set(any_pin pin, any_gpio_pull_mode mode) {
@@ -41,7 +39,7 @@ bool anypio_read(any_pin pin){
 
 static inline uint8_t _anypio_map_pin_to_channel (any_pin pin) {
 	switch((int)pin.iocon) {
-		case (int)&IOCON->PIO0_10:
+		case (int)&IOCON->PIO0_11:
 			return 0;
 			break;
 		case (int)&IOCON->PIO1_0:

@@ -11,5 +11,6 @@
 #include "timer.h"
 #include "i2c.h"
 #include "adc.h"
+#include "uart.h"
 
 #endif

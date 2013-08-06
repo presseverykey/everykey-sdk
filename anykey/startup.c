@@ -27,7 +27,7 @@ void gpio1_handler(void) DEFAULTS_TO(deadend);
 void gpio2_handler(void) DEFAULTS_TO(deadend);
 void gpio3_handler(void) DEFAULTS_TO(deadend);
 void i2c_handler(void) DEFAULTS_TO(deadend);
-
+void uart_handler(void) DEFAULTS_TO(deadend);
 /* The vector table - contains the initial stack pointer and
  pointers to boot code as well as interrupt and fault handler pointers.
  The processor will expect this to be located at address 0x0, so
@@ -99,7 +99,7 @@ const VECTOR_TABLE vtable = {
 	ct32b0_handler,          //32-bit Timer 0 handler
 	ct32b1_handler,          //32-bit Timer 1 handler
 	deadend,                 //SSP
-	deadend,                 //UART
+	uart_handler,            //UART
 	usb_irq_handler,         //USB IRQ
 	usb_fiq_handler,         //USB FIQ
 	deadend,                 //ADC
