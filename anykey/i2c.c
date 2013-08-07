@@ -5,6 +5,8 @@
 
 I2C_State* i2c_state = POINTER_NOT_SET;
 
+volatile uint8_t latestI2CState = 0;
+
 void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 	i2c_state = inState;
 	i2c_state->refcon = 0;
@@ -52,8 +54,8 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 
 void i2c_handler(void) {
 	uint32_t status = 0xf8 & I2C->STAT;
-	
-	NVIC_ClearInterruptPending(NVIC_I2C0);
+	if (status) latestI2CState = status;
+
 
 	I2C_STATUS userStatus = I2C_STATUS_OK; 	//status code to return
 
@@ -77,15 +79,11 @@ void i2c_handler(void) {
 			}
 			break;
 		case I2C_STAT_SLAW_NACKED:			//SLAW failed -> finish, notify
-			i2c_state->toWrite = 0;
-			i2c_state->toRead = 0;
 			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
 			userStatus = I2C_STATUS_ADDRESSING_FAILED;
 			goto stopAndNotifyUser;
 			break;
 		case I2C_STAT_DATA_WRITE_NACKED:	//Data write failed -> finish, notify
-			i2c_state->toWrite = 0;
-			i2c_state->toRead = 0;
 			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
 			userStatus = I2C_STATUS_DATA_FAILED;
 			goto stopAndNotifyUser;
@@ -99,30 +97,40 @@ void i2c_handler(void) {
 			break;
 		case I2C_STAT_SLAR_ACKED:
 			if (i2c_state->toRead > 1) I2C->CONSET = I2C_CONSET_AA;
+			else I2C->CONCLR = I2C_CONCLR_AAC;
 			break;
 		case I2C_STAT_SLAR_NACKED:			//SLAR nacked -> finish, notify
-			i2c_state->toWrite = 0;
-			i2c_state->toRead = 0;
 			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
 			userStatus = I2C_STATUS_ADDRESSING_FAILED;
 			goto stopAndNotifyUser;
 			break;
 		case I2C_STAT_DATA_READ_ACKED:		//byte read and acked (more to come)
-		case I2C_STAT_DATA_READ_NACKED:		//byte read and nacked (done)
-			if (i2c_state->toRead) {
+			{
 				uint8_t val = I2C->DAT;
-				*(i2c_state->readBuffer) = val;
-				i2c_state->readBuffer++;
-				i2c_state->toRead--;
-				if (i2c_state->toRead <= 1) I2C->CONCLR = I2C_CONCLR_AAC;
+				if (i2c_state->toRead > 0) {
+					*(i2c_state->readBuffer) = val;
+					i2c_state->readBuffer++;
+					i2c_state->toRead--;
+				}
 			}
-			if (!i2c_state->toRead) {
-				I2C->CONSET = I2C_CONSET_STO;
-				userStatus = I2C_STATUS_OK;
-				goto stopAndNotifyUser;
-			}
+			if (i2c_state->toRead > 1) I2C->CONSET = I2C_CONSET_AA;
+			else I2C->CONCLR = I2C_CONCLR_AAC;
 			break;
-		default: 
+		case I2C_STAT_DATA_READ_NACKED:		//byte read and nacked (done)
+			{
+				uint8_t val = I2C->DAT;
+				if (i2c_state->toRead > 0) {
+					*(i2c_state->readBuffer) = val;
+					i2c_state->readBuffer++;
+					i2c_state->toRead--;
+				}
+			}
+			userStatus = I2C_STATUS_OK;
+			goto stopAndNotifyUser;
+			break;
+		default: 	//Should not happen
+			userStatus = I2C_STATUS_INTERNAL_ERROR;
+			goto stopAndNotifyUser;
 			break;
 	}
 
@@ -130,10 +138,11 @@ void i2c_handler(void) {
 	return;
 
 stopAndNotifyUser:
+	i2c_state->toWrite = 0;
+	i2c_state->toRead = 0;
 	I2C->CONSET = I2C_CONSET_STO;
 notifyUser:
 	I2C->CONCLR = I2C_CONCLR_SIC;
-
 	if (i2c_state->completionHandler) i2c_state->completionHandler(i2c_state->refcon, userStatus);
 }
 
@@ -175,4 +184,11 @@ I2C_STATUS I2C_WriteRead(uint8_t addr,
 
 bool I2C_TransactionRunning() {
 	return ((i2c_state->toRead > 0) || (i2c_state->toWrite > 0));
+}
+
+void I2C_CancelTransaction() {
+	i2c_state->completionHandler = NULL;
+	i2c_state->toWrite = 0;
+	i2c_state->toRead = 0;
+	I2C->CONSET = I2C_CONSET_STO; //send stop condition (which will hopefully stop everything)
 }

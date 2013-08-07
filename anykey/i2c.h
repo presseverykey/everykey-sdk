@@ -19,7 +19,8 @@ typedef enum {
 	I2C_STATUS_ADDRESSING_FAILED,
 	I2C_STATUS_DATA_FAILED,
 	I2C_STATUS_ARBITRATION_LOST,
-	I2C_STATUS_TIMEOUT
+	I2C_STATUS_TIMEOUT,
+	I2C_STATUS_INTERNAL_ERROR,	//Something weird happened
 } I2C_STATUS;
 
 /** User-supplied callback when a I2C transaction finished.
@@ -84,13 +85,13 @@ typedef enum {
 
 /** structure for housekeeping of transactions */
 typedef struct {
-	uint32_t refcon;		//user-supplied refcon for this transaction
-	uint8_t slaveAddress;   //slave address to talk to
-	uint16_t toWrite;       //remaining number of bytes to write
-	uint8_t* writeBuffer;   //pointer to next byte to write
-	uint16_t toRead;        //remaining number of bytes to read
-	uint8_t* readBuffer;    //pointer to next byte to read
-	I2C_CompletionHandler completionHandler;  //callback when transaction is completed
+	volatile uint32_t refcon;		//user-supplied refcon for this transaction
+	volatile uint8_t slaveAddress;   //slave address to talk to
+	volatile uint16_t toWrite;       //remaining number of bytes to write
+	volatile uint8_t* writeBuffer;   //pointer to next byte to write
+	volatile uint16_t toRead;        //remaining number of bytes to read
+	volatile uint8_t* readBuffer;    //pointer to next byte to read
+	volatile I2C_CompletionHandler completionHandler;  //callback when transaction is completed
 } I2C_State;
 
 /** Codes for bus speed */
@@ -153,6 +154,9 @@ I2C_STATUS I2C_WriteRead(uint8_t addr,
  @return true if there is a pending transaction, false otherwise */
 bool I2C_TransactionRunning();
 
+
+/** tries to cancel a pending transaction */
+void I2C_CancelTransaction();
 
 
 #endif
