@@ -12,7 +12,7 @@
 //animation speed in systick intervals. For 36 kHz systick, 256 will result in roughly 144 Hz.
 #define ANIM_SPEED 256
 
-//triangle wave size, one side in anim speed. With 512 steps (full wave), we'll repeat all 3.5s.
+//triangle wave size, one side in anim speed. With 512 steps (full wave), we'll repeat every 3.5s.
 #define ANIM_STEPS 256
 
 uint32_t counter;	//we count systicks for deriving pwm phase and brightness
