@@ -3,16 +3,16 @@
 #include "keyboard.h"
 
 const uint8_t kbd_deviceDescriptor[] = {
-	0x12,							              //bLength: length of this structure in bytes (18)
-	USB_DESC_DEVICE,				        //bDescriptorType: usb device descriptor
-	0x00, 0x02,						          //bcdUSB: 0200 (Little Endian) - USB 2.0 compliant
-	USB_CLASS_DEVICE,				        //bDeviceClass: Device class (0 = interfaces specify class)
-	0x00,							              //bDeviceSubClass: Device subclass (must be 0 if bDeviceClass is 0)
-	0x00,							              //bDeviceProtocol: 0 for no specific device-level protocols
-	USB_MAX_COMMAND_PACKET_SIZE,	  //bMaxPacketSize0: Max packet size for control endpoint
+	0x12,                           //bLength: length of this structure in bytes (18)
+	USB_DESC_DEVICE,                //bDescriptorType: usb device descriptor
+	0x00, 0x02,                     //bcdUSB: 0200 (Little Endian) - USB 2.0 compliant
+	USB_CLASS_DEVICE,               //bDeviceClass: Device class (0 = interfaces specify class)
+	0x00,                           //bDeviceSubClass: Device subclass (must be 0 if bDeviceClass is 0)
+	0x00,                           //bDeviceProtocol: 0 for no specific device-level protocols
+	USB_MAX_COMMAND_PACKET_SIZE,	//bMaxPacketSize0: Max packet size for control endpointit)
 	0x34, 0x12,                     //idVendor: 16 bit vendor id
 	0x78, 0x56,                     //idProduct: 16 bit product id
-	0x00, 0x01,						          //bcdDevice: Device release version
+	0x00, 0x01,                     //bcdDevice: Device release version
 	0x01,                           //iManufacturer: Manufacturer string index
 	0x02,                           //iProduct: Product string index
 	0x03,                           //iSerialNumber: Serial number string index
@@ -46,10 +46,10 @@ const uint8_t kbd_reportDescriptor[] = {
 	0x95, 0x06,	// Report Count (6)
 	0x75, 0x08,	// Report Size (8)
 	0x15, 0x00,	// Logical Minimum (0)
-	0x25, 0x65,	// Logical Maximum(101)
+	0x25, 0xff,	// Logical Maximum(255)
 	0x05, 0x07,	// Usage Page (Key Codes)
 	0x19, 0x00,	// Usage Minimum (0)
-	0x29, 0x65,	// Usage Maximum (101)
+	0x29, 0xff,	// Usage Maximum (255)
 	0x81, 0x00,	// Input (Data, Array)
 	0xc0 		// End Collection
 };
@@ -61,7 +61,7 @@ const uint8_t kbd_configDescriptor[] = {
 	0x01,								//bNumInterfaces: Number of interfaces (1)
 	0x01,								//bConfigurationValue: Number to set to activate this config
 	0x00,								//iConfiguration: configuration string index (0 = not available)
-	0x80,								//bmAttributes: Not self-powered, no remote wakeup
+	0x80,								//bmAttributes: Not self-powered
 	0x32,								//bMaxPower: Max power in 2mA steps (0x32 = 50 = 100mA)
 	
 	// Interface 0: HID
@@ -78,7 +78,7 @@ const uint8_t kbd_configDescriptor[] = {
 	// HID descriptor (inserted between interface and endpoints for HID devices)
 	0x09,								//bLength: length of HID descriptor in bytes
 	USB_DESC_HID_HID,					//bDescriptorType: HID descriptor
-	I16_TO_LE_BA(0x0100),				//bcdHID: version 1.0
+	I16_TO_LE_BA(0x0111),				//bcdHID: version 1.11
 	0x09,								//bCountryCode: 9 = German (HID spec 1.11, section 6.2.1 - 0=not supported, 33=US)
 	0x01,								//bNumDescriptors: We have one descriptor
 	USB_DESC_HID_REPORT,				//bDescriptorType: It is a report descriptor

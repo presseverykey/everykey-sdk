@@ -176,7 +176,21 @@ uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index) {
 #pragma mark USB common command handlers
 
 void USB_Reset(USB_Device_Struct* device) {
+	USB->DEVINTEN = 0;					//disable all interrupts so that we can reset without interruption
 	USB->DEVINTCLR = 0x3fff;			//clear all interrupts
+	
+	//Reset our state
+	device->usbSuspended = false;
+	device->currentCommandDataBase = NULL;
+	device->currentCommandDataRemaining = 0;
+	device->currentConfiguration = 0;
+	device->controlOutDataCompleteCallback = NULL;
+	device->controlStatusCallback = NULL;
+	int i;
+	for (i=0; i<USB_MAX_INTERFACES_PER_DEVICE; i++) device->interfaceAltSetting[i] = 0;
+	USB_SIE_SetAddress(device, 0, true);
+
+	//start up interrupts again
 	USB->DEVINTEN =
 		USB_DEVINT_EP0 |
 		USB_DEVINT_EP1 |
@@ -188,15 +202,6 @@ void USB_Reset(USB_Device_Struct* device) {
 		USB_DEVINT_EP7 |
 		USB_DEVINT_FRAME | 
 		USB_DEVINT_DEV_STAT;				//enable EP interrupts + status change + frame
-	device->usbSuspended = false;
-	device->currentCommandDataBase = NULL;
-	device->currentCommandDataRemaining = 0;
-	device->currentConfiguration = 0;
-	USB_SIE_SetAddress(device, 0, true);
-	device->controlOutDataCompleteCallback = NULL;
-	device->controlStatusCallback = NULL;
-	int i;
-	for (i=0; i<USB_MAX_INTERFACES_PER_DEVICE; i++) device->interfaceAltSetting[i] = 0;
 }
 
 void USB_Suspend(USB_Device_Struct* device) {
@@ -540,7 +545,7 @@ void usb_irq_handler(void) {
 	USB_Device_Struct* device = _usbDevice;
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
-	
+
 	//We could test other USB interrupts here if we need to
 
 	//Check frame interrupt
@@ -584,6 +589,7 @@ void USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device
 	
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON | SYSCON_SYSAHBCLKCTRL_USB_REG;
+
 
 	// Configure USB clock
  	SYSCON->PDRUNCFG &= ~(SYSCON_USBPLL_PD | SYSCON_USBPAD_PD);	//Turn on USB PLL and PHY 

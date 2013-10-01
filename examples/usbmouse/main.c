@@ -5,8 +5,8 @@
 /** We assume there's a button (pull-low) at BUTTON_PIN and potentiometers (0 - 3.3V) at X and Y.
 This example turns them into a USB mouse */
 
-#define BUTTON PIN_1_1	
-#define X PIN_0_11
+#define BUTTON PIN_0_2	
+#define X PIN_1_1
 #define Y PIN_1_0
 
 #define AVG_COUNT 30
@@ -48,7 +48,7 @@ uint16_t inReportHandler (USB_Device_Struct* device,
 						  uint8_t reportId) {
 	inBuffer[0] = button ? 0x01 : 0x00;
 	inBuffer[1] = (x - avgX) >> SENS_SHIFT;
-	inBuffer[2] = (y - avgY) >> SENS_SHIFT;
+	inBuffer[2] = (avgY - y) >> SENS_SHIFT;
 	return 3;
 }
 
