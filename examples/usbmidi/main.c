@@ -7,25 +7,23 @@
 #define DATA_OUT_ENDPOINT_PHYSICAL 2
 #define DATA_IN_ENDPOINT_LOGICAL 0x81
 #define DATA_IN_ENDPOINT_PHYSICAL 3
-
+#define MIDI_FIFO_SIZE 256
+#define MAX_SYSEX_SIZE 255
 
 USB_Device_Struct midi_device;
 
 uint8_t inBuffer[USB_MAX_BULK_DATA_SIZE];				//data from device to host
 uint8_t outBuffer[USB_MAX_BULK_DATA_SIZE];				//data from host to device
+uint8_t midiFifo[MIDI_FIFO_SIZE];
+uint16_t midiFifoRdIdx = 0;
+uint16_t midiFifoWrIdx = 0;
 
-/** generate IN data */
-uint16_t inDataHandler 	(	USB_Device_Struct* device,
-							const USBMIDI_Behaviour_Struct* behaviour) {
-	anypio_write(LED, !anypio_read(LED));
-	return 0;
-}
+void myMidiNoteOnHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note, uint8_t velocity);
+void myMidiNoteOffHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note);
+void myMidiControlChangeHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t control, uint8_t value);
+void myMidiSysExHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t* data, uint8_t length, bool moreToCome);
 
-/** parse OUT data */
-void outDataHandler (	USB_Device_Struct* device,
-					   	const USBMIDI_Behaviour_Struct* behaviour) {
-	anypio_write(LED, !anypio_read(LED));
-}
+void parseSysEx(uint8_t* data, uint8_t length);
 
 const uint8_t midi_deviceDescriptor[] = {
 
@@ -198,8 +196,14 @@ const USBMIDI_Behaviour_Struct midi_behaviour = {
 	outBuffer,
 	DATA_IN_ENDPOINT_PHYSICAL,
 	DATA_OUT_ENDPOINT_PHYSICAL,
-	inDataHandler,
-	outDataHandler
+	midiFifo,
+	MIDI_FIFO_SIZE,
+	&midiFifoRdIdx,
+	&midiFifoWrIdx,
+	myMidiNoteOnHandler,
+	myMidiNoteOffHandler,
+	myMidiControlChangeHandler,
+	myMidiSysExHandler
 };
 
 const USB_Device_Definition midi_deviceDefinition = {
@@ -217,6 +221,7 @@ const USB_Device_Definition midi_deviceDefinition = {
 
 void main () {
 	anypio_write(LED, false);
+	anypio_digital_input_set(KEY1_REV2, PULL_UP);
 
 	USB_Init(&midi_deviceDefinition, &midi_device);
 
@@ -225,6 +230,65 @@ void main () {
 	SYSCON_StartSystick_10ms();
 }
 
+bool lastButton = false;
+
 void systick () {
+	bool button = !anypio_read(KEY1_REV2);
+	if (button != lastButton) {
+		if (button) USBMIDI_SendNoteOn(&midi_device, &midi_behaviour, 3, 1, 60, 127);
+		else USBMIDI_SendNoteOff(&midi_device, &midi_behaviour, 3, 1, 60);
+	}
+	lastButton = button;
 }
 
+void myMidiNoteOnHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note, uint8_t velocity) {
+	anypio_write(LED, velocity > 0);
+}
+
+void myMidiNoteOffHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note) {
+	anypio_write(LED, false);
+}
+
+void myMidiControlChangeHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t control, uint8_t value) {
+}
+
+
+void myMidiSysExHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t* data, uint8_t length, bool moreToCome) {
+	static uint8_t sysExData[MAX_SYSEX_SIZE];
+	static uint8_t sysExLength = 0;
+
+	uint8_t remaining = MAX_SYSEX_SIZE - sysExLength;
+	if (remaining > length)	{
+		uint8_t i;
+		for (i=0; i<length; i++) {
+			sysExData[sysExLength+i] = data[i];
+		}
+		sysExLength += length;
+	}
+	if (!moreToCome) {
+		parseSysEx(sysExData, sysExLength);
+		sysExLength = 0;
+	}
+}
+
+void parseSysEx(uint8_t* data, uint8_t length) {
+	if (length < 4) return;
+	if (length > 200) return;
+	if (data[0] != 0xf0) return;
+	if (data[1] != 0x7f) return;
+	if (data[2] != 0x7e) return;
+	if (data[length-1] != 0xf7) return;
+	uint8_t i;
+	for (i=length-4; i>0; i--) {
+		data[8+i] = data[2+i];
+	}
+	data[3] = 'H';
+	data[4] = 'a';
+	data[5] = 'l';
+	data[6] = 'l';
+	data[7] = 'o';
+	data[8] = ' ';
+	length += 6;
+	data[length-1] = 0xf7;
+	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, length);
+}
