@@ -25,9 +25,10 @@ bool USBMIDI_SendNoteOn(USB_Device_Struct* device, const USBMIDI_Behaviour_Struc
 
 bool USBMIDI_SendNoteOff(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t note) {
 	uint8_t block[4];
-	block[0] = ((cableNumber & 0x0f) << 4) | 0x09;
-	block[1] = 0x90 | (channel & 0x0f);
+	block[0] = ((cableNumber & 0x0f) << 4) | 0x08;
+	block[1] = 0x80 | (channel & 0x0f);
 	block[2] = note & 0x7f;
+	block[3] = 0;
 	return USBMIDI_EnqueueBlock(behaviour, block);
 }
 
