@@ -16,8 +16,8 @@
 #define SAMPLE_RATE 48000
 #define BYTES_PER_FRAME (((SAMPLE_RATE/1000)+1)*2) /* samples per ms * sample size, 1 sample extra */
 
-#define KEY_PORT 1
-#define KEY_PIN 4
+#define KEY_PORT 0
+#define KEY_PIN 1
 #define LED_PORT 0
 #define LED_PIN 7
 
