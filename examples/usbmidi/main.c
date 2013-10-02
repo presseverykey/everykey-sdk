@@ -23,11 +23,13 @@
 
 // First, we need to declare some storage in RAM for the USB
 // implemtation to use for buffering MIDI data received from the host as
-// well as MIDI data queued for sending to the host.
+// well as MIDI data queued for sending to the host. 
 
+// The size of the MIDI output FIFO needs to be a multiple of 4 bytes in
+// length, apart from that, the sizes are more or less arbitrary.
 
 #define MIDI_FIFO_SIZE 256
-#define MAX_SYSEX_SIZE 255
+#define MAX_SYSEX_SIZE 128
 
 uint8_t inBuffer[USB_MAX_BULK_DATA_SIZE];				//data from device to host
 uint8_t outBuffer[USB_MAX_BULK_DATA_SIZE];			//data from host to device
@@ -72,10 +74,10 @@ const USBMIDI_Behaviour_Struct midi_behaviour = {
 	myMidiSysExHandler
 };
 
-// The 'usbmidiboilerplate.h' header file contains the device descriptor
-// that the Anykey will send to the host to identify itself as a MIDI,
-// as well as the behaviour described above. This struct is necessary to
-// initialize the USB hardware.
+// The 'usbmidiboilerplate.h' header file contains the necessary USB
+// descriptors that the Anykey will send to the host to identify itself
+// as a MIDI, as well as the behaviour described above. This struct is
+// necessary to initialize the USB hardware.
 
 const USB_Device_Definition midi_deviceDefinition = {
         midi_deviceDescriptor,
@@ -87,8 +89,8 @@ const USB_Device_Definition midi_deviceDefinition = {
         { (USB_Behaviour_Struct*)(&midi_behaviour) }
 };
 
-// The USB hardware on the anykey is represented by a USB_Device_Struct,
-// which we declare here:
+// The USB hardware (i.e. it's runtime state) on the anykey is
+// contained in a `USB_Device_Struct`, which we declare here:
 
 USB_Device_Struct midi_device;
 
@@ -107,9 +109,10 @@ void main () {
 	// button.
 	anypio_digital_input_set(KEY1_REV2, PULL_UP);
 
-	// The following code initializes the USB subsystem by copying our
-	// device descriptors to the midi_device, representing the hardware
-	// and telling the hardware to connect. 
+	// The following code initializes the USB subsystem by inserting our
+	// device descriptors into the USB_Device_Struct and telling the
+	// hardware to reset and connect. 
+
 	USB_Init(&midi_deviceDefinition, &midi_device);
 	USB_SoftConnect (&midi_device);
 	
@@ -136,16 +139,11 @@ void systick () {
 			// cable  :  3 (defined in the device descriptor)
 			// channel:  1 
 			// note   : 60 (middle C)
-			// velcity:127 (play loud!)
-			//anypio_write(LED, true);
+			// velocity:127 (play loud!)
 			USBMIDI_SendNoteOn(&midi_device, &midi_behaviour, 3, 1, 60, 127);
 		} else {
-			// when the button is release, we turn off our middle C:
-			if (USBMIDI_SendNoteOff(&midi_device, &midi_behaviour, 3, 1, 60))
-			{
-			//anypio_write(LED, false);
-			
-			}
+			// when the button is released, we turn off our middle C:
+			USBMIDI_SendNoteOff(&midi_device, &midi_behaviour, 3, 1, 60);
 		}
 	}
 	lastButton = button;
@@ -173,7 +171,7 @@ void parseSysEx(uint8_t* data, uint8_t length);
 // Sysex (System Exclusive) messages are part of the MIDI standard and
 // used to transport arbitrary binary data. The Handler below will
 // receive sysex data, prepend a "Hello" to it and send the data back:
-// MIDI "Hello World" !
+// a MIDI "Hello World" !
 
 void myMidiSysExHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t* data, uint8_t length, bool moreToCome) {
 	static uint8_t sysExData[MAX_SYSEX_SIZE];

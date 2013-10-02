@@ -8,12 +8,16 @@
 // In case you just want to get MIDI working, you can use these
 // describtors in your project as is. In case you want to program a
 // custom device, you'll need to dive in here and change things around a
-// bit...
+// bit... The describtors below are the sample describtors stolen
+// directly from the USB Audio Spec
 
 // Further Reading:
-// - The USB MIDI class is part of the Audio class, which is described in
-// this document:
+// - The USB MIDI class is a subclass of the Audio class, which is described in
+// this document, which contains some of the necessary constants:
 //   http://www.usb.org/developers/devclass_docs/audio10.pdf
+// - The particulars of the USB MIDI class itself are contained in their own 
+// specification, which you can find here:
+//   http://www.usb.org/developers/devclass_docs/midi10.pdf
 // - USB per se is a beast of a protocol. In case you'd like to
 // understand how it works, we can recommend the following two resources
 // as a good starting point to learn about the internal workings:
@@ -39,7 +43,7 @@
 // These datastructures are defined below.
 
 // The DeviceDescriptor contains metadata for the host: USB Version,
-// maximum size of packets that can be handled by the device, and
+// maximum size of packets that can be handled by the device, etc. and
 // finally the number of Configurations (next section) the device
 // supports.
 const uint8_t midi_deviceDescriptor[] = {
@@ -83,11 +87,27 @@ const uint8_t midi_deviceDescriptor[] = {
 // AUDIO_CONTROL and MIDI_STREAMING are subclasses of the USB AUDIO
 // class.
 
-// The MIDI_STREAMING interface itself describes the 2 physical
-// bulk endpoints: IN and OUT. (in USB IN and OUT are always relative to
-// the host, so the OUT endpoint is the one we'll be receiving data on
-// and the IN endpoint is used to send data)
+// The MIDI_STREAMING interface itself describes a number of MIDI Jacks
+// which are connected to USB Enpoints. Jacks are classified as EMBEDDED
+// or EXTERNAL, embedded jacks are virtual jacks to USB, while external
+// jacks represent physical MIDI connectors. Furthermore, jacks are
+// labeled IN and OUT, this is relative to the Anykey so an IN jack
+// receives data while OUT jacks are used to send data. 
 
+// Now things become confusing, because the USB interface descriptor
+// contains the description of the USB endpoints. These are also labeled
+// IN and OUT, but in the USB world  IN and OUT are always relative to
+// the host. So the OUT endpoint is the one we'll be receiving data on
+// and the IN endpoint is used to send data. As a consequence, the USB
+// OUT endpoint is associated with the MIDI embedded IN jack and the IN
+// endpoint with the MIDI embedded OUT jack.
+
+// The association between MIDI jack and USB endpoint is made via
+// jackIDs which are referenced from both the MIDI_STREAMING interface
+// descriptor and the Endpoint descriptor.
+
+// To make things even more confusing, the USB MIDI spec only calls this
+// association "jack" in the descriptor and "cable" everywhere else.
 
 #define DATA_OUT_ENDPOINT_LOGICAL 0x01
 #define DATA_OUT_ENDPOINT_PHYSICAL 2
@@ -223,31 +243,31 @@ const uint8_t midi_configDescriptor[] = {
 	0x03                    // BaAssocJackID(1) - ID of the Embedded MIDI OUT Jack.};
 };
 
-// Finally, the decribtors sent to the host may contain "String
+// Finally, the decribtors sent to the host may contain "string
 // describtors" which provide human readable information about the
 // device...
 
 const uint8_t midi_languages[] = {
-	0x04,								//bLength: length of this descriptor in bytes (4)
-	USB_DESC_STRING,					//bDescriptorType: string descriptor
-	I16_TO_LE_BA(0x0409)				//wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
+	0x04,                //bLength: length of this descriptor in bytes (4)
+	USB_DESC_STRING,     //bDescriptorType: string descriptor
+	I16_TO_LE_BA(0x0409) //wLangID[]: An array of 16 bit language codes (LE). 0x0409: English (US)
 };
 	
 const uint8_t midi_manufacturerName[] = {
-	0x22,								//bLength: length of this descriptor in bytes (34)
-	USB_DESC_STRING,					//bDescriptorType: string descriptor
+	0x22,             //bLength: length of this descriptor in bytes (34)
+	USB_DESC_STRING,  //bDescriptorType: string descriptor
 	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t midi_deviceName[] = {
-	0x12,								//bLength: length of this descriptor in bytes (18)
-	USB_DESC_STRING,					//bDescriptorType: string descriptor
+	0x12,             //bLength: length of this descriptor in bytes (18)
+	USB_DESC_STRING,  //bDescriptorType: string descriptor
 	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t midi_serialName[] = {
-	0x0a,								//bLength: length of this descriptor in bytes (10)
-	USB_DESC_STRING,					//bDescriptorType: string descriptor
+	0x0a,             //bLength: length of this descriptor in bytes (10)
+	USB_DESC_STRING,  //bDescriptorType: string descriptor
 	'V',0,'1',0,'.',0,'0',0				//bString[]: String (UTF16LE, not terminated)
 };
 
