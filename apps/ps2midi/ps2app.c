@@ -1,8 +1,6 @@
 #include "ps2app.h"
 #include "ps2scancodes.h"
 
-#define SET_LED(a) any_gpio_write(0,7,a)
-
 #define PS2_APP_WAIT_UNKNOWN_TIME 10 /* idle counts to wait for mouse id - if exceeded, assume keyboard */
 #define PS2_APP_MAX_EVENT_LENGTH 10
 #define PS2_APP_EVENT_IDLE_TIMEOUT 2 /* if we encounter this number of IDLE messages, we clear the event buffer */
@@ -59,7 +57,8 @@ PS2_APP_CONNECTION ps2app_connection = PS2_APP_CONN_NONE;
 
 uint32_t ps2app_idleCounter = 0;
 uint8_t ps2app_initSeq = 0;
-bool ps2app_mouse_haveScroll = false;
+bool ps2app_mouse_haveScroll = false;       //4 byte reports, scroll value in byte 3, bits 0..3
+bool ps2app_mouse_haveMoreButtons = false;  //4 byte reports, button 4 and 5 available (byte 3, bit 4/5)
 uint8_t ps2app_keyboard_ledState = 0;
 
 uint8_t ps2app_eventData[PS2_APP_MAX_EVENT_LENGTH];
@@ -70,6 +69,10 @@ uint8_t ps2app_eventDataLen = 0;
 void ps2app_pingCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
 void ps2app_resetCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
 void ps2app_mouse1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_mouse2CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_mouse3CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_mouse4CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_mouse5CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
 void ps2app_keyboard1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
 void ps2app_keyboardLedsCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
 
@@ -134,6 +137,36 @@ void ps2app_cmdIdleHandler() {
     }
 }
 
+void ps2app_gotoConnState(PS2_APP_CONNECTION newConnState) {
+    if (ps2app_connection == newConnState) return;
+    ps2app_connection = newConnState;
+    ps2app_idleCounter = 0;
+    ps2app_eventDataLen = 0;    //No data taken from one to another state
+    if (ps2app_connectionCallback) ps2app_connectionCallback(ps2app_connection);
+    
+    switch (ps2app_connection) {
+        case PS2_APP_CONN_INIT_KEYBOARD:
+            ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_keyboard1CompletionHandler);
+            break;
+        case PS2_APP_CONN_INIT_MOUSE:
+            {   
+            /* A mouse was detected. Try to enable the scroll wheel by the magic Intellimouse sequence:
+            Set sample rate 200, set sample rate 100, set sample rate 80, read device id. The response
+            will tell if the device understood this sequence and enabled the wheel. Then enable reporting. */
+                ps2app_mouse_haveScroll = false;    //assume no scroll wheel
+                ps2app_mouse_haveMoreButtons = false;    //assume only 3 basic buttons
+                uint8_t sampleRate = 200;
+                ps2cmd_sendCommand(PS2_CMDCODE_MOUSE_SETSAMPLERATE, 1, &sampleRate, 0, ps2app_mouse1CompletionHandler);
+            }
+            break;
+        case PS2_APP_CONN_RUN_KEYBOARD:
+            ps2app_keyboard_ledState = 0;
+            ps2app_updateKeyboardLeds();
+            break;
+    }
+}
+
+
 /* completion handler for mouse or keyboard ping - check if the device is still there */
 void ps2app_pingCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
     ps2app_idleCounter = 0; 
@@ -150,44 +183,65 @@ void ps2app_resetCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_
     ps2app_gotoConnState(PS2_APP_CONN_NONE);    
 }
 
+/* mouse init step 1 complete: sample rate was set to 200, now set to 100 */
 void ps2app_mouse1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
-
-    //TODO: Do further setup ***************
-    switch (completionCode) {
-        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
-        case PS2_CMD_COMPLETION_TIMEOUT : ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
-        case PS2_CMD_COMPLETION_OK: ps2app_gotoConnState(PS2_APP_CONN_RUN_MOUSE); break;
+    if (completionCode == PS2_CMD_COMPLETION_OK) {
+        uint8_t sampleRate = 100;
+        ps2cmd_sendCommand(PS2_CMDCODE_MOUSE_SETSAMPLERATE, 1, &sampleRate, 0, ps2app_mouse2CompletionHandler);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
     }
 }
 
+/* mouse init step 2 complete: sample rate was set to 100, now set to 80 */
+void ps2app_mouse2CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    if (completionCode == PS2_CMD_COMPLETION_OK) {
+        uint8_t sampleRate = 80;
+        ps2cmd_sendCommand(PS2_CMDCODE_MOUSE_SETSAMPLERATE, 1, &sampleRate, 0, ps2app_mouse3CompletionHandler);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
+    }
+}
+
+/* mouse init step 3 complete: sample rate was set to 80, now read id */
+void ps2app_mouse3CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    if (completionCode == PS2_CMD_COMPLETION_OK) {
+        ps2cmd_sendCommand(PS2_CMDCODE_MOUSE_GETDEVICEID, 0, NULL, 1, ps2app_mouse4CompletionHandler);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
+    }
+}
+
+/* mouse init step 4 complete: device id is returned, set scroll and start reporting */
+void ps2app_mouse4CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    if ((completionCode == PS2_CMD_COMPLETION_OK) && (responseLen == 1)) {
+        uint8_t deviceId = response[0];
+        ps2app_mouse_haveScroll = (deviceId == 3) || (deviceId == 4);
+        ps2app_mouse_haveMoreButtons = (deviceId == 4);
+        ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_mouse5CompletionHandler);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
+    }
+}
+
+/* mouse init step 5 complete: we're done */
+void ps2app_mouse5CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    if (completionCode == PS2_CMD_COMPLETION_OK) {
+        ps2app_gotoConnState(PS2_APP_CONN_RUN_MOUSE);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
+    }
+}
+
+/* keyboard init step 1 complete: we're done */
 void ps2app_keyboard1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
-    switch (completionCode) {
-        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
-        case PS2_CMD_COMPLETION_TIMEOUT : ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
-        case PS2_CMD_COMPLETION_OK: ps2app_gotoConnState(PS2_APP_CONN_RUN_KEYBOARD); break;
+    if (completionCode == PS2_CMD_COMPLETION_OK) {
+        ps2app_gotoConnState(PS2_APP_CONN_RUN_KEYBOARD);
+    } else {
+        ps2app_gotoConnState(PS2_APP_CONN_NONE);
     }
 }
 
-void ps2app_gotoConnState(PS2_APP_CONNECTION newConnState) {
-    if (ps2app_connection == newConnState) return;
-    ps2app_connection = newConnState;
-    ps2app_idleCounter = 0;
-    ps2app_eventDataLen = 0;    //No data taken from one to another state
-    if (ps2app_connectionCallback) ps2app_connectionCallback(ps2app_connection);
-    
-    switch (ps2app_connection) {
-        case PS2_APP_CONN_INIT_KEYBOARD:
-            ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_keyboard1CompletionHandler);
-            break;
-        case PS2_APP_CONN_INIT_MOUSE:
-            ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_mouse1CompletionHandler);
-            break;
-        case PS2_APP_CONN_RUN_KEYBOARD:
-            ps2app_keyboard_ledState = 0;
-            ps2app_updateKeyboardLeds();
-            break;
-    }
-}
 
 
 void ps2app_checkMouseEvent() {
@@ -198,10 +252,19 @@ void ps2app_checkMouseEvent() {
         if (ps2app_eventData[0] & 0x10) dx -= 256;
         int16_t dy = ps2app_eventData[2];
         if (ps2app_eventData[0] & 0x20) dy -= 256;
-        int16_t dz = (ps2app_mouse_haveScroll) ? ((int8_t*)ps2app_eventData)[3] : 0;
+
         bool left = (ps2app_eventData[0] & 0x01) ? true : false;
         bool right = (ps2app_eventData[0] & 0x02) ? true : false;
         bool middle = (ps2app_eventData[0] & 0x04) ? true : false;
+
+        int16_t dz = 0;
+        if (ps2app_mouse_haveScroll) {
+            uint8_t fourth = ps2app_eventData[3];
+            if (fourth & 0x08) dz = (fourth&0xf) - 16;
+            else dz = fourth & 0xf;
+            //We might add support for 4th and 5th buttons here.
+        }
+
         if (ps2app_mouseInputCallback) ps2app_mouseInputCallback(dx,dy,dz,left,right,middle);
         ps2app_eventDataLen = 0;
     }

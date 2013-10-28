@@ -149,6 +149,7 @@ void sendKeyboardEvent(uint8_t keycode, bool down, uint8_t leds) {
 void PS2ConnectionChange(PS2_APP_CONNECTION newState) {
 	connectionState = 	((newState == PS2_APP_CONN_RUN_MOUSE) ? 1 : 0) |
 						((newState == PS2_APP_CONN_RUN_KEYBOARD) ? 2 : 0);
+	any_gpio_write(LED_PORT, LED_PIN, connectionState > 0);						
 	sendConnectionState();
 }
 
@@ -161,7 +162,6 @@ void PS2KeyboardInput(uint8_t keycode, bool down, uint8_t leds) {
 }
 
 void PS2Idle() {
-//	any_gpio_write(LED_PORT, LED_PIN, connectionState != 0);
 	sendConnectionState();
 }
 
