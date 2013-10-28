@@ -56,7 +56,6 @@ void ps2bus_forwardEvent(PS2_BUS_EVENT state);
 void ps2bus_forwardByteReceived(uint8_t value);
 
 void ps2bus_init(ps2bus_EventCallback eventCB, ps2bus_ByteReceivedCallback receiveCB) {
-//	TOGGLE_LED
 
     ps2bus_eventCallback = eventCB;
     ps2bus_byteReceivedCallback = receiveCB;
@@ -68,9 +67,10 @@ void ps2bus_init(ps2bus_EventCallback eventCB, ps2bus_ByteReceivedCallback recei
 	Timer_Enable(CT16B0, true);
 	Timer_SetPrescale(CT16B0, 72);	//us units
 	Timer_SetMatchBehaviour(CT16B0, 0, TIMER_MATCH_INTERRUPT | TIMER_MATCH_STOP);
-	ps2bus_state = PS2_BUS_IDLE;
+	ps2bus_state = PS2_BUS_ABORTING;	//Some non-idle state where we don't listen to incoming line
     NVIC_EnableInterrupt(NVIC_PIO_0);
     NVIC_EnableInterrupt(NVIC_CT16B0);
+    ps2bus_goIdle();					//Go to real start state
 }
 
 bool ps2bus_sendByte(uint8_t byte) {
@@ -144,8 +144,13 @@ void gpio0_handler(void) {
 				any_gpio_write(PS2_PORT, PS2_DATA_PIN, true);   //Strictly, this line is not needed - just for debugging
 				any_gpio_set_dir(PS2_PORT, PS2_DATA_PIN, INPUT);
 			} else if (ps2bus_frameBitCounter == 11) {	//ack bit - read
-				if (bit) ps2bus_forwardEvent(PS2_BUS_NACK_ERROR);
-				else ps2bus_forwardEvent(PS2_BUS_FRAME_ACKED);
+//				if (bit) ps2bus_forwardEvent(PS2_BUS_NACK_ERROR);
+//				else ps2bus_forwardEvent(PS2_BUS_FRAME_ACKED);
+/* NOTE: We will ignore the ack bit here and always assume it was acked since the timing
+on some devices (i.e. the Keyboard I used for testing) does not pull the data line low or not 
+for the falling edge. Since the device will acknowledge host-to-devices with a response frame
+anyway, we'll ignore it here for simplicity. TODO: check if sampling on the rising edge is better **** */
+				ps2bus_forwardEvent(PS2_BUS_FRAME_ACKED);
 				ps2bus_goIdle();
 			}
 			break;
@@ -158,7 +163,6 @@ void gpio0_handler(void) {
 /* timer fired - either a wakeup (we've pulled down the clock long enough)
 or a transaction timeout (device didn't clock fast enough) */
 void ct16b0_handler(void) {
-//	TOGGLE_LED
 
     uint32_t mask = Timer_GetInterruptMask(CT16B0);
 	Timer_ClearInterruptMask(CT16B0, mask);

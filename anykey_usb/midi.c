@@ -2,7 +2,8 @@
 
 void USBMIDI_Send(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* midi);
 
-bool USBMIDI_EnqueueBlock(const USBMIDI_Behaviour_Struct* behaviour, uint8_t* block) {
+bool USBMIDI_EnqueueBlock(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t* block) {
+	if (!(device->currentConfiguration)) return;	//Don't send anything in zero config
 	uint16_t wrIdx = *(behaviour->cmdFifoWrIdx);
 	uint16_t nextWrIdx = (wrIdx + 4) % (behaviour->cmdFifoSize);
 	if (nextWrIdx == *(behaviour->cmdFifoRdIdx)) return false;	//Would be full
@@ -20,7 +21,7 @@ bool USBMIDI_SendNoteOn(USB_Device_Struct* device, const USBMIDI_Behaviour_Struc
 	block[1] = 0x90 | (channel & 0x0f);
 	block[2] = note & 0x7f;
 	block[3] = velocity & 0x7f;
-	return USBMIDI_EnqueueBlock(behaviour, block);
+	return USBMIDI_EnqueueBlock(device, behaviour, block);
 }
 
 bool USBMIDI_SendNoteOff(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t note) {
@@ -29,7 +30,7 @@ bool USBMIDI_SendNoteOff(USB_Device_Struct* device, const USBMIDI_Behaviour_Stru
 	block[1] = 0x80 | (channel & 0x0f);
 	block[2] = note & 0x7f;
 	block[3] = 0;
-	return USBMIDI_EnqueueBlock(behaviour, block);
+	return USBMIDI_EnqueueBlock(device, behaviour, block);
 }
 
 bool USBMIDI_SendControlChange(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t control, uint8_t value) {
@@ -38,7 +39,7 @@ bool USBMIDI_SendControlChange(USB_Device_Struct* device, const USBMIDI_Behaviou
 	block[1] = 0xB0 | (channel & 0x0f);
 	block[2] = control & 0x7f;
 	block[3] = value & 0x7f;
-	return USBMIDI_EnqueueBlock(behaviour, block);
+	return USBMIDI_EnqueueBlock(device, behaviour, block);
 }
 
 bool USBMIDI_SendSysEx(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t* data, uint8_t len) {
@@ -49,14 +50,14 @@ bool USBMIDI_SendSysEx(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct
 			case 1:
 				block[0] = ((cableNumber & 0x0f) << 4) | 0x05;
 				block[1] = data[written];
-				if (!USBMIDI_EnqueueBlock(behaviour, block)) return false;
+				if (!USBMIDI_EnqueueBlock(device, behaviour, block)) return false;
 				written += 1;
 				break;
 			case 2:
 				block[0] = ((cableNumber & 0x0f) << 4) | 0x06;
 				block[1] = data[written];
 				block[2] = data[written+1];
-				if (!USBMIDI_EnqueueBlock(behaviour, block)) return false;
+				if (!USBMIDI_EnqueueBlock(device, behaviour, block)) return false;
 				written += 2;
 				break;
 			case 3:
@@ -64,7 +65,7 @@ bool USBMIDI_SendSysEx(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct
 				block[1] = data[written];
 				block[2] = data[written+1];
 				block[3] = data[written+2];
-				if (!USBMIDI_EnqueueBlock(behaviour, block)) return false;
+				if (!USBMIDI_EnqueueBlock(device, behaviour, block)) return false;
 				written += 3;
 				break;
 			default:
@@ -72,7 +73,7 @@ bool USBMIDI_SendSysEx(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct
 				block[1] = data[written];
 				block[2] = data[written+1];
 				block[3] = data[written+2];
-				if (!USBMIDI_EnqueueBlock(behaviour, block)) return false;
+				if (!USBMIDI_EnqueueBlock(device, behaviour, block)) return false;
 				written += 3;
 				break;
 		}
@@ -166,6 +167,7 @@ void USBMIDI_FrameHandler(USB_Device_Struct* device, const USB_Behaviour_Struct*
 }
 
 void USBMIDI_Send(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* midi) {
+	if (!(device->currentConfiguration)) return;	//Don't send anything in zero config
 	if (USB_EP_GetFull(device, midi->inDataEndpoint)) return;
 	uint16_t written = 0;
 

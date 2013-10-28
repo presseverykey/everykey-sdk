@@ -1,10 +1,13 @@
 #include "ps2app.h"
 #include "ps2scancodes.h"
 
+#define SET_LED(a) any_gpio_write(0,7,a)
+
 #define PS2_APP_WAIT_UNKNOWN_TIME 10 /* idle counts to wait for mouse id - if exceeded, assume keyboard */
 #define PS2_APP_MAX_EVENT_LENGTH 10
 #define PS2_APP_EVENT_IDLE_TIMEOUT 2 /* if we encounter this number of IDLE messages, we clear the event buffer */
 #define PS2_APP_IDLE_PING 20 /* if we haven't heard anything from the device, see if it's still there */
+#define PS2_APP_RESET_TIMEOUT 20 /* timeout to send a reset for all states other than running */
 
 typedef enum {
     PS2_CMDCODE_RESET = 0xff,
@@ -35,12 +38,20 @@ void ps2app_gotoConnState(PS2_APP_CONNECTION newConnState);
 void ps2app_checkMouseEvent();
 void ps2app_checkKeyboardEvent();
 
+/* do whatever is appropriate for a given key event */
+void ps2app_keyboardInput(uint8_t keyCode, bool down);
+
+/* sets the LEDs to reflect our current state */
+void ps2app_updateKeyboardLeds();
+
+
 
 /* client callbacks */
 
 ps2app_ConnectionChangeHandler ps2app_connectionCallback;
 ps2app_MouseInputHandler ps2app_mouseInputCallback;
 ps2app_KeyboardInputHandler ps2app_keyboardInputCallback;
+ps2app_IdleHandler ps2app_idleCallback;
 
 /* current state */
 
@@ -49,14 +60,28 @@ PS2_APP_CONNECTION ps2app_connection = PS2_APP_CONN_NONE;
 uint32_t ps2app_idleCounter = 0;
 uint8_t ps2app_initSeq = 0;
 bool ps2app_mouse_haveScroll = false;
+uint8_t ps2app_keyboard_ledState = 0;
 
 uint8_t ps2app_eventData[PS2_APP_MAX_EVENT_LENGTH];
 uint8_t ps2app_eventDataLen = 0;
 
-void ps2app_init(ps2app_ConnectionChangeHandler connCB, ps2app_MouseInputHandler mouseCB, ps2app_KeyboardInputHandler kbCB) {
+/* various command completion handlers */
+
+void ps2app_pingCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_resetCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_mouse1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_keyboard1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+void ps2app_keyboardLedsCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response);
+
+
+void ps2app_init(   ps2app_ConnectionChangeHandler connCB,
+                    ps2app_MouseInputHandler mouseCB,
+                    ps2app_KeyboardInputHandler kbCB,
+                    ps2app_IdleHandler idleCB) {
     ps2app_connectionCallback = connCB;
     ps2app_mouseInputCallback = mouseCB;
     ps2app_keyboardInputCallback = kbCB;
+    ps2app_idleCallback = idleCB;
     ps2app_idleCounter = 0;
     ps2app_initSeq = 0;
     ps2app_connection = PS2_APP_CONN_INVALID;   //Force gotoConnState to trigger
@@ -80,24 +105,56 @@ void ps2app_cmdDataHandler(uint8_t data) {
 }
 
 void ps2app_cmdIdleHandler() {
+    if (ps2app_idleCallback) ps2app_idleCallback();
+
     ps2app_idleCounter++;
-    if ((ps2app_connection == PS2_APP_CONN_UNKNOWN) && (ps2app_idleCounter > PS2_APP_WAIT_UNKNOWN_TIME)) {
-        ps2app_gotoConnState(PS2_APP_CONN_INIT_KEYBOARD);
-    }
-    if ((ps2app_connection == PS2_APP_CONN_RUN_KEYBOARD) || (ps2app_connection == PS2_APP_CONN_RUN_MOUSE)) {
-        if (ps2app_idleCounter >= PS2_APP_EVENT_IDLE_TIMEOUT) { //event timed out
-            ps2app_eventDataLen = 0;
-        }
-        if (ps2app_idleCounter >= PS2_APP_IDLE_PING) {          //Should send something to the device to see if it's still there
-            //TODO **************
-        }
+    switch (ps2app_connection) {
+        case PS2_APP_CONN_UNKNOWN:
+            if (ps2app_idleCounter > PS2_APP_WAIT_UNKNOWN_TIME) {   //No second byte sent -> assume keyboard
+                ps2app_gotoConnState(PS2_APP_CONN_INIT_KEYBOARD);
+            }
+            break;
+        case PS2_APP_CONN_RUN_KEYBOARD:
+        case PS2_APP_CONN_RUN_MOUSE:
+            if (ps2app_idleCounter >= PS2_APP_EVENT_IDLE_TIMEOUT) { //half-sent event data, clear it
+                ps2app_eventDataLen = 0;
+            }
+            if (ps2app_idleCounter >= PS2_APP_IDLE_PING) {          
+                //Device has been idle for some time - talk to it to see if it is still there
+                ps2app_idleCounter = 0;
+                ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_pingCompletionHandler);
+            }
+            break;
+        default:    //Stuck device or nothing detected on bus
+            if (ps2app_idleCounter >= PS2_APP_RESET_TIMEOUT) {
+                ps2app_idleCounter = 0;
+                ps2cmd_sendCommand(PS2_CMDCODE_RESET, 0, NULL, 0, ps2app_resetCompletionHandler);
+            }
+            break;
     }
 }
 
+/* completion handler for mouse or keyboard ping - check if the device is still there */
+void ps2app_pingCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    ps2app_idleCounter = 0; 
+    ps2app_eventDataLen = 0;
+    if (completionCode != PS2_CMD_COMPLETION_OK) {  //Ping failed - try to reset
+        ps2cmd_sendCommand(PS2_CMDCODE_RESET, 0, NULL, 0, ps2app_resetCompletionHandler);
+    }
+}
+
+/* completion handler for a reset attempt - either because of malfunction or to check the bus */
+void ps2app_resetCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+    //We'll go to unconnected state no matter if the reset succeeded or not - we will see
+    //the normal boot sequence or nothing if no device is attached. Or we'll retry reset later.
+    ps2app_gotoConnState(PS2_APP_CONN_NONE);    
+}
+
 void ps2app_mouse1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+
     //TODO: Do further setup ***************
     switch (completionCode) {
-        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_INVALID); break;
+        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
         case PS2_CMD_COMPLETION_TIMEOUT : ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
         case PS2_CMD_COMPLETION_OK: ps2app_gotoConnState(PS2_APP_CONN_RUN_MOUSE); break;
     }
@@ -105,7 +162,7 @@ void ps2app_mouse1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8
 
 void ps2app_keyboard1CompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
     switch (completionCode) {
-        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_INVALID); break;
+        case PS2_CMD_COMPLETION_FAIL: ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
         case PS2_CMD_COMPLETION_TIMEOUT : ps2app_gotoConnState(PS2_APP_CONN_NONE); break;
         case PS2_CMD_COMPLETION_OK: ps2app_gotoConnState(PS2_APP_CONN_RUN_KEYBOARD); break;
     }
@@ -115,9 +172,21 @@ void ps2app_gotoConnState(PS2_APP_CONNECTION newConnState) {
     if (ps2app_connection == newConnState) return;
     ps2app_connection = newConnState;
     ps2app_idleCounter = 0;
+    ps2app_eventDataLen = 0;    //No data taken from one to another state
     if (ps2app_connectionCallback) ps2app_connectionCallback(ps2app_connection);
-    if (ps2app_connection == PS2_APP_CONN_INIT_KEYBOARD) ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_keyboard1CompletionHandler);
-    if (ps2app_connection == PS2_APP_CONN_INIT_MOUSE) ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_mouse1CompletionHandler);
+    
+    switch (ps2app_connection) {
+        case PS2_APP_CONN_INIT_KEYBOARD:
+            ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_keyboard1CompletionHandler);
+            break;
+        case PS2_APP_CONN_INIT_MOUSE:
+            ps2cmd_sendCommand(PS2_CMDCODE_ENABLE_REPORTING, 0, NULL, 0, ps2app_mouse1CompletionHandler);
+            break;
+        case PS2_APP_CONN_RUN_KEYBOARD:
+            ps2app_keyboard_ledState = 0;
+            ps2app_updateKeyboardLeds();
+            break;
+    }
 }
 
 
@@ -141,20 +210,48 @@ void ps2app_checkMouseEvent() {
 void ps2app_checkKeyboardEvent() {
     if (ps2app_connection != PS2_APP_CONN_RUN_KEYBOARD) return;
     uint16_t idx = 0;
-    while (ps2ScanCodesMode2[idx] != 0) {
+    while (true) {
         uint8_t codeLen = 0x0f & ps2ScanCodesMode2[idx];
-        if (codeLen != ps2app_eventDataLen) continue;
-        uint8_t i;  //length match - check code
-        for (i=0;i<codeLen;i++) {
-            if (ps2ScanCodesMode2[idx+1+i] != ps2app_eventData[i]) break;
+        if (!codeLen) break;    //Done
+        if (codeLen == ps2app_eventDataLen) {
+            uint8_t i;  //length match - check code
+            for (i=0;i<codeLen;i++) {
+                if (ps2ScanCodesMode2[idx+1+i] != ps2app_eventData[i]) break;
+            }
+            if (i == codeLen) { //code match
+                bool down = (ps2ScanCodesMode2[idx] & 0x10) ? false : true;
+                uint8_t keyCode = ps2ScanCodesMode2[idx+1+codeLen];
+                ps2app_keyboardInput(keyCode, down);
+                ps2app_eventDataLen = 0;
+                break;  //We're done searching
+            }
         }
-        if (i == codeLen) { //code match
-            bool down = (ps2ScanCodesMode2[idx] & 0x10) ? false : true;
-            uint8_t keyCode = ps2ScanCodesMode2[idx+1+codeLen];
-            if (ps2app_keyboardInputCallback) ps2app_keyboardInputCallback(keyCode, down);
-            ps2app_eventDataLen = 0;
-            break;  //We're done searching
-        }
+        idx += codeLen + 2;
     }
 }
+
+void ps2app_keyboardInput(uint8_t keyCode, bool down) {
+    if (down && (keyCode == KEYCODE_CAPSLOCK)) {
+        ps2app_keyboard_ledState ^= PS2_KBD_LED_CAPSLOCK;
+        ps2app_updateKeyboardLeds();
+    }
+    if (down && (keyCode == KEYCODE_KEYPAD_NUMLOCK)) {
+        ps2app_keyboard_ledState ^= PS2_KBD_LED_NUMLOCK;
+        ps2app_updateKeyboardLeds();
+    }
+    if (down && (keyCode == KEYCODE_SCROLLLOCK)) {
+        ps2app_keyboard_ledState ^= PS2_KBD_LED_SCROLLLOCK;
+        ps2app_updateKeyboardLeds();
+    }
+    if (ps2app_keyboardInputCallback) ps2app_keyboardInputCallback(keyCode, down, ps2app_keyboard_ledState);
+
+}
+
+void ps2app_updateKeyboardLeds() {
+    ps2cmd_sendCommand(PS2_CMDCODE_KEYBOARD_SETLEDS, 1, &ps2app_keyboard_ledState, 0, ps2app_keyboardLedsCompletionHandler);
+}
+
+void ps2app_keyboardLedsCompletionHandler(PS2_CMD_COMPLETIONCODE completionCode, uint8_t responseLen, uint8_t* response) {
+}
+
 

@@ -19,6 +19,9 @@ uint8_t midiFifo[MIDI_FIFO_SIZE];
 uint16_t midiFifoRdIdx = 0;
 uint16_t midiFifoWrIdx = 0;
 
+uint8_t connectionState = 0;	//bitmask: 0x01=mouse, 0x02=keyboard
+
+
 void myMidiNoteOnHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note, uint8_t velocity);
 void myMidiNoteOffHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note);
 void myMidiControlChangeHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t control, uint8_t value);
@@ -56,8 +59,9 @@ USB_Device_Struct midi_device;
 //PS/2 STUFF FROM HERE
 void PS2ConnectionChange(PS2_APP_CONNECTION newState);
 void PS2MouseInput(int16_t dx, int16_t dy, int16_t dz, bool left, bool right, bool middle);
-void PS2KeyboardInput(uint8_t keycode, bool down);
-
+void PS2KeyboardInput(uint8_t keycode, bool down, uint8_t leds);
+void PS2Idle();
+void PS2Debug(uint8_t* string);
 
 // MAIN PROGRAM FROM HERE
 
@@ -73,7 +77,7 @@ void main () {
 	any_gpio_set_dir(0,4,INPUT);
 	any_gpio_set_dir(0,5,INPUT);
 
-	ps2app_init(PS2ConnectionChange, PS2MouseInput, PS2KeyboardInput);
+	ps2app_init(PS2ConnectionChange, PS2MouseInput, PS2KeyboardInput, PS2Idle);
 }
 
 //MIDI SYSEX SENDING STUFF
@@ -81,34 +85,32 @@ void main () {
 typedef enum {
 	CONNECTION_MSG = 0x01,	//1 byte: bit 0: mouse connected, bit 1: keyboard connected
 	MOUSE_EVENT_MSG = 0x02, //7 bytes: flags, dx hi/lo, dy hi/lo, dz hi/lo
-	KEY_EVENT_MSG = 0x03	//2 bytes: code + down
+	KEY_EVENT_MSG = 0x03,	//2 bytes: code + down
+	DEBUG_STRING_MSG = 0x7f //null-terminated string
 } PS2MIDI_MESSAGE_TYPE;
 
-void sendMouseConnected() {
-	any_gpio_write(LED_PORT, LED_PIN, true);
-	uint8_t data[] = {
-		0xf0, 0x7f, 0x7e,
-		CONNECTION_MSG, 0x01,
-		0xf7
-	};
+void sendDebugString(uint8_t* string) {
+	uint8_t len = 0;
+	while (string[len]) len++;
+	uint8_t data[len+8];
+	data[0] = 0xf0;
+	data[1] = 0x7d;
+	data[2] = 'A';
+	data[3] = 'n';
+	data[4] = 'y';
+	data[5] = 1;
+	data[6] = DEBUG_STRING_MSG;
+	int i = 0;
+	for (i=0; i<len; i++) data[7+i] = string[i];
+	data[len+7] = 0xf7;
 	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, sizeof(data));
 }
 
-void sendKeyboardConnected() {
-	any_gpio_write(LED_PORT, LED_PIN, true);
+void sendConnectionState() {
 	uint8_t data[] = {
-		0xf0, 0x7f, 0x7e,
-		CONNECTION_MSG, 0x02,
-		0xf7
-	};
-	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, sizeof(data));
-}
-
-void sendDisconnected() {
-	any_gpio_write(LED_PORT, LED_PIN, false);
-	uint8_t data[] = {
-		0xf0, 0x7f, 0x7e,
-		CONNECTION_MSG, 0x00,
+		0xf0, 0x7d,
+		'A','n','y',1,		//Magic + version number
+		CONNECTION_MSG, connectionState,
 		0xf7
 	};
 	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, sizeof(data));
@@ -119,7 +121,8 @@ void sendMouseEvent(int16_t dx, int16_t dy, int16_t dz, bool left, bool right, b
 					(right  ? 0x02 : 0) + 
 					(middle ? 0x04 : 0);
 	uint8_t data[] = {
-		0xf0, 0x7f, 0x7e,
+		0xf0, 0x7d,
+		'A','n','y',1,		//Magic + version number
 		MOUSE_EVENT_MSG,
 		flags,
 		((uint8_t*)(&dx))[0],((uint8_t*)(&dx))[1],
@@ -130,11 +133,12 @@ void sendMouseEvent(int16_t dx, int16_t dy, int16_t dz, bool left, bool right, b
 	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, sizeof(data));
 }
 
-void sendKeyboardEvent(uint8_t keycode, bool down) {
+void sendKeyboardEvent(uint8_t keycode, bool down, uint8_t leds) {
 	uint8_t data[] = {
-		0xf0, 0x7f, 0x7e,
+		0xf0, 0x7d,
+		'A','n','y',1,		//Magic + version number
 		KEY_EVENT_MSG,
-		keycode, down ? 1 : 0,
+		keycode, down ? 1 : 0, leds,
 		0xf7
 	};
 	USBMIDI_SendSysEx(&midi_device, &midi_behaviour, 3, data, sizeof(data));
@@ -143,23 +147,23 @@ void sendKeyboardEvent(uint8_t keycode, bool down) {
 //PS/2 EVENT HANDLERS
 
 void PS2ConnectionChange(PS2_APP_CONNECTION newState) {
-	if (newState == PS2_APP_CONN_RUN_MOUSE) {
-		sendMouseConnected();		
-	} else if (newState == PS2_APP_CONN_RUN_KEYBOARD) {
-		sendKeyboardConnected();		
-	} else {
-		sendDisconnected();
-	}
+	connectionState = 	((newState == PS2_APP_CONN_RUN_MOUSE) ? 1 : 0) |
+						((newState == PS2_APP_CONN_RUN_KEYBOARD) ? 2 : 0);
+	sendConnectionState();
 }
 
 void PS2MouseInput(int16_t dx, int16_t dy, int16_t dz, bool left, bool right, bool middle) {
 	sendMouseEvent(dx, dy, dz, left, right, middle);
 }
 
-void PS2KeyboardInput(uint8_t keycode, bool down) {
-	sendKeyboardEvent(keycode, down);
+void PS2KeyboardInput(uint8_t keycode, bool down, uint8_t leds) {
+	sendKeyboardEvent(keycode, down, leds);
 }
 
+void PS2Idle() {
+//	any_gpio_write(LED_PORT, LED_PIN, connectionState != 0);
+	sendConnectionState();
+}
 
 // MIDI EVENT HANDLERS (we don't do that...)
 

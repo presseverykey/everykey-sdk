@@ -1,11 +1,3 @@
-//
-//  ps2cmd.c
-//  PS2Test
-//
-//  Created by Matthias Krauß on 17.10.13.
-//  Copyright (c) 2013 Matthias Krauß. All rights reserved.
-//
-
 #include "ps2cmd.h"
 #include "ps2bus.h"
 
@@ -14,6 +6,8 @@
 
 #define PS2_CMD_MAX_COMMAND_LEN 4
 #define PS2_CMD_MAX_RESPONSE_LEN 4
+
+void sendDebugString(uint8_t* string);
 
 typedef enum {
     PS2_CMD_RESPONSECODE_ACK = 0xfa,
@@ -134,6 +128,12 @@ void ps2cmd_busEventHandler(PS2_BUS_EVENT event) {
             break;
         case PS2_BUS_NACK_ERROR:    //Outgoing frame failed - we should try to resend the last byte
             ps2cmd_errorCount++;
+
+            if (ps2cmd_currentCommand[0] == 0xf4) { 
+                uint8_t msg[6];
+                msg[0]='n';msg[1]='a';msg[2]='c';msg[3]='k';msg[4]='0'+ps2cmd_errorCount;msg[5]=0;
+                sendDebugString(msg);
+            }
             if (ps2cmd_checkContinue()) {
                 ps2cmd_currentState = PS2_CMD_STATE_READY_TO_SEND;
             }
@@ -180,20 +180,23 @@ void ps2cmd_tryToRebuffer() {
 bool ps2cmd_checkContinue() {
     if (ps2cmd_currentState == PS2_CMD_STATE_IDLE) return; //Nothing to cancel
     if (ps2cmd_errorCount >= PS2_CMD_MAX_ERROR_COUNT) {
-        if (ps2cmd_completionCallback) ps2cmd_completionCallback(PS2_CMD_COMPLETION_FAIL, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
+        ps2cmd_CommandCompletionHandler cb = ps2cmd_completionCallback;
         ps2cmd_completionCallback = NULL;
         ps2cmd_currentState = PS2_CMD_STATE_IDLE;
+        if (cb) cb(PS2_CMD_COMPLETION_FAIL, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
         return false;
     } else if (ps2cmd_idleCount >= PS2_CMD_MAX_IDLE_COUNT) {
-        if (ps2cmd_completionCallback) ps2cmd_completionCallback(PS2_CMD_COMPLETION_TIMEOUT, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
+        ps2cmd_CommandCompletionHandler cb = ps2cmd_completionCallback;
         ps2cmd_completionCallback = NULL;
         ps2cmd_currentState = PS2_CMD_STATE_IDLE;
+        if (cb) cb(PS2_CMD_COMPLETION_TIMEOUT, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
         return false;
     } else return true;
 }
 
 void ps2cmd_success() {
-    if (ps2cmd_completionCallback) ps2cmd_completionCallback(PS2_CMD_COMPLETION_OK, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
+    ps2cmd_CommandCompletionHandler cb = ps2cmd_completionCallback;
     ps2cmd_completionCallback = NULL;
     ps2cmd_currentState = PS2_CMD_STATE_IDLE;
+    if (cb) cb(PS2_CMD_COMPLETION_OK, ps2cmd_currentResponseOffset, ps2cmd_currentResponse);
 }
