@@ -7,8 +7,6 @@
 #define PS2_CMD_MAX_COMMAND_LEN 4
 #define PS2_CMD_MAX_RESPONSE_LEN 4
 
-void sendDebugString(uint8_t* string);
-
 typedef enum {
     PS2_CMD_RESPONSECODE_ACK = 0xfa,
     PS2_CMD_RESPONSECODE_RESEND = 0xfe,
@@ -128,12 +126,6 @@ void ps2cmd_busEventHandler(PS2_BUS_EVENT event) {
             break;
         case PS2_BUS_NACK_ERROR:    //Outgoing frame failed - we should try to resend the last byte
             ps2cmd_errorCount++;
-
-            if (ps2cmd_currentCommand[0] == 0xf4) { 
-                uint8_t msg[6];
-                msg[0]='n';msg[1]='a';msg[2]='c';msg[3]='k';msg[4]='0'+ps2cmd_errorCount;msg[5]=0;
-                sendDebugString(msg);
-            }
             if (ps2cmd_checkContinue()) {
                 ps2cmd_currentState = PS2_CMD_STATE_READY_TO_SEND;
             }
