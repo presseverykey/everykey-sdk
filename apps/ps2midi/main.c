@@ -11,8 +11,6 @@
 #define MIDI_FIFO_SIZE 256
 #define MAX_SYSEX_SIZE 128
 
-#define TOGGLE_LED any_gpio_write(0,7,!any_gpio_read(0,7));
-
 uint8_t inBuffer[USB_MAX_BULK_DATA_SIZE];				//data from device to host
 uint8_t outBuffer[USB_MAX_BULK_DATA_SIZE];			//data from host to device
 uint8_t midiFifo[MIDI_FIFO_SIZE];

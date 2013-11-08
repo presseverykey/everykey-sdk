@@ -18,9 +18,9 @@ typedef enum {
     PS2_APP_CONN_UNKNOWN,         //A device was detected but it's not known yet what it is
     PS2_APP_CONN_INIT_MOUSE,      //A mouse is starting up (or disconnection was not detected yet)
     PS2_APP_CONN_INIT_KEYBOARD,   //A keyboard is starting up (or disconnection was not detected yet)
-    PS2_APP_CONN_INVALID,         //A device seems to be connected but the initialization / detection sequence failed (assume unsupported device)
     PS2_APP_CONN_RUN_MOUSE,       //A mouse is inited and running (or disconnection was not detected yet)
     PS2_APP_CONN_RUN_KEYBOARD,    //A keyboard is inited and running (or disconnection was not detected yet)
+    PS2_APP_CONN_INVALID,         //This state never occur except for startup
 } PS2_APP_CONNECTION;
 
 typedef void(*ps2app_ConnectionChangeHandler)(PS2_APP_CONNECTION newState);

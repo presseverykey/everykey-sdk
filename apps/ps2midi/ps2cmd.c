@@ -13,7 +13,6 @@ typedef enum {
     PS2_CMD_RESPONSECODE_ERROR = 0xfc
 } PS2_CMD_RESPONSECODE;
 
-
 /* callbacks from underlying protocol layer */
 void ps2cmd_busEventHandler(PS2_BUS_EVENT event);
 void ps2cmd_busByteReceiveHandler(uint8_t byte);

@@ -7,14 +7,14 @@
 #define PS2_BUS_IDLE_TIME_US 50000 /* Timeout to send "idling" event (no activity on bus) - 50ms */
 #define PS2_BUS_MAX_READ_FRAME_TIME_US 2000 /* From start to end, a read frame should finish within 2ms */
 #define PS2_BUS_MAX_WRITE_FRAME_TIME_US 20000 /* outgoing frames should complete within 20ms (from start of RTS) */
-#define PS2_BUS_RTS_TIME_US 100 /* Pull down clock low for 100us to indicate RTS or abort transaction */
-
+#define PS2_BUS_RTS_TIME_US 150 /* Pull down clock low for at least 100us to indicate RTS or abort transaction */
 
 typedef enum {
 	PS2_BUS_IDLE,
 	PS2_BUS_READING,	//buffer valid, frame counter valid
 	PS2_BUS_WRITING,	//buffer valid, frame counter valid
-	PS2_BUS_RTS,		//buffer valid, frame counter valid
+	PS2_BUS_RTS,		//buffer valid, frame counter valid - clock pulled low
+	PS2_BUS_RTS2,		//buffer valid, frame counter valid - clock and data pulled low
 	PS2_BUS_ABORTING
 } PS2_BUS_STATE;
 
@@ -77,13 +77,11 @@ bool ps2bus_sendByte(uint8_t byte) {
 	//TODO: Should we start writing if a read is in progress? Maybe yes...
 	if (ps2bus_state != PS2_BUS_IDLE) return false;
 	ps2bus_state = PS2_BUS_RTS;
-	any_gpio_set_dir(PS2_PORT, PS2_DATA_PIN, OUTPUT);
-	any_gpio_write(PS2_PORT, PS2_DATA_PIN, 0);
-	any_gpio_set_dir(PS2_PORT, PS2_CLOCK_PIN, OUTPUT);
-	any_gpio_write(PS2_PORT, PS2_CLOCK_PIN, 0);
 	ps2bus_frameBuffer = byte;
 	ps2bus_frameBitCounter = 0;
 	ps2bus_odd = 0;
+	any_gpio_set_dir(PS2_PORT, PS2_CLOCK_PIN, OUTPUT);
+	any_gpio_write(PS2_PORT, PS2_CLOCK_PIN, 0);
 	ps2bus_startTimer(PS2_BUS_RTS_TIME_US);
 	return true;
 }
@@ -155,6 +153,7 @@ anyway, we'll ignore it here for simplicity. TODO: check if sampling on the risi
 			}
 			break;
 		case PS2_BUS_RTS:
+		case PS2_BUS_RTS2:
 		case PS2_BUS_ABORTING:    //in RTS and ABORTING states, we're pulling clock low, so it's by us - no need to react
 			break;
 	}
@@ -168,7 +167,13 @@ void ct16b0_handler(void) {
 	Timer_ClearInterruptMask(CT16B0, mask);
 	//TODO: check mask ***************
 	switch (ps2bus_state) {
-		case PS2_BUS_RTS:		//We're done pulling the clock low to indicate RTS. We can send now.
+		case PS2_BUS_RTS:		//Pre-wait for RTS is done. Pull clock and data low.
+			ps2bus_state = PS2_BUS_RTS2;
+			any_gpio_set_dir(PS2_PORT, PS2_DATA_PIN, OUTPUT);
+			any_gpio_write(PS2_PORT, PS2_DATA_PIN, 0);
+			ps2bus_startTimer(PS2_BUS_RTS_TIME_US);   //set timeout to pull low
+			break;
+		case PS2_BUS_RTS2:		//We're done pulling the clock low to indicate RTS. We can send now.
 			ps2bus_state = PS2_BUS_WRITING;
 			any_gpio_write(PS2_PORT, PS2_CLOCK_PIN, true);         //Strictly, this line is not needed - just for debugging
 			any_gpio_set_dir(PS2_PORT, PS2_CLOCK_PIN, INPUT);
