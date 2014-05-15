@@ -1,1 +1,0 @@
-anykey/lpc1343.ld
