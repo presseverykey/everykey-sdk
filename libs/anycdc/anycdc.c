@@ -9,7 +9,7 @@
 #define DATA_OUT_ENDPOINT_PHYSICAL 2
 #define DATA_IN_ENDPOINT_LOGICAL 0x81
 #define DATA_IN_ENDPOINT_PHYSICAL 3
-#define FIFO_SIZE 256
+#define FIFO_SIZE 2048
 
 
 // usb specific device descriptor which will be assmbled into a
@@ -143,8 +143,8 @@ const uint8_t configDescriptor[] = {
 
 USB_CDC_Linecoding_Struct currentLineCoding;
 
-uint8_t outBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE - 1];
-uint8_t inBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE - 1];
+uint8_t outBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE];
+uint8_t inBuffer[sizeof(RingBufferDynamic) + FIFO_SIZE];
 bool serialIdle;
 uint8_t controlLineState;
 
