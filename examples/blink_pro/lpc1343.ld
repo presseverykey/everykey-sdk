@@ -1,1 +1,1 @@
-anykey/lpc1343.ld
+everykey/lpc1343.ld

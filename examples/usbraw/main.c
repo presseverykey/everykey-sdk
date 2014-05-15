@@ -1,5 +1,5 @@
-#include "anykey/anykey.h"
-#include "anykey_usb/usb.h"
+#include "everykey/everykey.h"
+#include "everykey_usb/usb.h"
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)

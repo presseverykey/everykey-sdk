@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 #include "typing.h"
 #include "sm.h"
 
@@ -18,13 +18,13 @@
 
 void main (void) {
   volatile int i;
-  any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-  any_gpio_set_dir(KEY_PORT, KEY_PIN , INPUT);
+  every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+  every_gpio_set_dir(KEY_PORT, KEY_PIN , INPUT);
 
-  ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
+  EVERY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
   init_keyboard();
   init_game();
-  any_gpio_write(LED_PORT, LED_PIN, false);
+  every_gpio_write(LED_PORT, LED_PIN, false);
   for (i=5000000; i!=0; --i) {}
   SYSCON_StartSystick(SYSTICK_CNTR);
 }
@@ -33,7 +33,7 @@ void systick(void) {
   static bool     key_state = false;
   static uint32_t count     = 0x00;
 
-  key_state = any_gpio_read(KEY_PORT, KEY_PIN);
+  key_state = every_gpio_read(KEY_PORT, KEY_PIN);
 
   do_nerd_sm(!key_state, count);
 

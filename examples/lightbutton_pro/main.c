@@ -1,11 +1,11 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 // This is a more elaborate, "real-life" example of how to read the value
 // of a button (or, for that matter, anything that you may have connected
 // externally to a pin).
 //
-// We're not using the anypio library anymore, butif you like, you can
-// mix and match. Since we're not using anypio, we first need to define
+// We're not using the everypio library anymore, butif you like, you can
+// mix and match. Since we're not using everypio, we first need to define
 // the PIN and PORT numbers corresponding to the physical pins on the
 // microprocessor. For convenience, we'll use the buttons and the led,
 // but you can use any of the processors pins.
@@ -39,25 +39,25 @@ void main(void) {
 	// first some boilerplat: we need to configure each of the PINs we'll
 	// use to be set to pin i/o (PIO) and to be in digital mode (as
 	// opposed to using the A/D conversion for the pin)
-	ANY_GPIO_SET_FUNCTION(LED_PORT, LED_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(LED_PORT, LED_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
 
-	ANY_GPIO_SET_FUNCTION(INT1_PORT, INT1_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
-	ANY_GPIO_SET_FUNCTION(INT2_PORT, INT2_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(INT1_PORT, INT1_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(INT2_PORT, INT2_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
 
 	// more boilerplate: the LED pin should be configured as OUTPUT and
 	// we'll turn it on for the start...
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write(LED_PORT, LED_PIN, true);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write(LED_PORT, LED_PIN, true);
 
 	// The two button pins should be configured as INPUT because we want
 	// to read from them. Since the buttons are connected to ground when
 	// pushed, we configure them with an internal PULL_UP. If you're
 	// uncertain about the purpose of the pull-up, go back and read the
 	// `light_button` example.
-	any_gpio_set_dir(INT1_PORT, INT1_PIN, INPUT);
-	ANY_GPIO_SET_PULL(INT1_PORT, INT1_PIN, PULL_UP);
-	any_gpio_set_dir(INT2_PORT, INT2_PIN, INPUT);
-	ANY_GPIO_SET_PULL(INT2_PORT, INT2_PIN, PULL_UP);
+	every_gpio_set_dir(INT1_PORT, INT1_PIN, INPUT);
+	EVERY_GPIO_SET_PULL(INT1_PORT, INT1_PIN, PULL_UP);
+	every_gpio_set_dir(INT2_PORT, INT2_PIN, INPUT);
+	EVERY_GPIO_SET_PULL(INT2_PORT, INT2_PIN, PULL_UP);
 
 	// IO Interrupts can be configured to be triggered on a number of
 	// events: in our case, we are looking for the RISING and FALLING
@@ -81,7 +81,7 @@ void main(void) {
 	//
 	// In order to demostrate the differences, the two buttons are
 	// configured for different types of EDGE interrupts. Button 1 (the
-	// one in the middle of the Anykey) is configured to trigger the
+	// one in the middle of the Everykey) is configured to trigger the
 	// interrupt on a falling edge. Since a falling edge is a transition
 	// from high to low, and pressing the button will connect the pin to
 	// ground, button one triggers the interrupt when it's pressed.
@@ -90,8 +90,8 @@ void main(void) {
 	// a rising edge. This means that the interrupt is triggered when the
 	// button is released.
 
-	any_gpio_set_interrupt_mode(INT1_PORT, INT1_PIN, TRIGGER_FALLING_EDGE);	
-	any_gpio_set_interrupt_mode(INT2_PORT, INT2_PIN, TRIGGER_RISING_EDGE);	
+	every_gpio_set_interrupt_mode(INT1_PORT, INT1_PIN, TRIGGER_FALLING_EDGE);	
+	every_gpio_set_interrupt_mode(INT2_PORT, INT2_PIN, TRIGGER_RISING_EDGE);	
 
 	// Only to more steps: we need to tell the processor to activate the
 	// interrupt ...
@@ -103,22 +103,22 @@ void main(void) {
 
 // When the IO interrupt is triggered, the processor looks for a
 // function called `gpio<PORT>_handler` and runs that. (Have a look at
-// `anykey/startup.c` to see where these function names are defined.)
+// `everykey/startup.c` to see where these function names are defined.)
 
 void gpio0_handler(void) {
 	// because this handler function is called for ALL interrupts trigger
 	// by PORT 0, we need a way to find out which pin actually triggered
 	// it. 
-	uint32_t mask = any_gpio_get_interrupt_mask(INT1_PORT);
+	uint32_t mask = every_gpio_get_interrupt_mask(INT1_PORT);
 
 	// the bits set in this mask correspond to the pin that triggered the
 	// interrupt. In this example, we won't actually use the value,
 	// so we'll go ahead and clear the mask:
-	any_gpio_clear_interrupt_mask(INT1_PORT, mask);
+	every_gpio_clear_interrupt_mask(INT1_PORT, mask);
 
 	// Finally, we toggle the value of the LED.
-	bool val = any_gpio_read(LED_PORT, LED_PIN);
-	any_gpio_write(LED_PORT, LED_PIN, !val);
+	bool val = every_gpio_read(LED_PORT, LED_PIN);
+	every_gpio_write(LED_PORT, LED_PIN, !val);
 
 	// In this example, we're not actually using the mask, but try
 	// this excercise: change the handler function to only toggle the LED

@@ -1,4 +1,4 @@
-#include "anypio.h"
+#include "everypio.h"
 
 
 // This is an example of creating a rainbow animation with an RGB LED.
@@ -41,12 +41,12 @@
 #define B PIN_0_10
 
 void main(void) {
-	anypio_write(LED, false);
+	everypio_write(LED, false);
 
 	// prepare the RGB outputs for PWM (timer and digital mode)
-	ANY_GPIO_SET_FUNCTION(0,8,TMR,IOCON_IO_ADMODE_DIGITAL);
-	ANY_GPIO_SET_FUNCTION(0,9,TMR,IOCON_IO_ADMODE_DIGITAL);
-	ANY_GPIO_SET_FUNCTION(0,10,TMR,IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0,8,TMR,IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0,9,TMR,IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0,10,TMR,IOCON_IO_ADMODE_DIGITAL);
 
 	// enable the timer
 	Timer_Enable(CT16B0, true);
@@ -143,7 +143,7 @@ void systick() {
 	// and it will toggle every transition, we can use this mask to turn
 	// the LED on and off at each subsequent transition.
 
-	anypio_write(LED, counter & 0x80);
+	everypio_write(LED, counter & 0x80);
 
 	// Since this routine is called every ten ms and the counter needs to
 	// reach 0x80 (= 128 decimal) for a new transition to start, each

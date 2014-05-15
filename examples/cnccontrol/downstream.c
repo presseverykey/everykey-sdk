@@ -9,20 +9,20 @@ uint16_t spindleCompare;
 
 void SetEnablePin(uint8_t axis, bool on) {
 	if (ENABLE_IS_LOW_ACTIVE) on = !on;
-	any_gpio_write(axes[axis].enablePort, axes[axis].enablePin, on); 
+	every_gpio_write(axes[axis].enablePort, axes[axis].enablePin, on); 
 }
 
 void SetDirPin(uint8_t axis, bool increasing) {
-	any_gpio_write(axes[axis].dirPort, axes[axis].dirPin, increasing); 
+	every_gpio_write(axes[axis].dirPort, axes[axis].dirPin, increasing); 
 }
 
 void SetStepPin(uint8_t axis, bool value) {
-	any_gpio_write(axes[axis].stepPort, axes[axis].stepPin, value); 
+	every_gpio_write(axes[axis].stepPort, axes[axis].stepPin, value); 
 }
 
 void SetSpindlePin(bool on) {
 	if (SPINDLE_IS_LOW_ACTIVE) on = !on;
-	any_gpio_write(SPINDLE_PORT, SPINDLE_PIN, on);
+	every_gpio_write(SPINDLE_PORT, SPINDLE_PIN, on);
 }				
 
 /** set the spindleSpeed value and our internal PWM compare value according to spindle speed value (0-65535) */
@@ -32,27 +32,27 @@ void SetSpindleSpeed(uint16_t speed) {
 }
 
 void Downstream_Init() {
-	ANY_GPIO_SET_FUNCTION(0, 10, PIO, IOCON_IO_ADMODE_DIGITAL);
-	ANY_GPIO_SET_FUNCTION(0, 11, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0, 10, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0, 11, PIO, IOCON_IO_ADMODE_DIGITAL);
 	
 	int i;
 	for (i=0;i<NUM_AXES;i++) {
 		
-		any_gpio_set_dir(axes[i].dirPort, axes[i].dirPin, OUTPUT);
+		every_gpio_set_dir(axes[i].dirPort, axes[i].dirPin, OUTPUT);
 		SetDirPin(i, false);
 
-		any_gpio_set_dir(axes[i].stepPort, axes[i].stepPin, OUTPUT);
+		every_gpio_set_dir(axes[i].stepPort, axes[i].stepPin, OUTPUT);
 		SetStepPin(i, false);
 
-		any_gpio_set_dir(axes[i].enablePort, axes[i].enablePin, OUTPUT);
+		every_gpio_set_dir(axes[i].enablePort, axes[i].enablePin, OUTPUT);
 		SetEnablePin(i, true);	//Right now, we enable all drivers - should be made dynamic later
 	}
 
-	any_gpio_set_dir(SPINDLE_PORT, SPINDLE_PIN, OUTPUT);
+	every_gpio_set_dir(SPINDLE_PORT, SPINDLE_PIN, OUTPUT);
 	SetSpindlePin(false);
 	
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write(LED_PORT, LED_PIN, false);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write(LED_PORT, LED_PIN, false);
 
 	ledCounter = 0;
 	spindlePhase = 0;
@@ -178,11 +178,11 @@ void Downstream_Tick() {
 	//set spindle
 	spindlePhase = (spindlePhase + 1) % SPINDLE_PWM_RESOLUTION;
 	SetSpindlePin(spindlePhase < spindleCompare);
-//	any_gpio_write(LED_PORT, LED_PIN, spindlePhase < spindleCompare);
+//	every_gpio_write(LED_PORT, LED_PIN, spindlePhase < spindleCompare);
 
 	//Blink the LED to show we're alive
 	ledCounter++;
-	any_gpio_write(LED_PORT, LED_PIN, ledCounter & 0x800);
+	every_gpio_write(LED_PORT, LED_PIN, ledCounter & 0x800);
 	
 	//set step bits
 	for (i=0; i<NUM_AXES; i++) {

@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 #include "fontTex.h"
 
@@ -76,18 +76,18 @@ void main(void) {
 	uint16_t screenCount = 2;
 	
 	//init pins
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write(LED_PORT, LED_PIN, 0);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write(LED_PORT, LED_PIN, 0);
 
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_R_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_G_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_B_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_R_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_G_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_B_PIN, OUTPUT);
 
-	any_gpio_set_dir(VGA_SYNC_PORT, VGA_HSYNC_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_SYNC_PORT, VGA_HSYNC_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
 
-	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
+	every_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
+	EVERY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
 
 	setScreen(screen1);
 
@@ -102,7 +102,7 @@ void main(void) {
 	SYSCON_StartSystick(2056);
 
 	while (1) {
-		bool newState = any_gpio_read(KEY_PORT, KEY_PIN);
+		bool newState = every_gpio_read(KEY_PORT, KEY_PIN);
 		if (!newState && oldState) {
 			downFrame = currentFrame;
 		}
@@ -120,7 +120,7 @@ void main(void) {
 		int val = currentFrame % 100 - 50;
 		val = val * val / 10;
 		vOffset = -val;
-		any_gpio_write(LED_PORT, LED_PIN, currentScreen & 1);
+		every_gpio_write(LED_PORT, LED_PIN, currentScreen & 1);
 	}
 }
 

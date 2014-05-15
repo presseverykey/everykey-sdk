@@ -1,7 +1,7 @@
 # Examples ...
 
 This directory contains a number of samples to help you get started
-programming the Anykey (and with embedded programming in general).
+programming the Everykey (and with embedded programming in general).
 
 Each of the example directories contain a file called `main.c`, and a
 bunch of other stuff, ignore the other stuff and concentrate on the
@@ -12,7 +12,7 @@ The order below is a suggestion of how you should get started...
 ## `blink`
 
 Start here! This is the Hello World of embedded programming, a routine
-to make the Anykey's LED blink. This example is heavily commented, but
+to make the Everykey's LED blink. This example is heavily commented, but
 consists of hardly any code :) Be sure to work through the comments if
 you're not particularly experienced in this sort of thing.
 
@@ -25,7 +25,7 @@ introduces the concept of "timers". It's also heavily commented.
 ## `lightbutton_pro`
 
 The blink examples only dealt with output, the lightbutton examples show
-how to use Anykey's input facilities (the two buttons). They are
+how to use Everykey's input facilities (the two buttons). They are
 well commented and structured similarly to the `blink` examples, the
 first one shows the easiest possible way determine whether a button has
 been pressed, the second example is a bit more sosphisticated.
@@ -47,7 +47,7 @@ simple example demonstrating the ADC
 
 ## `cdcleetifier`
 
-Example of how to use the CDC libs to communicate with the Anykey via a
+Example of how to use the CDC libs to communicate with the Everykey via a
 serial port.
 
 ## `i2c`

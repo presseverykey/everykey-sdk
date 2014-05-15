@@ -6,12 +6,12 @@
 
 // First off, we're not taking the easy route to handle Pin IO and will
 // configure the LED pin manually ... We no longer need to include the
-// anypio.h header, instead, we need to directly include the "low level"
+// everypio.h header, instead, we need to directly include the "low level"
 // SDK:
 
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
-// To use the sdk in your own projects, the anykey directory needs to be
+// To use the sdk in your own projects, the everykey directory needs to be
 // copied or linked to your project directoy.
 
 // In the microcontroller, physical pins are organized into "ports" and
@@ -63,7 +63,7 @@ void main(void) {
 	// We're back at IO: since a pin can be used a number of different
 	// pursposes. We need to configure the pin to be used for pin IO:
 
-	ANY_GPIO_SET_FUNCTION(LED_PORT, LED_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(LED_PORT, LED_PIN, PIO, IOCON_IO_ADMODE_DIGITAL);
 
 	// (strictly speaking, this last step wasn't necessary for the LED
 	// because port 0, pin 7 is set up for pin IO per default, but some
@@ -77,12 +77,12 @@ void main(void) {
 	// the connected pin. We need to set the pin configuration to output
 	// mode, because we want to turn the LED on and off:
 
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
 
 	// We defined LED_PORT and LED_PIN to identify the LED in the code
-	// above. OUTPUT is a constant of the type any_gpio_direction and
-	// defined in anykey/gpio.h which was included indirectly by
-	// including: anykey/anykey.h ...
+	// above. OUTPUT is a constant of the type every_gpio_direction and
+	// defined in everykey/gpio.h which was included indirectly by
+	// including: everykey/everykey.h ...
 
 	// Next we need to configure the timer and interrupt. All Cortex M3
 	// processors include a "systick" timer, which, when activated
@@ -94,7 +94,7 @@ void main(void) {
 // The LPC1343 (and many other processors) require an interrupt table
 // that keeps track of where the functions that run when an interrupt is
 // triggered are located. This table is placed at the very beginning of
-// the firmware and it's defined in the file: anykey/startup.c. 
+// the firmware and it's defined in the file: everykey/startup.c. 
 //
 // If you have a look at the interrupt table, you'll see the first entry
 // refers to the top of the stack (ignore that for now) and the second
@@ -129,7 +129,7 @@ void systick(void) {
 		// `counter` reaches 20 after systick has executed 10 times, so after
 		// a tenth of a second (10 * 10ms (10/1000s) = 1/10s). Once a tenth
 		// of a second has elapsed, we turn the LED off.
-		any_gpio_write(LED_PORT, LED_PIN, false);
+		every_gpio_write(LED_PORT, LED_PIN, false);
 		
 		// here's the trick: we don't reset the counter to 0, but to 1.
 		// Since we're always incrementing by 2, we'll now that if the
@@ -145,7 +145,7 @@ void systick(void) {
 		// This has the effect that the LED will blink once a second for
 		// 1/10s...
 
-		any_gpio_write(LED_PORT, LED_PIN, true);
+		every_gpio_write(LED_PORT, LED_PIN, true);
 
 		// reset counter to 0 in order to remeber to turn it back off!
 		counter = 0;

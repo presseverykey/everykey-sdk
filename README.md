@@ -21,9 +21,9 @@ Contents of this directory
 
 This directory contains the following items:
 
-- `anykey`: The Everykey runtime for the LPC1343 / Anykey0x.de
+- `everykey`: The Everykey runtime for the LPC1343 / Everykey
   board, linker script and makefile
-- `anykey_usb` : USB firmware, this is quite large so we keep it seperated.
+- `everykey_usb` : USB firmware, this is quite large so we keep it seperated.
 - `checksum`: A tool to calculate and adjust the checksum of a firmware
   file
 - several sample projects (see the README in the `examples` directory )
@@ -45,7 +45,7 @@ peripherals are working yet.
 Build environment
 =================
 
-For developing and building Anykey software, you will need:
+For developing and building Everykey software, you will need:
 
 - a computer and a text editor of your choice
 - gcc arm-none-eabi toolchain  
@@ -66,21 +66,21 @@ following steps to create a project directory from scratch:
 
 - create a project directory
 - create a main.c file (the name doesn't actually matter)
-- to use pressanykey firmware library, #include
-  "pressanykey/pressanykey.h"
-- link, symlink or copy pressanykey directory to project directory
-- link, symlink or copy makefile (inside pressanykey dir) to project
+- to use everykey firmware library, #include
+  "everykey/everykey.h"
+- link, symlink or copy everykey directory to project directory
+- link, symlink or copy makefile (inside everykey dir) to project
   directory
-- link, symlink or copy lpc1343.ld (inside pressanykey dir) to project
+- link, symlink or copy lpc1343.ld (inside everykey dir) to project
   directory
 - run `make` (will compile and link all c files in project dir and subdirs)
-- connect target board in USB programming mode (Anykey V1: Short-circuit the programming pins while connecting the USB cable, Evertkey V2: Hold the application button while pressing the reset button)
+- connect target board in USB programming mode (Everykey V1: Short-circuit the programming pins while connecting the USB cable, Everykey V2: Hold the application button while pressing the reset button)
 - run `make mac-install` (optionally copy the resulting .bin file manually)
 - Reset the board (Everykey V1: disconnect and re-plug, Everykey V2: press the reset button)
 
 In most cases, symlinking (or hard-linking, if you prefer) the
-`anykey` directory, makefile and linker script from your project
-directory to the pressanykey directory is recommended. This way, the
+`everykey` directory, makefile and linker script from your project
+directory to the everykey directory is recommended. This way, the
 project refers to the original, unaltered runtime library. 
 
 The build system should work in OSX without modifications. For other
@@ -102,7 +102,7 @@ https://raw.github.com/r0ket/r0ket/master/tools/bootloader/simpleflash
 Examples
 ========
 
-If you are new to the Anykey-SDK or to (embedded) programming, have a
+If you are new to the Everykey-SDK or to (embedded) programming, have a
 look at the
 [README](https://github.com/presseverykey/everykey-sdk/tree/master/examples)
 in the `examples` directory. it describes all the examples included with

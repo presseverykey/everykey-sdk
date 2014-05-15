@@ -1,8 +1,8 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 /* Here's how to connect your VGA output to the board:
 
-Anykey                 VGA
+Everykey               VGA
 
 GPIO2.2  ---[200R]---  Red       (VGA Pin  1)
 GPIO2.1  ---[200R]---  Green     (VGA Pin  2)
@@ -67,12 +67,12 @@ void main(void) {
 
 	//set all our pins to digital output
 
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_R_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_G_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_RGB_PORT, VGA_B_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_SYNC_PORT, VGA_HSYNC_PIN, OUTPUT);
-	any_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_R_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_G_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_RGB_PORT, VGA_B_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_SYNC_PORT, VGA_HSYNC_PIN, OUTPUT);
+	every_gpio_set_dir(VGA_SYNC_PORT, VGA_VSYNC_PIN, OUTPUT);
 
 	//line counter is used for syncing, frame counter just for LED blinking
 
@@ -148,14 +148,14 @@ void systick(void) {
 
 	lineCounter++;
 	if (lineCounter==622) {
-		any_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 0);
+		every_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 0);
 	} else if (lineCounter>=624) {
-		any_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 1);
+		every_gpio_write(VGA_SYNC_PORT, VGA_VSYNC_PIN, 1);
 		lineCounter = 0;
 		frameCounter++;
 	}
 
 	// blink LED with 1Hz. Because we can.
 
-	any_gpio_write(LED_PORT, LED_PIN, (frameCounter/28)&1);
+	every_gpio_write(LED_PORT, LED_PIN, (frameCounter/28)&1);
 }

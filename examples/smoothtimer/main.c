@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
@@ -18,8 +18,8 @@
 uint32_t counter = 0;	//we count cycles
 
 void main(void) {	// main is used for setup and starting the systick timer
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write(LED_PORT, LED_PIN, false);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write(LED_PORT, LED_PIN, false);
 	Timer_Enable(CT16B0, true);
 	Timer_SetPrescale(CT16B0, 0);				//Use full clock speed
 	Timer_SetMatchValue(CT16B0, 0, 2000);
@@ -45,5 +45,5 @@ void ct16b0_handler(void) {	//systick is used for regular, repeating tasks
 	uint32_t pwmPhase = counter % PWM_SPEED;
 
 	// set output
-	any_gpio_write(LED_PORT, LED_PIN, brightness > pwmPhase);
+	every_gpio_write(LED_PORT, LED_PIN, brightness > pwmPhase);
 }

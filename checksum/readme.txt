@@ -4,4 +4,4 @@ Compiling: make
 
 Usage: checksum <file_to_be_fixed>
 
-To use it with the Press Any Key toolchain, compile it and either put it in a place where it can be found by your search path or set the tool's path explicitly in the project's makefile.
+To use it with the Everykey toolchain, compile it and either put it in a place where it can be found by your search path or set the tool's path explicitly in the project's makefile.

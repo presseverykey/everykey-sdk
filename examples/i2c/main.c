@@ -3,7 +3,7 @@ and turns the LED on and off based on the measured brightness. This example requ
 connected to the I2C port (SCL = PIO0_4, SDA = PIO0_5). Add 3.3V pullup resistors to both lines.
 See TCS3471 datasheet and NXP's I2C spec and notes for details. */
 
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
@@ -188,33 +188,33 @@ I2C_State i2cState;
 void main () {
 	sleep(100000); //For some reason, this seems to be a good thing to do
 
-	any_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write   (LED_PORT, LED_PIN, false);
-	any_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, PULL_UP);
+	every_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write   (LED_PORT, LED_PIN, false);
+	every_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
+	EVERY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, PULL_UP);
 
 	//Start I2C in slow mode. Just pass in an empty I2C_Struct - used by I2C engine.
 	I2C_Init(I2C_MODE_STANDARD, &i2cState); 
 	
 	if (!TCS3471_PowerOn()) {
-		any_gpio_write(0,7,true);
+		every_gpio_write(0,7,true);
 		while (1) {}
 	}
 	
 	if (!TCS3471_SetIntegrationTimeMS(100)) {
-		any_gpio_write(0,7,true);
+		every_gpio_write(0,7,true);
 		while (1) {}
 	}
 
 	if (!TCS3471_SetWaitTimeMS(300)) {
-		any_gpio_write(0,7,true);
+		every_gpio_write(0,7,true);
 		while (1) {}
 	}
 
 	while (1) {
 		uint16_t r,g,b,c;
 		if (TCS3471_GetColors(&c,&r,&g,&b)) {
-			any_gpio_write(0,7,c > 1000);
+			every_gpio_write(0,7,c > 1000);
 		}
 		sleep(100000);
 	}

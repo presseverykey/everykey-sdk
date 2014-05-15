@@ -1,7 +1,7 @@
-#include "anykey/anykey.h"
-#include "anypio.h"
+#include "everykey/everykey.h"
+#include "everypio.h"
 
-// This example shows how to implement a USB MIDI device on the Anykey.
+// This example shows how to implement a USB MIDI device on the Everykey.
 // Because USB is quite an elaborate topic, we've tryed to keep as much 
 // of the USB specifics out of this tutorial to concentrate on the code
 // you need to implement.
@@ -11,7 +11,7 @@
 
 #include "usbmidiboilerplate.h"
 
-// as well as the code contained in the linked "anykey_usb" directory.
+// as well as the code contained in the linked "everykey_usb" directory.
 // We'll get back to this code in a moment.
 
 // In case you're really itching to just get going and don't care how
@@ -39,7 +39,7 @@ uint16_t midiFifoWrIdx = 0;
 
 // Next we need to define our devices behaviour: 
 // In order to send MIDI to the host, we use functions declared in:
-//    anykey_usb/midi.h
+//    everykey_usb/midi.h
 //
 // USBMIDI_SendNoteOn
 // USBMIDI_SendNoteOff
@@ -75,7 +75,7 @@ const USBMIDI_Behaviour_Struct midi_behaviour = {
 };
 
 // The 'usbmidiboilerplate.h' header file contains the necessary USB
-// descriptors that the Anykey will send to the host to identify itself
+// descriptors that the Everykey will send to the host to identify itself
 // as a MIDI, as well as the behaviour described above. This struct is
 // necessary to initialize the USB hardware.
 
@@ -89,7 +89,7 @@ const USB_Device_Definition midi_deviceDefinition = {
         { (USB_Behaviour_Struct*)(&midi_behaviour) }
 };
 
-// The USB hardware (i.e. it's runtime state) on the anykey is
+// The USB hardware (i.e. it's runtime state) on the everykey is
 // contained in a `USB_Device_Struct`, which we declare here:
 
 USB_Device_Struct midi_device;
@@ -103,11 +103,11 @@ void main () {
 	// Main contains pretty standard stuff..
 
 	// turn off the LED
-	anypio_write(LED, false);
+	everypio_write(LED, false);
 
 	// configure KEY1 with a PULL_UP resistor so we can use it as a
 	// button.
-	anypio_digital_input_set(KEY1_REV2, PULL_UP);
+	everypio_digital_input_set(KEY1_REV2, PULL_UP);
 
 	// The following code initializes the USB subsystem by inserting our
 	// device descriptors into the USB_Device_Struct and telling the
@@ -120,7 +120,7 @@ void main () {
 	// The routine called by this interrupt is defined next ...
 	SYSCON_StartSystick_10ms();
 
-	// That's it for main, the anykey will just hang around waiting for
+	// That's it for main, the everykey will just hang around waiting for
 	// keypresses in the systick routine and wait for midi data to arrive
 	// from the host. This data is handled by the callbacks declared above
 	// (myMidiNoteOnHandler) and implemented below ...
@@ -130,7 +130,7 @@ bool lastButton = false;
 
 void systick () {
 	// read the button value
-	bool button = !anypio_read(KEY1_REV2);
+	bool button = !everypio_read(KEY1_REV2);
 	// check if the button state has changed since the last time we
 	// looked.
 	if (button != lastButton) {
@@ -151,12 +151,12 @@ void systick () {
 
 // whenever we receive a note on message, we turn on our LED ...
 void myMidiNoteOnHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note, uint8_t velocity) {
-	anypio_write(LED, velocity > 0);
+	everypio_write(LED, velocity > 0);
 }
 
 // ... and turn it off again on any note off message.
 void myMidiNoteOffHandler(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableIdx, uint8_t channel, uint8_t note) {
-	anypio_write(LED, false);
+	everypio_write(LED, false);
 }
 
 // ignore fancy stuff ...

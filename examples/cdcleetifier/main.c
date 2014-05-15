@@ -1,21 +1,21 @@
-#include "anycdc.h"
-#include "anypio.h"
+#include "everycdc.h"
+#include "everypio.h"
 
 int counter;
 
 void main(void) {
-	anycdc cdc;
-	anycdc_init(&cdc);
+	everycdc cdc;
+	everycdc_init(&cdc);
 
 	
-	anypio_write  (LED, false);
+	everypio_write  (LED, false);
 
 	while(true) {
 		int b;
-		if ( -1 !=  (b = anycdc_read_byte(&cdc)) ) {
+		if ( -1 !=  (b = everycdc_read_byte(&cdc)) ) {
 			uint8_t ch = b & 0xff;
 			++counter;
-			anypio_write(LED, counter & 1);
+			everypio_write(LED, counter & 1);
 			
 			if ((ch >= 'a') && (ch <= 'z')) ch -= 'a'-'A';
 			else if ((ch >= 'A') && (ch <= 'Z')) ch += 'a'-'A';
@@ -27,7 +27,7 @@ void main(void) {
 			if (ch == 's') ch = 'z';
 			if (ch == 'S') ch = 'Z';
 
-			anycdc_write_byte(&cdc, ch);
+			everycdc_write_byte(&cdc, ch);
 		}
 	}
 }

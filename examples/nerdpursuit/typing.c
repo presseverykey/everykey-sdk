@@ -1,5 +1,5 @@
 #include "typing.h"
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 #define LED_PORT 0
 #define LED_PIN  7
