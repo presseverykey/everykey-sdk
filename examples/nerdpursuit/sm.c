@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 #include "typing.h"
 #include "question.h"
 
@@ -75,7 +75,7 @@ void do_nerd_sm (bool pressed, uint32_t count) {
 	switch (sm.state) {
 		case start:
 		case press_any_key:
-			type("press anykey to continue!");
+			type("press any key to continue!");
 			sm.state = question_;
 			break;
 		case question_:

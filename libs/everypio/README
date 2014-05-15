@@ -1,0 +1,43 @@
+
+To use this library in your code, just copy the contents in the
+directory along side your own firmware code.
+
+You'll need a copy of the `everykey` SDK folder located below this
+directory.
+
+E.g.
+
+Your firmware is in:
+
+    ../my_project
+
+which contains
+
+    $ ls
+    main.c
+
+You'll first need to copy (or link) the makefile and linker script from
+the `everykey` sdk directory:
+
+    $ cp ${everysdk}/everykey/makefile  .
+    $ cp ${everysdk}/everykey/lp1342.ld .
+
+Copy the `everykey` and `everykey_usb` directories:
+
+    $ cp -r ${everysdk}/everykey .
+
+Finally, copy or link the files in this directory:
+
+    $ cp ${everysdk}/lib/everypio.h .
+    $ cp ${everysdk}/lib/everypio.c .
+
+The resulting directory looks will look like this:
+
+    $ ls -l
+    everykey
+    everypio.c
+    everypio.h
+    lpc1343.ld
+    main.c
+    makefile
+

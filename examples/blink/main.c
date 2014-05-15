@@ -6,16 +6,16 @@
 // the LED by alternatingly providing power to a pin and turning the pin
 // off again. In between, we wait.
 
-#include "anypio.h"
+#include "everypio.h"
 
 // Turning a pin on or off is about the simplest thing you can do on an
 // embedded device, but it does require a bit of boilerplate that can be
-// daunting at first. The `anypio` library takes care of all that for
+// daunting at first. The `everypio` library takes care of all that for
 // you.
 //
-// (In case you want to use anypio for your own projecti later, you need
+// (In case you want to use everypio for your own projecti later, you need
 // to copy or link it into your project directory. The source is located
-// under `libs/anypio`)
+// under `libs/everypio`)
 
 // first we declare a delay function to allow us to wait in between
 // turning the LED off and on. The implementation is at the bottom of
@@ -30,13 +30,13 @@ void delay(int count);
 // system can run, some intialization needs to be taken care of. If you
 // are interested in what happens when the system boots up, have a look
 // at: 
-//       anykey/startup.c
+//       everykey/startup.c
 void main(void) {
 	// the program is just an infinite loop:
 	while (true) {
-		anypio_write(LED, true);
+		everypio_write(LED, true);
 		delay(1000000);
-		anypio_write(LED, false);
+		everypio_write(LED, false);
 		delay(1000000);
 	}
 }

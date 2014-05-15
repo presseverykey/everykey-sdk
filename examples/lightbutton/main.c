@@ -1,7 +1,7 @@
-#include "anypio.h"
+#include "everypio.h"
 
 // This is a simple example of how to interact with the buttons on the
-// Anykey. 
+// Everykey. 
 // A somewhat more elaborate example (using interrupts) is contained int
 // the lightbutton_pro directory.
 
@@ -9,7 +9,7 @@
 void main(void) {
 
 	// ! in case you are lucky (?) enough to own
-	// ! a vintage first edition anykey: the second
+	// ! a vintage first edition everykey: the second
 	// ! edition got an extra button and the pins are
 	// ! mapped differently, so you'll need to replace
 	// ! KEY1_REV2 with KEY_REV1 in the code below.
@@ -51,17 +51,17 @@ void main(void) {
 	// In order to configure the pin to use a pull-up resistor, we do the
 	// following:
 
-	anypio_digital_input_set(KEY1_REV2, PULL_UP);
+	everypio_digital_input_set(KEY1_REV2, PULL_UP);
 
 	while (true) {
 		// now read the button.
-		bool button = anypio_read(KEY1_REV2);
+		bool button = everypio_read(KEY1_REV2);
 
 		// write the value read from the button to the LED. Remember that
 		// the buttons are connected to ground , so you will
 		// read a logical 0 when the button is pressed.
 		
-		anypio_write(LED, button);
+		everypio_write(LED, button);
 	}
 }
 

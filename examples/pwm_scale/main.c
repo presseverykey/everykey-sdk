@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 
 // slightly more advanced pwm example. 
@@ -78,14 +78,14 @@ void play_note(note n) {
 
 void main(void) {
 	// use LED for fancy button press indicator!
-	any_gpio_set_dir(0,7,OUTPUT);
+	every_gpio_set_dir(0,7,OUTPUT);
 	
 	// configure the button as input.
-	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
+	every_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
+	EVERY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
 	
 	// configure the PIN 0_8 to act as timer match output.
-	ANY_GPIO_SET_FUNCTION(0,8,TMR, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0,8,TMR, IOCON_IO_ADMODE_DIGITAL);
 
 	// start playing the first note.
 	play_note(notes[currnote]);
@@ -101,7 +101,7 @@ void systick() {
 	// simple debounce operation. Reading that the button has
 	// been pressed three times in a row (30ms) gives us enough 
 	// convidence that the button has actually been pressed...
-	if (!any_gpio_read(KEY_PORT, KEY_PIN)) {
+	if (!every_gpio_read(KEY_PORT, KEY_PIN)) {
 		if (button_presses == 0xff) {
 			return;
 		}
@@ -114,7 +114,7 @@ void systick() {
 
 	if (button_presses == 0xff) {
 		// button has been released
-		if (any_gpio_read(KEY_PORT, KEY_PIN)) {
+		if (every_gpio_read(KEY_PORT, KEY_PIN)) {
 			// button has been released
 			currnote += 1;
 			if (currnote > num_notes) {
@@ -122,7 +122,7 @@ void systick() {
 				currnote = 0;
 			}
 			// switch light on and off for each press ...
-			any_gpio_write(0,7,currnote & 1);
+			every_gpio_write(0,7,currnote & 1);
 			// play the next note.
 			play_note(notes[currnote]);
 		}

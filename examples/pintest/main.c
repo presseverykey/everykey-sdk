@@ -41,7 +41,7 @@
 // after pad 26, of course afterwards the key will no longer work and
 // you'll need to reset it to test the key again.
 
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 
 #define KEY_PORT 1
@@ -93,33 +93,33 @@ void set_functions() {
 	// some pads aren't in PIO mode per default,
 	// i.e. PIO1_0, pad 6, proc pin 33
 	// set all of them.
-	ANY_GPIO_SET_FUNCTION(1,7,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,6,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,1,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(2,0,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,4,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,0,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,6,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,11,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,10,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,2,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,7,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,5,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(2,1,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,7,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,6,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,1,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(2,0,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,4,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,0,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,6,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,11,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,10,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,2,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,7,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,5,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(2,1,PIO,IOCON_IO_ADMODE_DIGITAL)
 
-	ANY_GPIO_SET_FUNCTION(2,2,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,1,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,2,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(2,2,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,1,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,2,PIO,IOCON_IO_ADMODE_DIGITAL)
 	// pwr
 	// vdd
 	// gnd
 	// key
-	ANY_GPIO_SET_FUNCTION(2,3,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,3,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(1,5,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(2,11,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,9,PIO,IOCON_IO_ADMODE_DIGITAL)
-	ANY_GPIO_SET_FUNCTION(0,8,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(2,3,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,3,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(1,5,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(2,11,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,9,PIO,IOCON_IO_ADMODE_DIGITAL)
+	EVERY_GPIO_SET_FUNCTION(0,8,PIO,IOCON_IO_ADMODE_DIGITAL)
 };
 
 void initialize_ports (void) {
@@ -134,12 +134,12 @@ void initialize_ports (void) {
 		port = 0x0f & (pp>>4);
 		pin  = 0x0f & pp;
 		
-		any_gpio_set_dir(port,pin, OUTPUT);
-		any_gpio_write(port, pin, true);
+		every_gpio_set_dir(port,pin, OUTPUT);
+		every_gpio_write(port, pin, true);
 	}
 	// ... except the key pad
-	any_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
+	every_gpio_set_dir(KEY_PORT, KEY_PIN, INPUT);
+	EVERY_GPIO_SET_PULL(KEY_PORT, KEY_PIN, PULL_UP);
 }
 
 // turn on pad number `pad+1`, the pad parameter is
@@ -161,14 +161,14 @@ void set_pad(int * pad) {
 		} else {
 			val = false;	  // and everything else off
 		}
-		any_gpio_write(port, pin, val);
+		every_gpio_write(port, pin, val);
 	}
 	
 	// once we've reached the last pad, turn the the
 	// pad connected to the button on. (pad 20)
 	if (*pad == NUM_PIN_PORT) {
-		any_gpio_set_dir(KEY_PORT, KEY_PIN, OUTPUT);
-		any_gpio_write(KEY_PORT, KEY_PIN, true);
+		every_gpio_set_dir(KEY_PORT, KEY_PIN, OUTPUT);
+		every_gpio_write(KEY_PORT, KEY_PIN, true);
 	} 
 	
 	*pad += 1;
@@ -187,15 +187,15 @@ void systick(void) {
 	bool curr_state;	
 	
 	// check whether the button is pressed ...
-	curr_state = any_gpio_read(KEY_PORT, KEY_PIN);
+	curr_state = every_gpio_read(KEY_PORT, KEY_PIN);
 
 	if (key_state != curr_state) {
 		if (curr_state == pressed) {
 			// light the led when pressed
-			any_gpio_write(LED_PORT, LED_PIN, true);
+			every_gpio_write(LED_PORT, LED_PIN, true);
 		} else {
 			// and then turn it back off when releasing...
-			any_gpio_write(LED_PORT, LED_PIN, false);
+			every_gpio_write(LED_PORT, LED_PIN, false);
 			// ... and finally light the next pad.
 			set_pad(&pad);
 		}

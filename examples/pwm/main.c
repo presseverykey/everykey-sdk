@@ -1,13 +1,13 @@
 
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 
 
 void main(void) {
 
-	any_gpio_set_dir(0,7,OUTPUT);
-	ANY_GPIO_SET_FUNCTION(0,8,TMR, IOCON_IO_ADMODE_DIGITAL);
-	ANY_GPIO_SET_FUNCTION(0,9,TMR, IOCON_IO_ADMODE_DIGITAL);
+	every_gpio_set_dir(0,7,OUTPUT);
+	EVERY_GPIO_SET_FUNCTION(0,8,TMR, IOCON_IO_ADMODE_DIGITAL);
+	EVERY_GPIO_SET_FUNCTION(0,9,TMR, IOCON_IO_ADMODE_DIGITAL);
 	
 	Timer_Enable(CT16B0, true);
 	Timer_SetPrescale(CT16B0, 719);       // divider for the system clock: 72MHz 100kHz

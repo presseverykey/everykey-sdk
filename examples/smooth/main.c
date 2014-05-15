@@ -1,4 +1,4 @@
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
@@ -18,7 +18,7 @@
 uint32_t counter;	//we count systicks for deriving pwm phase and brightness
 
 void main(void) {	// main is used for setup and starting the systick timer
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
 	counter = 0;			//use main to initialize globals, don't init them statically
 	SYSCON_StartSystick(SYSTICK_CYCLES-1);	//systick() is called all SYSTICK_CYCLES cycles
 }
@@ -38,5 +38,5 @@ void systick(void) {	//systick is used for regular, repeating tasks
 	uint32_t pwmPhase = counter % PWM_SPEED;
 
 	// set output
-	any_gpio_write(LED_PORT, LED_PIN, brightness > pwmPhase);
+	every_gpio_write(LED_PORT, LED_PIN, brightness > pwmPhase);
 }

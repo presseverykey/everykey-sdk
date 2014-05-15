@@ -1,5 +1,5 @@
-#include "anykey/anykey.h"
-#include "anykey_usb/usb.h"
+#include "everykey/everykey.h"
+#include "everykey_usb/usb.h"
 
 const uint8_t deviceDescriptor[] = {
 	0x12,							//bLength: length of this structure in bytes (18)
@@ -90,8 +90,8 @@ void delay (uint32_t duration) {
 }
 
 void SPIFLASH_Init() {
-	any_gpio_set_dir(FLASHSEL_PORT, FLASHSEL_PIN, OUTPUT);
-	any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	//deselect chip (low active)
+	every_gpio_set_dir(FLASHSEL_PORT, FLASHSEL_PIN, OUTPUT);
+	every_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	//deselect chip (low active)
 	SSP_Init(4, 8, SSP_CR0_FRF_SPI, true, true, true);
 }
 
@@ -99,10 +99,10 @@ bool SPIFLASH_WaitReady() {
 	uint32_t retries;
 	bool busy;
 	for (retries = 0; retries < MAX_BUSY_RETRIES; retries++) {
-		any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, false);	// start talking to chip
+		every_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, false);	// start talking to chip
 		SSP_Transfer(SPIFLASH_CMD_GETSTATUS);
 		uint16_t status = SSP_Transfer(0x00);
-		any_gpio_write (FLASHSEL_PORT, FLASHSEL_PIN, true);	// stop talking to chip
+		every_gpio_write (FLASHSEL_PORT, FLASHSEL_PIN, true);	// stop talking to chip
 		busy = (status & SPIFLASH_STATUS_BUSY);
 		if (!busy) break;
 		delay(100000);
@@ -111,12 +111,12 @@ bool SPIFLASH_WaitReady() {
 }
 
 uint32_t SPIFLASH_ReadDeviceId() {
-	any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, false);	// start talking to chip
+	every_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, false);	// start talking to chip
 	SSP_Transfer(SPIFLASH_CMD_GETJEDECID);					// write command JEDEC Device ID
 	uint8_t manufacturerId = SSP_Transfer(0x00);			// Read return
 	uint8_t memoryType = SSP_Transfer(0x00);				// Read return
 	uint8_t capacity = SSP_Transfer(0x00);					// Read return
-	any_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	// stop talking to chip
+	every_gpio_write(FLASHSEL_PORT, FLASHSEL_PIN, true);	// stop talking to chip
 	return (manufacturerId << 16) | (memoryType << 8) | capacity;
 }
 
@@ -132,13 +132,13 @@ uint8_t versionString[14];
 #define LED_PIN 7
 
 void main(void) {
-	any_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write(LED_PORT, LED_PIN, true);
+	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write(LED_PORT, LED_PIN, true);
 	
 	SPIFLASH_Init();
 	SPIFLASH_WaitReady();
 
-	any_gpio_write(LED_PORT, LED_PIN, false);
+	every_gpio_write(LED_PORT, LED_PIN, false);
 
 	uint32_t deviceId = SPIFLASH_ReadDeviceId();
 	

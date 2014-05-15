@@ -1,7 +1,7 @@
 #ifndef _CMDQUEUE_
 #define _CMDQUEUE_
 
-#include "anykey/anykey.h"
+#include "everykey/everykey.h"
 #include "cnctypes.h"
 #include "config.h"
 

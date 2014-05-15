@@ -25,14 +25,14 @@
 //   http://www.usbmadesimple.co.uk/ums_1.htm
 // - The USB standards (long, detailed, boring) are freely available at
 // usb.org in case you want to consult a definative resource.
-// - How to use the USB capabilities of the Anykey is detailed in 
+// - How to use the USB capabilities of the Everykey is detailed in 
 // Chapter 10 of the LPC1343 user manual available here:
 //   http://www.nxp.com/documents/user_manual/UM10375.pdf
 
 #ifndef _USB_MIDI_BOILERPLATE
 #define _USB_MIDI_BOILERPLATE
 
-#include "anykey_usb/midi.h"
+#include "everykey_usb/midi.h"
 
 
 // USB devices identify themselves to hosts by providing a
@@ -91,7 +91,7 @@ const uint8_t midi_deviceDescriptor[] = {
 // which are connected to USB Enpoints. Jacks are classified as EMBEDDED
 // or EXTERNAL, embedded jacks are virtual jacks to USB, while external
 // jacks represent physical MIDI connectors. Furthermore, jacks are
-// labeled IN and OUT, this is relative to the Anykey so an IN jack
+// labeled IN and OUT, this is relative to the Everykey so an IN jack
 // receives data while OUT jacks are used to send data. 
 
 // Now things become confusing, because the USB interface descriptor

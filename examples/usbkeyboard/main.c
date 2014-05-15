@@ -1,5 +1,5 @@
-#include "anykey/anykey.h"
-#include "anykey_usb/keyboard.h"
+#include "everykey/everykey.h"
+#include "everykey_usb/keyboard.h"
 
 #define LED_PORT 0
 #define LED_PIN 7
@@ -60,11 +60,11 @@ void outReportHandler (USB_Device_Struct* device,
 					   uint8_t reportId,
 					   uint16_t len) {
 	bool ledOn = outBuffer[0] & 0x02;	//caps lock LED
-	any_gpio_write (LED_PORT, LED_PIN, ledOn);
+	every_gpio_write (LED_PORT, LED_PIN, ledOn);
 }
 
 void systick () {
-	bool buttonDown = !any_gpio_read (KEY_PORT, KEY_PIN);
+	bool buttonDown = !every_gpio_read (KEY_PORT, KEY_PIN);
 	if (buttonDown && !buttonWasDown) counter = 0;
 	buttonWasDown = buttonDown;
 	
@@ -83,10 +83,10 @@ void systick () {
 }
 
 void main () {
-	any_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
-	any_gpio_write (LED_PORT, LED_PIN, false);
-	any_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
-	ANY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, PULL_UP);
+	every_gpio_set_dir (LED_PORT, LED_PIN, OUTPUT);
+	every_gpio_write (LED_PORT, LED_PIN, false);
+	every_gpio_set_dir (KEY_PORT, KEY_PIN, INPUT);
+	EVERY_GPIO_SET_PULL (KEY_PORT, KEY_PIN, PULL_UP);
 	
 	buttonWasDown = false;
 	downKey = 0;

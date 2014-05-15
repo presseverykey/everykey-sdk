@@ -1,6 +1,6 @@
-#include "anykey/anykey.h"
-#include "anykey_usb/hid.h"
-#include "anypio.h"
+#include "everykey/everykey.h"
+#include "everykey_usb/hid.h"
+#include "everypio.h"
 
 /** We assume there's a button (pull-low) at BUTTON_PIN and potentiometers (0 - 3.3V) at X and Y.
 This example turns them into a USB mouse */
@@ -198,9 +198,9 @@ const USB_Device_Definition mouse_deviceDefinition = {
 /** MAIN PROGRAM FROM HERE */
 
 void main () {
-	anypio_digital_input_set(BUTTON, PULL_UP);
-	anypio_analog_input_set(X, true);
-	anypio_analog_input_set(Y, true);
+	everypio_digital_input_set(BUTTON, PULL_UP);
+	everypio_analog_input_set(X, true);
+	everypio_analog_input_set(Y, true);
 	
 	USB_Init(&mouse_deviceDefinition, &mouse_device);
 
@@ -210,9 +210,9 @@ void main () {
 }
 
 void systick () {
-	x = anypio_analog_read(X);
-	y = 1024 - anypio_analog_read(Y);
-	button = !anypio_read(BUTTON);
+	x = everypio_analog_read(X);
+	y = 1024 - everypio_analog_read(Y);
+	button = !everypio_read(BUTTON);
 	if (avgCounter < AVG_COUNT) {	//Still in averaging phase
 		avgX += x;
 		avgY += y;
