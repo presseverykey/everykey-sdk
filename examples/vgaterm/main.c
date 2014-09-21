@@ -5,8 +5,8 @@
 #define LED_PORT 0
 #define LED_PIN 7
 
-#define KEY_PORT 1
-#define KEY_PIN 4
+#define KEY_PORT 0
+#define KEY_PIN 1
 
 #define VGA_SYNC_PORT 1
 #define VGA_HSYNC_PIN 7
@@ -23,12 +23,12 @@
 //hard-coded: COLUMNS_PER_BITMAP = 16
 
 uint8_t charMap[COLUMNS*ROWS];
-uint16_t currentScanline;			
-uint32_t currentFrame;			
+uint16_t currentScanline;
+uint32_t currentFrame;
 uint16_t scanlinePixels[COLUMNS];
 int16_t vOffset;
 
-const uint8_t screen1[] = "\n\n\nPress any key to continue\n\n\n";
+const uint8_t screen1[] = "\n\n\nWelcome to EVOKE 2014\n\n\n";
 
 const uint8_t screen2[] = "\n\n\nThanks for pressing any key.\n\nPress any key to restart ";
 
@@ -50,7 +50,7 @@ void setScreen(const uint8_t* string) {
 	int col = 1;
 	uint8_t ch;
 	while (ch = string[off++]) {
-		switch (ch) {		
+		switch (ch) {
 			case '\n':
 				row = (row+1) % ROWS;
 				col = 1;
@@ -66,7 +66,7 @@ void setScreen(const uint8_t* string) {
 		}
 	}
 }
-		
+
 void main(void) {
 
 	const uint8_t* screens[] = {
@@ -74,7 +74,7 @@ void main(void) {
 		screen2
 	};
 	uint16_t screenCount = 2;
-	
+
 	//init pins
 	every_gpio_set_dir(LED_PORT, LED_PIN, OUTPUT);
 	every_gpio_write(LED_PORT, LED_PIN, 0);
@@ -148,7 +148,7 @@ void systick(void) {
 
 		"PIXELLINE:\n"
 		//hsync is low. Wait a bit before pulling up again. This time could be used for other calculations
-		"MOV r1, #28\n"			//1       r1 = wait counter 
+		"MOV r1, #28\n"			//1       r1 = wait counter
 		"PIXELLINEWAITSYNC:\n"
 		"SUBS r1, r1, #1\n"		//1	  count down counter
 		"BNE PIXELLINEWAITSYNC\n"    	//1-4(2)  wait loop branch
@@ -1305,7 +1305,7 @@ void systick(void) {
 
 		"BLANKINGLINE:\n"
 		//hsync is down. Wait a bit before pulling it up again.
-		"MOV r1, #28\n"			//1       r1 = wait counter 
+		"MOV r1, #28\n"			//1       r1 = wait counter
 		"BLANKINGLINEWAITSYNC:\n"
 		"SUBS r1, r1, #1\n"		//1	  count down counter
 		"BNE BLANKINGLINEWAITSYNC\n"    //1-4(2)  wait loop branch
@@ -1344,7 +1344,7 @@ void systick(void) {
                 "STR r0, [r1]\n"		//1       write currentFrame
 		"LINEEND:\n"
 
-		: 
+		:
 		:
 		: "r0","r1","r2","r3","cc"
 	);
