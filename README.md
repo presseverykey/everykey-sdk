@@ -14,7 +14,7 @@ Have a look at the [Tutorial](https://github.com/presseverykey/everykey-tutorial
 you are new to embedded programming.
 
 Read the rest of this file and when you're ready to get started, [install
-the development tools](https://github.com/presseverykey/everykey-tutorial/tree/master/lesson1) ...
+the development tools](https://github.com/presseverykey/everykey-toolchain-installer) ...
 
 Contents of this directory
 ==========================
