@@ -1,5 +1,6 @@
 #include "i2c.h"
 #include "gpio.h"
+#include "nvic.h"
 
 #define POINTER_NOT_SET ((void*)-1)
 

@@ -27,7 +27,7 @@ SECTIONS {
     text : {   
         *(.text)
         *(.rodata)
-	_LD_END_OF_TEXT = .;     /* Remember position (=start of RAM mirror in FLASH) */
+	   _LD_END_OF_TEXT = .;     /* Remember position (=start of RAM mirror in FLASH) */
     } >flash
   
     /* data section contains read-write (non-const) globals and static variables

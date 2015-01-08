@@ -1,8 +1,16 @@
 #include "memorymap.h"
 #include "uart.h"
 #include "gpio.h"
+#include "nvic.h"
+
+/* By default, we receive data in blocks of this size (incomplete blocks are sent with a bit delay).
+ This value is a compromise of interrupt overhead, transmission granularity and receive
+ buffer reserve (16 bytes total). Allowed values: 1,4,8,14 */
+#define RX_TLVL UART_FCR_RXTLVL8
+
 
 UART_StatusHandler uartStatusHandler = NULL;
+
 
 void UART_Init( uint32_t baud,
                 uint8_t dataBits,
@@ -10,6 +18,16 @@ void UART_Init( uint32_t baud,
                 uint8_t stopBits,
                 bool useHWFlow,
                 UART_StatusHandler statusHandler) {
+	UART_Init_Ext(baud, dataBits, parity, stopBits, useHWFlow, statusHandler,RX_TLVL);
+}
+
+void UART_Init_Ext( uint32_t baud,
+                    uint8_t dataBits,
+                    UART_Parity parity,
+                    uint8_t stopBits,
+                    bool useHWFlow,
+                    UART_StatusHandler statusHandler,
+                    UART_FCR threshold) {
 
 	uartStatusHandler = statusHandler;
 
@@ -80,7 +98,7 @@ void UART_Init( uint32_t baud,
 	UART_HW->MCR = useHWFlow ? UART_MCR_CTSEN | UART_MCR_RTSEN : 0;
 
 	//Enable and reset FIFOs (reset if FIFOs were already on)
-	UART_HW->IIR_FCR = UART_FCR_FIFOEN | UART_FCR_RXFIFOR | UART_FCR_TXFIFOR | RX_TLVL;
+	UART_HW->IIR_FCR = UART_FCR_FIFOEN | UART_FCR_RXFIFOR | UART_FCR_TXFIFOR | threshold;
 
 	//TODO: Resetting the FIFOs should also clear them. Do we need to manually flush them here?
 
@@ -105,9 +123,24 @@ uint8_t UART_Read(uint8_t* buffer, uint8_t maxLength) {
 	for (read = 0; read < maxLength; read++) {
 		uint8_t lineStatus = UART_HW->LSR;
 		if (!(lineStatus & UART_LS_RDR)) return read;
-		buffer[read] = UART_HW->RBR_THR_DLL;
+		if (buffer) {
+			buffer[read] = UART_HW->RBR_THR_DLL;
+		} else {
+			UART_HW->RBR_THR_DLL;
+		}
 	}
 }
+
+/** starts transmitting a break condition (tx low) */
+void UART_StartBreak() {
+	UART_HW->LCR |= UART_LCR_BC;
+}
+
+/** stops transmitting a break condition (tx low) */
+void UART_StopBreak() {
+	UART_HW->LCR &= ~UART_LCR_BC;
+}
+
 
 void uart_handler() {
 	uint8_t interruptReason = (UART_HW->IIR_FCR) & 0xf;	//both status and id

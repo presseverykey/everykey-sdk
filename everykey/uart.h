@@ -17,11 +17,6 @@
 #define UART_RTS_PORT 1
 #define UART_RTS_PIN 5
 
-/* We receive data in blocks of this size (incomplete blocks are sent with a bit delay).
- This value is a compromise of interrupt overhead, transmission granularity and receive
- buffer reserve (16 bytes total). Allowed values: 1,4,8,14 */
-#define RX_TLVL UART_FCR_RXTLVL8
-
 /** combined values for parity enable and parity mode */
 typedef enum {
     UART_PARITY_NONE = 0x00,
@@ -65,6 +60,22 @@ void UART_Init( uint32_t baud,
                 bool useHWFlow,
                 UART_StatusHandler statusHandler);
 
+/** Initializes the UART peripheral to a specific mode. This call currently assumes 72 MHz main clock.
+@param baud baud rate (will try use closest value)
+@param dataBits number of data bits (5..8)
+@param parity parity
+@param stopBits (1 or 2 - 2 becomes 1.5 when dataBits = 5) 
+@param useHWFlow true to enable hardware flow control (RTS/CTS), false otherwise
+@param statusHandler user-supplied handler for status changes or events - may be NULL 
+@param threshold one of the UART_FCR interrupt generation threshold values (UART_FCR_RXTLVL1/4/8/14) */
+void UART_Init_Ext( uint32_t baud,
+                    uint8_t dataBits,
+                    UART_Parity parity,
+                    uint8_t stopBits,
+                    bool useHWFlow,
+                    UART_StatusHandler statusHandler,
+                    uint8_t threshold);
+
 /** adds bytes to the send buffer. Note that this function does not use a separate FIFO buffer, so writing space is very limited.
 @param buffer bytes to send
 @param length length to send (1..16)
@@ -72,10 +83,21 @@ void UART_Init( uint32_t baud,
 uint8_t UART_Write(const uint8_t* buffer, uint8_t length);
 
 /** reads bytes from the receive buffer.
-@param buffer buffer to hold received data
+@param buffer buffer to hold received data. specify nil to ignore data
 @param maxLength length to send (1..16)
 @return number of bytes that could be read */
 uint8_t UART_Read(uint8_t* buffer, uint8_t maxLength);
+
+/** reads one byte from the receive buffer.
+@param buffer buffer to hold received data or nil to ignore data
+@return true if data could be read */
+bool UART_Read1(uint8_t* buffer);
+
+/** starts transmitting a break condition (tx low) */
+void UART_StartBreak();
+
+/** stops transmitting a break condition (tx low) */
+void UART_StopBreak();
 
 
 //---------------------------
