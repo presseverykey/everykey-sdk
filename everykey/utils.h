@@ -14,6 +14,12 @@ void disableInterrupts();
 /** re-enable interrupts */
 void enableInterrupts();
 
+/** set memory */
+void* memset(void* b, int c, uint32_t len);
+
+/** copy memory */
+void* memcpy(void* to, const void* from, uint32_t len);
+
 #endif
 
 
