@@ -12,5 +12,6 @@
 #include "i2c.h"
 #include "adc.h"
 #include "uart.h"
+#include "nvic.h"
 
 #endif
