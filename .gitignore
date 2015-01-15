@@ -11,3 +11,5 @@ a.out
 tags
 *.s
 *.d
+JLink.log
+flash.jlink
