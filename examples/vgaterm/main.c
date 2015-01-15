@@ -127,7 +127,7 @@ void main(void) {
 
 
 void systick(void) {
-	asm volatile (
+	__asm volatile (
 		".equ GPIO1, 0x50010000\n"
 		".equ GPIO2, 0x50020000\n"
 		".equ LED, 0x50000200\n"
