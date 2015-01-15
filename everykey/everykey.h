@@ -13,5 +13,6 @@
 #include "adc.h"
 #include "uart.h"
 #include "nvic.h"
+#include "iap.h"
 
 #endif

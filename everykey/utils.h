@@ -20,6 +20,15 @@ void* memset(void* b, int c, uint32_t len);
 /** copy memory */
 void* memcpy(void* to, const void* from, uint32_t len);
 
+/** compare memory */
+int memcmp(const void *s1, const void *s2, uint32_t n);
+
+/** determine the length of a C string (not including termination) */
+uint32_t strlen(const char* s);
+
+/** copy a C string (including termination) */
+char* strcpy(char *dst, const char *src);
+
 #endif
 
 
