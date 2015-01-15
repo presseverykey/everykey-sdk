@@ -1,6 +1,14 @@
 /* Demonstration of In-App Programming (writing to flash from within an application). Note that using IAP
 requires a specific linker script - the IAP routines use the highest 32 bytes of RAM, so it's not available 
-for the remaining application. */
+for the remaining application. Also, the last 4K of flash are reserved for persistent store, so they are
+not available for app code.
+
+The following example shows reprogramming flash memory. During programming, the configuration area is
+set to a "this was originally programmed" string. The application will compare the configuration page
+with a "this was programmed using IAP" string. If it matches, the LED will light up. If not, the LED
+will remain dark and the second string will be written into flash. As a consequence, the LED will remain
+dark when booting up for the first time after programming. All subsequent starts will light up the LED, even
+after disconnecting power. */
 
 #include "everykey/everykey.h"
 
