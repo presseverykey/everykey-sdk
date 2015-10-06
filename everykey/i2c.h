@@ -83,15 +83,23 @@ typedef enum {
 	I2C_STAT_DATA_READ_NACKED   = 0x58  //Last read ok -> STOP
 } I2C_STAT_CODE;
 
+
+/** transaction flags (current or last transaction) */
+typedef enum {
+	I2C_FLAGS_WRITE_MORE         = 0x01,  //go back to user after writing, don't stop the transaction
+	I2C_FLAGS_WRITING            = 0x02   //bus write in progress
+} I2C_FLAGS;
+
 /** structure for housekeeping of transactions */
 typedef struct {
 	volatile uint32_t refcon;		//user-supplied refcon for this transaction
-	volatile uint8_t slaveAddress;   //slave address to talk to
-	volatile uint16_t toWrite;       //remaining number of bytes to write
-	volatile uint8_t* writeBuffer;   //pointer to next byte to write
-	volatile uint16_t toRead;        //remaining number of bytes to read
-	volatile uint8_t* readBuffer;    //pointer to next byte to read
+	volatile uint8_t slaveAddress;  //slave address to talk to
+	volatile uint16_t toWrite;      //remaining number of bytes to write
+	volatile const uint8_t* writeBuffer;  //pointer to next byte to write
+	volatile uint16_t toRead;       //remaining number of bytes to read
+	volatile uint8_t* readBuffer;   //pointer to next byte to read
 	volatile I2C_CompletionHandler completionHandler;  //callback when transaction is completed
+	volatile uint8_t flags;			//flags (bitwise or of I2C_FLAGS)iting (still active)
 } I2C_State;
 
 /** Codes for bus speed */
@@ -116,7 +124,7 @@ void I2C_Init(I2C_MODE mode, I2C_State* state);
  @return status of transmission initiation (does not indicate success of transaction) */
 I2C_STATUS I2C_Write(uint8_t addr,
           		    uint16_t len,
-               		uint8_t* buf,
+               		const uint8_t* buf,
                		I2C_CompletionHandler handler,
                		uint32_t refcon);
 
@@ -137,6 +145,7 @@ I2C_STATUS I2C_Read(uint8_t addr,
  @param addr slave address
  @param writeLen number of bytes to write
  @param writeBuf data to write. Must be valid during transaction
+ @param writeMore return after writing, before releasing bus. Useful for writing multiple buffers
  @param readLen number of bytes to read
  @param readBuf buffer to store read data. Must be valid during transaction
  @param handler function to call after completion of transaction
@@ -144,7 +153,8 @@ I2C_STATUS I2C_Read(uint8_t addr,
  @return status of transmission initiation (does not indicate success of transaction) */
 I2C_STATUS I2C_WriteRead(uint8_t addr,
 						uint16_t writeLen,
-						uint8_t* writeBuf,
+						const uint8_t* writeBuf,
+						bool writeMore,
 						uint16_t readLen,
 						uint8_t* readBuf,
 						I2C_CompletionHandler handler,

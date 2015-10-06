@@ -53,4 +53,15 @@ void Timer_EnablePWM(TimerId timer, uint8_t pwmIdx, bool enable) {
 	else TIMER[timer].PWMC &= ~(1<<pwmIdx);
 }
 
+void Timer_SetCaptureMode(TimerId timer, bool captureRising, bool captureFalling, bool triggerInterrupt) {
+	TIMER[timer].CCR = (captureRising ? CAP0RE : 0) | (captureFalling ? CAP0FE : 0) | (triggerInterrupt ? CAP0I : 0);
+}
+
+/** returns the capture value
+	@param timer timer to read (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@return the current capture value */
+uint32_t Timer_GetCaptureValue(TimerId timer) {
+	return TIMER[timer].CR0;
+}
+
 

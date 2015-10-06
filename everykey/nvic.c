@@ -57,6 +57,23 @@ uint8_t NVIC_GetInterruptPriority(NVIC_INTERRUPT_INDEX interrupt) {
 	return (base[reg] >> shift) & 0xff;
 }
 
+void NVIC_SetSystemHandlerPriority(SCB_SYSTEM_HANDLER_INDEX syshandler, uint8_t prio) {
+	uint8_t reg = (syshandler / 4)-1;
+	uint8_t shift = 8 * (syshandler % 4);
+	volatile uint32_t* base = &(SCB->SHPR1);
+	uint32_t val = base[reg];
+	val &= ~(0xff << shift);
+	val |= prio << shift;
+	base[reg] = val;
+}
+
+uint8_t NVIC_GetSystemHandlerPriority(SCB_SYSTEM_HANDLER_INDEX syshandler) {
+	uint8_t reg = (syshandler / 4)-1;
+	uint8_t shift = 8 * (syshandler % 4);
+	volatile uint32_t* base = &(SCB->SHPR1);
+	return (base[reg] >> shift) & 0xff;
+}
+
 void NVIC_TriggerInterrupt(NVIC_INTERRUPT_INDEX interrupt) {
 	NVIC->STIR = interrupt;
 }

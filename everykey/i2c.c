@@ -17,7 +17,7 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 	i2c_state->toRead = 0;
 	i2c_state->readBuffer = NULL;
 	i2c_state->completionHandler = NULL;
-
+	i2c_state->flags = 0;
 
 	uint32_t scl = 360;	//default: 100kbps
 	switch (mode) {		//set pin functions and I2C clock rate: 2 * SCL * data rate = CPU clock
@@ -53,10 +53,15 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 
 }
 
+void I2C_WriteNextByte() {	//very low level, just push next byte from buffer
+	I2C->DAT = *(i2c_state->writeBuffer);
+	i2c_state->writeBuffer++;
+	i2c_state->toWrite--;
+}
+
 void i2c_handler(void) {
 	uint32_t status = 0xf8 & I2C->STAT;
 	if (status) latestI2CState = status;
-
 
 	I2C_STATUS userStatus = I2C_STATUS_OK; 	//status code to return
 
@@ -69,14 +74,20 @@ void i2c_handler(void) {
 		case I2C_STAT_SLAW_ACKED:			//Write addressing succeeded
 		case I2C_STAT_DATA_WRITE_ACKED:		//Byte successfully written
 			if (i2c_state->toWrite > 0) {		//more to write
-				I2C->DAT = *(i2c_state->writeBuffer);
-				i2c_state->writeBuffer++;
-				i2c_state->toWrite--;
-			} else if (i2c_state->toRead > 0) {		//write done, have something to read
-				I2C->CONSET = I2C_CONSET_STA;
-			} else {						//nothing to read or write any more -> stop
-				userStatus = I2C_STATUS_OK;
-				goto stopAndNotifyUser;
+				I2C_WriteNextByte();
+			} else {
+				if (i2c_state->flags & I2C_FLAGS_WRITE_MORE) {
+					i2c_state->flags |= I2C_FLAGS_WRITING;
+					userStatus = I2C_STATUS_OK;
+					goto notifyUser;
+				} else {
+					if (i2c_state->toRead > 0) {		//write done, have something to read
+						I2C->CONSET = I2C_CONSET_STA;
+					} else {						//nothing to read or write any more -> stop
+						userStatus = I2C_STATUS_OK;
+						goto stopAndNotifyUser;
+					}	
+				}
 			}
 			break;
 		case I2C_STAT_SLAW_NACKED:			//SLAW failed -> finish, notify
@@ -149,10 +160,10 @@ notifyUser:
 
 I2C_STATUS I2C_Write(uint8_t addr,
          		    uint16_t len,
-		            uint8_t* buf,
+		            const uint8_t* buf,
                		I2C_CompletionHandler handler,
                		uint32_t refcon) {
-	return I2C_WriteRead(addr, len, buf, 0, NULL, handler, refcon);
+	return I2C_WriteRead(addr, len, buf, false, 0, NULL, handler, refcon);
 }
 
 I2C_STATUS I2C_Read(uint8_t addr,
@@ -160,12 +171,13 @@ I2C_STATUS I2C_Read(uint8_t addr,
 	           		uint8_t* buf,
 	           		I2C_CompletionHandler handler,
 	           		uint32_t refcon) {
-	return I2C_WriteRead(addr, 0, NULL, len, buf, handler, refcon);
+	return I2C_WriteRead(addr, 0, NULL, false, len, buf, handler, refcon);
 }
 
 I2C_STATUS I2C_WriteRead(uint8_t addr,
 						uint16_t writeLen,
-						uint8_t* writeBuf,
+						const uint8_t* writeBuf,
+						bool moreToSend,
 						uint16_t readLen,
 						uint8_t* readBuf,
 						I2C_CompletionHandler handler,
@@ -179,7 +191,21 @@ I2C_STATUS I2C_WriteRead(uint8_t addr,
 	i2c_state->toRead = readLen;
 	i2c_state->readBuffer = readBuf;
 	i2c_state->completionHandler = handler;
-	I2C->CONSET = I2C_CONSET_STA; //send start condition.
+
+	//parse flags from last transaction
+	bool continueWrite = (i2c_state->flags & I2C_FLAGS_WRITING) && (i2c_state->toWrite > 0);
+	//clear all old flags
+	i2c_state->flags = 0;
+	//set relevant flags for new transaction
+	if (moreToSend) {
+		i2c_state->flags |= I2C_FLAGS_WRITE_MORE;
+	}
+	//start
+	if (continueWrite) {	//continued write
+		I2C_WriteNextByte();
+	} else {
+		I2C->CONSET = I2C_CONSET_STA; //send start condition.
+	}
 	return I2C_STATUS_OK;
 }
 

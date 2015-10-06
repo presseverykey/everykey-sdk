@@ -213,7 +213,13 @@ typedef enum IOCON_IO_FUNC {
 	IOCON_IO_FUNC_PIO3_0_DTR    = 0x01,
 
 	IOCON_IO_FUNC_PIO3_1_PIO    = 0x00,
-	IOCON_IO_FUNC_PIO3_1_DSR    = 0x01
+	IOCON_IO_FUNC_PIO3_1_DSR    = 0x01,
+
+	IOCON_IO_FUNC_PIO3_2_PIO    = 0x00,
+	IOCON_IO_FUNC_PIO3_2_DCD    = 0x01,
+
+	IOCON_IO_FUNC_PIO3_3_PIO    = 0x00,
+	IOCON_IO_FUNC_PIO3_3_RI     = 0x01
 
 	
 } IOCON_IO_FUNC;
@@ -457,105 +463,6 @@ typedef enum {
 
 #define USB ((USB_STRUCT*)(0x40020000))
 
-/* -----------------------------------
-   --- NVIC --------------------------
-   -----------------------------------
-
-The Nested Vector Interrupt Controller controls interrupts. Note that we use a different base address (0xe000e1000 instead of 0xe000e000) because the first 256 bytes are not used. */
-
-typedef struct {
-	HW_RW ISER0;	//Interrupt set enabled
-	HW_RW ISER1;
-	HW_RW ICER0;	//Interrupt clear enabled
-	HW_RW ICER1;
-	HW_RW ISPR0;	//Interrupt set pending
-	HW_RW ISPR1;
-	HW_RW ICPR0;	//Interrupt clear pending
-	HW_RW ICPR1;
-	HW_RO IABR0;	//Interrupt active
-	HW_RO IABR1;	
-	HW_RW IPR0;	//Interrupt priority
-	HW_RW IPR1;
-	HW_RW IPR2;
-	HW_RW IPR3;
-	HW_RW IPR4;
-	HW_RW IPR5;
-	HW_RW IPR6;
-	HW_RW IPR7;
-	HW_RW IPR8;
-	HW_RW IPR9;
-	HW_RW IPR10;
-	HW_RW IPR11;
-	HW_RW IPR12;
-	HW_RW IPR13;
-	HW_RW IPR14;
-	HW_WO STIR;	//Software trigger interrupt register
-} NVIC_STRUCT;
-
-/* due to the number of interrupts, it doesn't make much sense to write out all masks explicitly - they are split over multiple registers anyway. Instead, they are just numbered. The respective register and bit mask can be obtained by comparison and bit shifting. */
-
-typedef enum NVIC_INTERRUPT_INDEX {
-	NVIC_WAKE_PIO0_0 = 0,
-	NVIC_WAKE_PIO0_1,
-	NVIC_WAKE_PIO0_2,
-	NVIC_WAKE_PIO0_3,
-	NVIC_WAKE_PIO0_4,
-	NVIC_WAKE_PIO0_5,
-	NVIC_WAKE_PIO0_6,
-	NVIC_WAKE_PIO0_7,
-	NVIC_WAKE_PIO0_8,
-	NVIC_WAKE_PIO0_9,
-	NVIC_WAKE_PIO0_10,
-	NVIC_WAKE_PIO0_11,
-	NVIC_WAKE_PIO1_0,
-	NVIC_WAKE_PIO1_1,
-	NVIC_WAKE_PIO1_2,
-	NVIC_WAKE_PIO1_3,
-	NVIC_WAKE_PIO1_4,
-	NVIC_WAKE_PIO1_5,
-	NVIC_WAKE_PIO1_6,
-	NVIC_WAKE_PIO1_7,
-	NVIC_WAKE_PIO1_8,
-	NVIC_WAKE_PIO1_9,
-	NVIC_WAKE_PIO1_10,
-	NVIC_WAKE_PIO1_11,
-	NVIC_WAKE_PIO2_0,
-	NVIC_WAKE_PIO2_1,
-	NVIC_WAKE_PIO2_2,
-	NVIC_WAKE_PIO2_3,
-	NVIC_WAKE_PIO2_4,
-	NVIC_WAKE_PIO2_5,
-	NVIC_WAKE_PIO2_6,
-	NVIC_WAKE_PIO2_7,
-	NVIC_WAKE_PIO2_8,
-	NVIC_WAKE_PIO2_9,
-	NVIC_WAKE_PIO2_10,
-	NVIC_WAKE_PIO2_11,
-	NVIC_WAKE_PIO3_0,
-	NVIC_WAKE_PIO3_1,
-	NVIC_WAKE_PIO3_2,
-	NVIC_WAKE_PIO3_3,
-	NVIC_I2C0,
-	NVIC_CT16B0,
-	NVIC_CT16B1,
-	NVIC_CT32B0,
-	NVIC_CT32B1,
-	NVIC_SSP0,
-	NVIC_UART,
-	NVIC_USBIRQ,
-	NVIC_USBFIQ,
-	NVIC_ADC,
-	NVIC_WDT,
-	NVIC_BOD,
-	NVIC_PIO_3 = 53,
-	NVIC_PIO_2,
-	NVIC_PIO_1,
-	NVIC_PIO_0,
-	NVIC_SSP1
-} NVIC_INTERRUPT_INDEX;
-
-#define NVIC ((NVIC_STRUCT*)0xe000e100)
-
 /* --------------------------------------
    --- Synchronous Serial Port  (SSP) ---
    --------------------------------------
@@ -705,13 +612,119 @@ typedef struct {
 	void* PIOINT0_HANDLER;          //PIO INT0
 } VECTOR_TABLE;
 
+/* -----------------------------------
+   --- NVIC --------------------------
+   -----------------------------------
+
+The Nested Vector Interrupt Controller controls interrupts.  */
+
+typedef struct {
+	HW_UU reserved1[64];
+	HW_RW ISER0;    //Interrupt set enabled
+	HW_RW ISER1;
+	HW_UU reserved2[30];
+	HW_RW ICER0;    //Interrupt clear enabled
+	HW_RW ICER1;
+	HW_UU reserved3[30];
+	HW_RW ISPR0;    //Interrupt set pending
+	HW_RW ISPR1;
+	HW_UU reserved4[30];
+	HW_RW ICPR0;    //Interrupt clear pending
+	HW_RW ICPR1;
+	HW_UU reserved5[30];
+	HW_RO IABR0;    //Interrupt active
+	HW_RO IABR1;	
+	HW_UU reserved6[62];
+	HW_RW IPR0;	    //Interrupt priority
+	HW_RW IPR1;
+	HW_RW IPR2;
+	HW_RW IPR3;
+	HW_RW IPR4;
+	HW_RW IPR5;
+	HW_RW IPR6;
+	HW_RW IPR7;
+	HW_RW IPR8;
+	HW_RW IPR9;
+	HW_RW IPR10;
+	HW_RW IPR11;
+	HW_RW IPR12;
+	HW_RW IPR13;
+	HW_RW IPR14;
+	HW_UU reserved7[689];
+	HW_WO STIR;	//Software trigger interrupt register
+} NVIC_STRUCT;
+
+/* due to the number of interrupts, it doesn't make much sense to write out all masks explicitly - they are split over multiple registers anyway. Instead, they are just numbered. The respective register and bit mask can be obtained by comparison and bit shifting. */
+
+typedef enum NVIC_INTERRUPT_INDEX {
+	NVIC_WAKE_PIO0_0 = 0,
+	NVIC_WAKE_PIO0_1,
+	NVIC_WAKE_PIO0_2,
+	NVIC_WAKE_PIO0_3,
+	NVIC_WAKE_PIO0_4,
+	NVIC_WAKE_PIO0_5,
+	NVIC_WAKE_PIO0_6,
+	NVIC_WAKE_PIO0_7,
+	NVIC_WAKE_PIO0_8,
+	NVIC_WAKE_PIO0_9,
+	NVIC_WAKE_PIO0_10,
+	NVIC_WAKE_PIO0_11,
+	NVIC_WAKE_PIO1_0,
+	NVIC_WAKE_PIO1_1,
+	NVIC_WAKE_PIO1_2,
+	NVIC_WAKE_PIO1_3,
+	NVIC_WAKE_PIO1_4,
+	NVIC_WAKE_PIO1_5,
+	NVIC_WAKE_PIO1_6,
+	NVIC_WAKE_PIO1_7,
+	NVIC_WAKE_PIO1_8,
+	NVIC_WAKE_PIO1_9,
+	NVIC_WAKE_PIO1_10,
+	NVIC_WAKE_PIO1_11,
+	NVIC_WAKE_PIO2_0,
+	NVIC_WAKE_PIO2_1,
+	NVIC_WAKE_PIO2_2,
+	NVIC_WAKE_PIO2_3,
+	NVIC_WAKE_PIO2_4,
+	NVIC_WAKE_PIO2_5,
+	NVIC_WAKE_PIO2_6,
+	NVIC_WAKE_PIO2_7,
+	NVIC_WAKE_PIO2_8,
+	NVIC_WAKE_PIO2_9,
+	NVIC_WAKE_PIO2_10,
+	NVIC_WAKE_PIO2_11,
+	NVIC_WAKE_PIO3_0,
+	NVIC_WAKE_PIO3_1,
+	NVIC_WAKE_PIO3_2,
+	NVIC_WAKE_PIO3_3,
+	NVIC_I2C0,
+	NVIC_CT16B0,
+	NVIC_CT16B1,
+	NVIC_CT32B0,
+	NVIC_CT32B1,
+	NVIC_SSP0,
+	NVIC_UART,
+	NVIC_USBIRQ,
+	NVIC_USBFIQ,
+	NVIC_ADC,
+	NVIC_WDT,
+	NVIC_BOD,
+	NVIC_PIO_3 = 53,
+	NVIC_PIO_2,
+	NVIC_PIO_1,
+	NVIC_PIO_0,
+	NVIC_SSP1
+} NVIC_INTERRUPT_INDEX;
+
+#define NVIC ((NVIC_STRUCT*)0xe000e000)
+
 /* ---------------------------------
    --- System Control Block (SCB ---
    ---------------------------------
  
  Low level interrupt, exception and handler configuration, overall system control.
  This information is not taken from the LPC datasheet, but from ARM's info center.
- It is identical for most (all?) Cortex M3s. */
+ It is identical for most (all?) Cortex M3s. API implemented together with nvic. */
 
 typedef struct SCB_STRUCT {
 	HW_RO CPUID;	//CPUID base register
@@ -724,9 +737,22 @@ typedef struct SCB_STRUCT {
 	HW_RW SHPR2;	//System Handler Priority Register 2
 	HW_RW SHPR3;	//System Handler Priority Register 3
 	HW_RW SHCRS;	//System Handler Control and State Register
-	HW_RW CFSR;		//Configurable Fault Status Register
-	HW_RW MMSR;		//MemManage Fault Status Register
+	HW_RW CFSR;		//Configurable Fault Status Register (+MMSR/BFSR/UFSR)
+	HW_RW HFSR;		//HardFault Status Register
+	HW_UU reserved1;
+	HW_RW MMAR;		//MemManage fault address register
+	HW_RW BFAR;		//BusFault address register
+	HW_RW AFSR;		//Auxiliary fault status register
 } SCB_STRUCT;
+
+typedef enum {
+	SCB_MEMMANAGE = 4,
+	SCB_BUSFAULT = 5,
+	SCB_USAGEFAULT = 6,
+	SCB_SVCALL = 11,
+	SCB_PENDSV = 14,
+	SCB_SYSTICK = 15	
+} SCB_SYSTEM_HANDLER_INDEX;
 
 typedef enum AIRCR_BITS {
 	AIRCR_VECTKEY = (0xFA05 << 16),
@@ -738,11 +764,11 @@ typedef enum AIRCR_BITS {
 	AIRCR_SYSRESETREQ = 1 << 2
 } AIRCR_BITS;
 
-#define SCB ((SCB_STRUCT*)0xe00ed00)
+#define SCB ((SCB_STRUCT*)0xe000ed00)
 
 /** SCB_ACTLR (Auxiliary Control Register)
- is off the other block, so it's addressed separately */
-#define SCB_ACTLR ((HW_RW*)0xe00e008)
+ is off the other block (rather in NVIC), so it's addressed separately */
+#define SCB_ACTLR ((HW_RW*)0xe000e008)
 
 
 

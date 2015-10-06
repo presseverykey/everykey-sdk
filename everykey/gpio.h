@@ -83,7 +83,7 @@ void every_gpio_set_hysteresis(HW_RW* pin, every_gpio_hysteresis_mode mode);
  * calls if port and pin are known at compile time. Two-step for
  * argument macro expansion. */
 #define _SETHYSTERESIS2(port,pin,mode) {every_gpio_set_hysteresis(&(IOCON->PIO ## port ## _ ## pin),mode); }
-#define EVERY_GPIO_SETHYSTERESIS(port,pin,mode) _SETHYSTERESIS2(port,pin,mode)
+#define EVERY_GPIO_SET_HYSTERESIS(port,pin,mode) _SETHYSTERESIS2(port,pin,mode)
 
 /** sets the pin function of an IO pin
   sets the digital pin functions of an IO pin. precise functions support by the pins 

@@ -67,7 +67,7 @@ typedef enum TMR_MCR {
 typedef enum TMR_CCR {
 	CAP0RE = 1,      // Capture on CT16Bn_CAP0 rising edge: a sequence of 0 then 1 on CT16Bn_CAP0 will cause CR0 to be loaded with the contents of TC.
 	CAP0FE = 1 << 1, // Capture on CT16Bn_CAP0 falling edge: a sequence of 1 then 0 on CT16Bn_CAP0 will cause CR0 to be loaded with the contents of TC.
-	CAP01  = 1 << 2  // Interrupt on CT16Bn_CAP0 event: a CR0 load due to a CT16Bn_CAP0 event will 0 generate an interrupt.
+	CAP0I  = 1 << 2  // Interrupt on CT16Bn_CAP0 event: a CR0 load due to a CT16Bn_CAP0 event will 0 generate an interrupt.
 } TMR16_CCR;
 
 // UM Chap 264. §15.8.10
@@ -194,9 +194,19 @@ void Timer_ClearInterruptMask(TimerId timer, uint32_t mask);
 	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
 	@param matIdx index of the MAT pin / register (e.g. 2 for MAT2)
 	@param enable true to turn PWM on, false to turn it off */
-
 void Timer_EnablePWM(TimerId timer, uint8_t matIdx, bool enable);
 
+/** control the behaviour of the associated capture pin. The pin mode must be set independently.
+	@param timer timer to modify (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@param captureRising capture the timer value on rising edge
+	@param captureFalling capture the timer value on falling edge
+	@param triggerInterrupt additionally trigger the interrupt on capture */
+void Timer_SetCaptureMode(TimerId timer, bool captureRising, bool captureFalling, bool triggerInterrupt);
+
+/** returns the capture value
+	@param timer timer to read (CT16B0, CT16B1, CT32B0 or CT32B1)
+	@return the current capture value */
+uint32_t Timer_GetCaptureValue(TimerId timer);
 
 
 #endif
