@@ -5,6 +5,7 @@
 #include "../everykey/memorymap.h"
 #include "../everykey/utils.h"
 #include "../everykey/nvic.h"
+#include "../everykey/gpio.h"
 
 
 
@@ -580,37 +581,59 @@ void usb_irq_handler(void) {
 	}	
 }
 
+void usb_fiq_handler(void) {
+	usb_irq_handler();
+}
+
 #pragma mark USB high level API
 
-void USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device) {
+#define SMALLDELAY for (volatile uint32_t i=0; i<100000; i++) {}
+
+bool USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device) {
 
 	device->deviceDefinition = definition;
 	_usbDevice = device;
-	
+
 	// Turn AHB clock for peripherals: GPIO, IOCON and USB_REG
 	SYSCON->SYSAHBCLKCTRL |= SYSCON_SYSAHBCLKCTRL_GPIO | SYSCON_SYSAHBCLKCTRL_IOCON | SYSCON_SYSAHBCLKCTRL_USB_REG;
+	
+	SMALLDELAY;
 
+	// Configure soft connect pin as output, write high (to be sure it doesn't connect accidentally)
+	every_gpio_write(0,6,1);
+	every_gpio_set_dir(0,6,OUTPUT);
+	EVERY_GPIO_SET_FUNCTION(0,6,PIO,ADMODE_DIGITAL);
 
 	// Configure USB clock
  	SYSCON->PDRUNCFG &= ~(SYSCON_USBPLL_PD | SYSCON_USBPAD_PD);	//Turn on USB PLL and PHY 
+	
+	SMALLDELAY;
+
 	SYSCON->USBPLLCLKSEL = 1;			//choose system oscillator for USB PLL
+	SYSCON->USBPLLCTRL = 0b0100011;	    //Fin=12MHz, Fout=48MHz -> M=4, P=2
 	SYSCON->USBPLLCLKUEN = 0;			//Trigger USB PLL source change
 	SYSCON->USBPLLCLKUEN = 1;
-	SYSCON->USBPLLCTRL = 0b0100011;			//Fin=12MHz, Fout=48MHz -> M=4, P=2
-	while (! (SYSCON->USBPLLSTAT & 1)) {};		//wait for PLL to lock
+
+	SMALLDELAY;
+
+	if (!((SYSCON->USBPLLSTAT) & 1)) {	//wait for PLL to lock. This seemed to fail sometimes on the 
+		return false;
+	}
+
 	SYSCON->USBCLKSEL = 0;				//USB clock: USB PLL out
 	SYSCON->USBCLKUEN = 0;				//Trigger main clock source change
 	SYSCON->USBCLKUEN = 1;
-
-	// Configure pins
-	IOCON->PIO0_3 = 0xc1;				//set PIO0_3 to VBus function
-	IOCON->PIO0_6 = 0xc1;				//set PIO0_6 to !USB_Connect function
+	
+	// Configure (USB)
+	IOCON->PIO0_3 = 0x01;				//set PIO0_3 to VBus function
+	IOCON->PIO0_6 = 0x01;				//set PIO0_6 to !USB_Connect function
 
 	// Enable interrupts
 	NVIC_EnableInterrupt(NVIC_USBFIQ);
 	NVIC_EnableInterrupt(NVIC_USBIRQ);
 	
 	USB_Reset(device); //set all state variables to start
+	return true;
 }
 
 void USB_SoftConnect(USB_Device_Struct* device) {

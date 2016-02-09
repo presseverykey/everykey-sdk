@@ -39,16 +39,16 @@ const uint8_t languages[] = {
 };
 
 const uint8_t manufacturerName[] = {
-	0x22,                           //bLength: length of this descriptor in bytes (34)
+	0x26,                           //bLength: length of this descriptor in bytes (38)
 	USB_DESC_STRING,                //bDescriptorType: string descriptor
-	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
+	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'E',0,'v',0,'e',0,'r',0,'y',0,' ',0,'K',0,'e',0,'Y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
 };
 
 
 const uint8_t deviceName[] = {
 	0x1a,                           //bLength: length of this descriptor in bytes (26)
 	USB_DESC_STRING,                //bDescriptorType: string descriptor
-	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0,' ',0,'C',0,'D',0,'C',0
+	'E',0,'v',0,'e',0,'r',0,'y',0,'K',0,'e',0,'y',0,' ',0,'C',0,'D',0,'C',0
 };
 
 const uint8_t serialName[] = {

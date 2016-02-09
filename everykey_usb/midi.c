@@ -3,7 +3,7 @@
 void USBMIDI_Send(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* midi);
 
 bool USBMIDI_EnqueueBlock(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t* block) {
-	if (!(device->currentConfiguration)) return;	//Don't send anything in zero config
+	if (!(device->currentConfiguration)) return false;	//Don't send anything in zero config
 	uint16_t wrIdx = *(behaviour->cmdFifoWrIdx);
 	uint16_t nextWrIdx = (wrIdx + 4) % (behaviour->cmdFifoSize);
 	if (nextWrIdx == *(behaviour->cmdFifoRdIdx)) return false;	//Would be full
@@ -146,6 +146,9 @@ bool USBMIDI_EndpointDataHandler(USB_Device_Struct* device, const USB_Behaviour_
 					break;
 				case 0x0B:	//Control Change
 					if (midi->controlChangeHandler) midi->controlChangeHandler(device, midi, cableNumber, (midi->outBuffer[off+1])&0x0f, midi->outBuffer[off+2], midi->outBuffer[off+3]);
+					break;
+				case 0x0E:	//Pitch bend
+					if (midi->pitchBendHandler) midi->pitchBendHandler(device, midi, cableNumber, (midi->outBuffer[off+1])&0x0f, (midi->outBuffer[off+2]&0x7f) | ((midi->outBuffer[off+3]&0x7f)<<7));
 					break;
 			}
 

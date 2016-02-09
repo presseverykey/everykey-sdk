@@ -292,8 +292,9 @@ uint8_t USB_EP_LogicalToPhysicalIndex(uint8_t index);
  * @param definition Pointer to correctly filled USB_Device_Definition. Must not be NULL.
  * @param device Pointer to uninitialized USB_Device_Struct. Memory must
  *        be kept during existence of USB device. Must not be NULL.
+ * @return success (TODO: This should not be there, let's retry if there's something wrong ********)
  */
-void USB_Init(const USB_Device_Definition* definition,
+bool USB_Init(const USB_Device_Definition* definition,
 USB_Device_Struct* device);
 
 /** enable connection from client side (soft-connect) 

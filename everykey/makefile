@@ -1,18 +1,22 @@
-NAME     = firmware
-CSOURCES  = $(shell find -L . -type f -name '*.c')
-ASOURCES = $(shell find -L . -type f -name '*.S')
-INCLUDES = $(shell find -L . -type f -name '*.h')
-DEPENDS  = $(CSOURCES:%.c=%.dep)
-COBJS     = $(CSOURCES:%.c=%.o)
-AOBJS    = $(ASOURCES:%.S=%.o) 
+NAME        = firmware
+CSOURCES    = $(shell find -L . -type f -name '*.c')
+CPPSOURCES  = $(shell find -L . -type f -name '*.cpp')
+ASOURCES    = $(shell find -L . -type f -name '*.S')
+INCLUDES    = $(shell find -L . -type f -name '*.h')
+DEPENDS     = $(CSOURCES:%.c=%.dep)
+COBJS       = $(CSOURCES:%.c=%.o)
+CPPOBJS     = $(CPPSOURCES:%.cpp=%.o)
+AOBJS       = $(ASOURCES:%.S=%.o) 
 
-AS       = arm-none-eabi-as 
-CC       = arm-none-eabi-gcc
-LD       = arm-none-eabi-ld
-OC       = arm-none-eabi-objcopy
-CCFLAGS  = '-mcpu=cortex-m3' '-mthumb' '-std=c99'
-LDFLAGS  = '-Tlpc1343.ld' -nostartfiles -nostdlib -nodefaultlibs
-OCFLAGS  = -Obinary --strip-unneeded
+AS          = arm-none-eabi-as 
+CC          = arm-none-eabi-gcc
+CPP         = arm-none-eabi-gcc
+LD          = arm-none-eabi-ld
+OC          = arm-none-eabi-objcopy
+CCFLAGS     = '-mcpu=cortex-m3' '-mthumb' '-std=c99'
+CPPFLAGS    = '-mcpu=cortex-m3' '-mthumb' '-std=c++x0'
+LDFLAGS     = '-Tlpc1343.ld' -nostartfiles -nostdlib -nodefaultlibs
+OCFLAGS     = -Obinary --strip-unneeded
 
 JLINK = jLinkExe
 FLASH_START_ADDRESS = 0x00000000
@@ -30,8 +34,8 @@ $(NAME).hex: $(NAME).obj
 	$(OC) $(OCFLAGS) $(NAME).obj $(NAME).hex
 	
 # generate obj by linking all .o files
-$(NAME).obj: $(COBJS) $(AOBJS)
-	$(LD) $(LDFLAGS) -o $(NAME).obj $(COBJS) $(AOBJS)
+$(NAME).obj: $(COBJS) $(CPPOBJS) $(AOBJS) 
+	$(LD) $(LDFLAGS) -o $(NAME).obj $(COBJS) $(CPPOBJS) $(AOBJS) 
 
 # compile .c to .o files. Generate .dep files on the fly.
 %.o: %.c

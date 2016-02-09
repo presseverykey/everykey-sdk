@@ -12,6 +12,7 @@ typedef struct _USBMIDI_Behaviour_Struct USBMIDI_Behaviour_Struct;
 typedef void (*MidiNoteOnHandler)(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t note, uint8_t velocity);
 typedef void (*MidiNoteOffHandler)(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t note);
 typedef void (*MidiControlChangeHandler)(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint8_t control, uint8_t value);
+typedef void (*MidiPitchBendChangeHandler)(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t channel, uint16_t bend);
 typedef void (*MidiSysExHandler)(USB_Device_Struct* device, const USBMIDI_Behaviour_Struct* behaviour, uint8_t cableNumber, uint8_t* data, uint8_t length, bool moreToCome);
 
 /** Use these functions to send MIDI data to the host. Return true for success, false otherwise. */
@@ -37,6 +38,7 @@ struct _USBMIDI_Behaviour_Struct {
 	MidiNoteOnHandler noteOnHandler;                //Set to be informed about incoming NOTE ON events. Set to NULL to ignore.
 	MidiNoteOffHandler noteOffHandler;              //Set to be informed about incoming NOTE OFF events. Set to NULL to ignore.
 	MidiControlChangeHandler controlChangeHandler;  //Set to be informed about incoming CC events. Set to NULL to ignore.
+	MidiPitchBendChangeHandler pitchBendHandler;	//Set to be informed about incoming pitch bend events. Set to NULL to ignore
 	MidiSysExHandler sysExHandler;                  //Set to be informed about incoming SysEx events (data will be sent in chunks). Set to NULL to ignore.
 };
 

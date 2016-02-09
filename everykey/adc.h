@@ -1,3 +1,6 @@
+#ifndef _ADC_
+#define _ADC_
+
 #include "types.h"
 #include "memorymap.h"
 
@@ -154,3 +157,5 @@ typedef struct {
 } ADC_STRUCT;
 
 #define ADC_HW ((ADC_STRUCT*)(0x4001C000))
+
+#endif

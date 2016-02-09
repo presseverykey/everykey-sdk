@@ -15,6 +15,11 @@ extern uint8_t _LD_END_OF_BSS;
 #define DEFAULTS_TO(func) __attribute__ ((weak, alias (#func)))
 
 void main(void);// DEFAULTS_TO(deadend);
+void nmi_handler(void) DEFAULTS_TO(deadend);
+void hardfault_handler(void) DEFAULTS_TO(deadend);
+void mpufault_handler(void) DEFAULTS_TO(deadend);
+void busfault_handler(void) DEFAULTS_TO(deadend);
+void usagefault_handler(void) DEFAULTS_TO(deadend);
 void systick(void) DEFAULTS_TO(deadend);
 void usb_fiq_handler(void) DEFAULTS_TO(deadend);
 void usb_irq_handler(void) DEFAULTS_TO(deadend);
@@ -39,11 +44,11 @@ __attribute__ ((section(".vectors")))
 const VECTOR_TABLE vtable = {
 	&_LD_STACK_TOP,          //Stack top
 	bootstrap,               //boot code
-	deadend,                 //NMI
-	deadend,                 //Hard fault
-	deadend,                 //Memory protection unit fault handler
-	deadend,                 //Bus fault handler
-	deadend,                 //Usage fault handler
+	nmi_handler,             //NMI
+	hardfault_handler,       //Hard fault
+	mpufault_handler,        //Memory protection unit fault handler
+	busfault_handler,        //Bus fault handler
+	usagefault_handler,      //Usage fault handler
 	deadend,                 //RESERVED1
 	deadend,                 //RESERVED2
 	deadend,                 //Reserved for CRC checksum

@@ -287,13 +287,14 @@ typedef struct {
 	HW_RW CLKOUTUEN;		//Output clock source update. To trigger written CLKOUTCLKSEL, write 0 then 1
 	HW_RW CLKOUTDIV;		//Out clock divider. Bit7:0: 0:disable, 1..255: divide by 1..255
 	HW_RS RESERVED11[5];
+
 	HW_RO PIOPORCAP0;		//PIO pin state at Power-on reset
 	HW_RO PIOPORCAP1;		//PIO pin state at Power-on reset
 	HW_RS RESERVED12[18];
 	HW_RW BODCTRL;			//Brownout control. Bit1:0:Reset V, Bit3:2:Interrupt V, Bit4:Enable BOD reset
-	HW_RS RESERVED13;
 	HW_RW SYSTCKCAL;		//Systick timer calibration
-	HW_RS RESERVED14[41];
+	HW_RS RESERVED14[42];
+
 	HW_RW STARTAPRP0;		//Start logic edge control bitmap. Rising or falling edge of PIO
 	HW_RW STARTERP0;		//Start logic signal enable bitmap. PIO interrupt enable mask
 	HW_WO STARTRSRP0CLR;		//Start logic reset bitmap. Write 1 to reset start signal
@@ -755,7 +756,8 @@ typedef enum {
 } SCB_SYSTEM_HANDLER_INDEX;
 
 typedef enum AIRCR_BITS {
-	AIRCR_VECTKEY = (0xFA05 << 16),
+//	AIRCR_VECTKEY = (0xFA05 << 16),
+	AIRCR_VECTKEY = (0x05FA << 16),
 	AIRCR_ENDIAN_MASK = 1 << 15,
 	AIRCR_LITTLE_ENDIAN = 0,
 	AIRCR_BIG_ENDIAN = 1,

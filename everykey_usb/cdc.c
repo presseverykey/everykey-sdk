@@ -41,7 +41,7 @@ bool USBCDC_ExtendedControlSetupHandler(USB_Device_Struct* device, const USB_Beh
 	USBCDC_Behaviour_Struct* cdc = (USBCDC_Behaviour_Struct*)behaviour;
 	USB_Setup_Packet* req = &(device->currentCommand);
 	
-	if (req->wIndexL != cdc->controlInterface) return;	//must be targeted at our interface
+	if (req->wIndexL != cdc->controlInterface) return false;	//must be targeted at our interface
 	uint16_t dataLen = (req->wLengthH << 8) | req->wLengthL;
 	
 	if (req->bmRequestType == (USB_RT_TYPE_CLASS | USB_RT_RECIPIENT_INTERFACE | USB_RT_DIR_HOST_TO_DEVICE)) {

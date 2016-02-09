@@ -3,6 +3,5 @@
 #include "memorymap.h"
 
 void SCB_SystemReset() {
-	SCB->AIRCR |= AIRCR_SYSRESETREQ;
-	while (1) {};
+	SCB->AIRCR = AIRCR_VECTKEY | AIRCR_SYSRESETREQ;
 }
