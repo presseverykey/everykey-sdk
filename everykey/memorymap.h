@@ -311,6 +311,34 @@ typedef struct {
 	HW_RO DEVICE_ID;		//Device ID - Chip model.
 } SYSCON_STRUCT;
 
+
+typedef enum SYSCON_PRESETCTRL_BITS {
+	SYSCON_PRESETCTRL_SSP0_RST_N = 0x01,
+	SYSCON_PRESETCTRL_I2C_RST_N = 0x02,		//NOTE: This is taken from the UM, seems to be wrong
+	SYSCON_PRESETCTRL_SSP1_RST_N = 0x04
+} SYSCON_PRESETCTRL_BITS;
+
+typedef enum SYSCON_WDTOSCCTRL_BITS {
+	SYSCON_WDTOSCCTRL_DIVSEL_MASK     = 0x1f,
+	SYSCON_WDTOSCCTRL_FREQSEL_MASK    = 0x1e0,
+	SYSCON_WDTOSCCTRL_FREQSEL_600KHZ  = 0x20,
+	SYSCON_WDTOSCCTRL_FREQSEL_1050KHZ = 0x40,
+	SYSCON_WDTOSCCTRL_FREQSEL_1400KHZ = 0x60,
+	SYSCON_WDTOSCCTRL_FREQSEL_1750KHZ = 0x80,
+	SYSCON_WDTOSCCTRL_FREQSEL_2100KHZ = 0xa0,
+	SYSCON_WDTOSCCTRL_FREQSEL_2400KHZ = 0xc0,
+	SYSCON_WDTOSCCTRL_FREQSEL_2700KHZ = 0xe0,
+	SYSCON_WDTOSCCTRL_FREQSEL_3000KHZ = 0x100,
+	SYSCON_WDTOSCCTRL_FREQSEL_3250KHZ = 0x120,
+	SYSCON_WDTOSCCTRL_FREQSEL_3500KHZ = 0x140,
+	SYSCON_WDTOSCCTRL_FREQSEL_3750KHZ = 0x160,
+	SYSCON_WDTOSCCTRL_FREQSEL_4000KHZ = 0x180,
+	SYSCON_WDTOSCCTRL_FREQSEL_4200KHZ = 0x1a0,
+	SYSCON_WDTOSCCTRL_FREQSEL_4400KHZ = 0x1c0,
+	SYSCON_WDTOSCCTRL_FREQSEL_4600KHZ = 0x1e0
+
+} SYSCON_WDTOSCCTRL_BITS;
+
 typedef enum SYSCON_SYSAHBCLKCTRL_BITS {
 	SYSCON_SYSAHBCLKCTRL_SYS        = 0x00001,
 	SYSCON_SYSAHBCLKCTRL_ROM        = 0x00002,
@@ -332,6 +360,12 @@ typedef enum SYSCON_SYSAHBCLKCTRL_BITS {
 	SYSCON_SYSAHBCLKCTRL_SSP1       = 0x40000
 } SYSCON_SYSAHBCLKCTRL_BITS;
 
+typedef enum SYSCON_WDTCLKSEL_BITS {
+	SYSCON_WDTCLKSEL_IRC      = 0x0,
+	SYSCON_WDTCLKSEL_MAINCLK  = 0x1,
+	SYSCON_WDTCLKSEL_WATCHDOG = 0x2
+} SYSCON_WDTCLKSEL_BITS;
+
 /* may be used with PDRUNCFG and PDAWAKECFG registers */
 typedef enum SYSCON_PD_BITS {
 	SYSCON_IRCOUT_PD     = 0x0001,
@@ -347,11 +381,6 @@ typedef enum SYSCON_PD_BITS {
 	SYSCON_PD_ALWAYS_SET = 0xe800
 } SYSCON_PD_BITS;
 
-typedef enum SYSCON_PRESETCTRL_BITS {
-	SYSCON_PRESETCTRL_SSP0_RST_N = 0x01,
-	SYSCON_PRESETCTRL_I2C_RST_N = 0x02,		//NOTE: This is taken from the UM, seems to be wrong
-	SYSCON_PRESETCTRL_SSP1_RST_N = 0x04
-} SYSCON_PRESETCTRL_BITS;
 
 #define SYSCON ((SYSCON_STRUCT*)(0x40048000))
 
@@ -772,7 +801,32 @@ typedef enum AIRCR_BITS {
  is off the other block (rather in NVIC), so it's addressed separately */
 #define SCB_ACTLR ((HW_RW*)0xe000e008)
 
+/* ----------------------------
+   --- Watchdog Timer (WDT) ---
+   ----------------------------
+ 
+Simple watchdog timer with single feed point */
 
+typedef struct WDT_STRUCT {
+	HW_RW MOD;   //watchdog mode
+	HW_RW TC;    //timer reload constant
+	HW_WO FEED;  //feed register - write 0xaa, then 0x55 to reload the timer
+	HW_RO TV;    //current timer value
+} WDT_STRUCT;
+
+typedef enum WDT_MOD_BITS { 
+	WDT_MOD_WDEN    = 0x01,  //enable
+	WDT_MOD_WDRESET = 0x02,  //reset on trigger
+	WDT_MOD_WDTOF   = 0x04,  //trigger flag. Cleared when interrupt is generated, to be cleared by software
+	WDT_MOD_WDINT   = 0x08   //interrupt flag, read only
+} WDT_MOD_BITS;
+
+typedef enum WDT_FEED_VALUES { //magic feed values. First feed 1, then 2
+	WDT_FEED_1 = 0xaa,
+	WDT_FEED_2 = 0x55
+} WDT_FEED_VALUES;
+
+#define WDT ((WDT_STRUCT*)0x40004000)
 
 
 

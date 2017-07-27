@@ -13,7 +13,7 @@ CC          = arm-none-eabi-gcc
 CPP         = arm-none-eabi-gcc
 LD          = arm-none-eabi-ld
 OC          = arm-none-eabi-objcopy
-CCFLAGS     = '-mcpu=cortex-m3' '-mthumb' '-std=c99'
+CCFLAGS     = '-mcpu=cortex-m3' '-mthumb' '-std=c99' '-O2'
 CPPFLAGS    = '-mcpu=cortex-m3' '-mthumb' '-std=c++x0'
 LDFLAGS     = '-Tlpc1343.ld' -nostartfiles -nostdlib -nodefaultlibs
 OCFLAGS     = -Obinary --strip-unneeded

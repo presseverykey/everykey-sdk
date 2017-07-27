@@ -100,6 +100,7 @@ typedef struct {
 	volatile uint8_t* readBuffer;   //pointer to next byte to read
 	volatile I2C_CompletionHandler completionHandler;  //callback when transaction is completed
 	volatile uint8_t flags;			//flags (bitwise or of I2C_FLAGS)iting (still active)
+	volatile bool ignoreNack;		//if true, NACK is treated just like ACK
 } I2C_State;
 
 /** Codes for bus speed */
@@ -114,6 +115,11 @@ This function assumes that the PCLK clock is running at 72 MHz, currently master
  @param mode operation speed 
  @param state pointer to an uninitialized I2C_State structure in RAM. Must not be null. */
 void I2C_Init(I2C_MODE mode, I2C_State* state);
+
+/** Enables or disables I2C NACK ignore. Some devices (e.g. PCU9656) don't send ACK.
+I2C must be initialized 
+@param ignore if true, NACK is treated like an ACK */
+void I2C_SetIgnoreNACK(bool ignore);
 
 /** Writes data to I2C. 
  @param addr slave address

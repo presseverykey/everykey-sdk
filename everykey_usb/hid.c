@@ -12,18 +12,23 @@ bool USBHID_SetReportDataComplete(USB_Device_Struct* device) {
 								(device->currentCommand.wLengthH << 8) |
 								device->currentCommand.wLengthL);
 		return true;
-	} else return false;
+	} else {
+		return false;
+	}
 }
 
 /** handler for HID-specific USB commands */
 bool USBHID_ExtendedControlSetupHandler(USB_Device_Struct* device, const USB_Behaviour_Struct* behaviour) {
-
 	// we only handle requests to our interface	
-	if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_INTERFACE) return false;
+	if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_INTERFACE) {
+		return false;
+	}
 
 	const USBHID_Behaviour_Struct* hid = (const USBHID_Behaviour_Struct*)behaviour;
 	
-	if (device->currentCommand.wIndexL != hid->interfaceNumber) return false;
+	if (device->currentCommand.wIndexL != hid->interfaceNumber) {
+		return false;
+	}
 
 	uint16_t maxTransferLen = (device->currentCommand.wLengthH << 8) | device->currentCommand.wLengthL;
 

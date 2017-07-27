@@ -18,7 +18,7 @@
 
 /** change limits if you need more */
 #define USB_MAX_CONFIGURATION_COUNT 3
-#define USB_MAX_STRING_COUNT 5
+#define USB_MAX_STRING_COUNT 9
 #define USB_MAX_INTERFACES_PER_DEVICE 8
 #define USB_MAX_BEHAVIOURS_PER_DEVICE 4
 

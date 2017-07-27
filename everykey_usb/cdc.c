@@ -1,6 +1,7 @@
 #include "cdc.h"
 #include "../everykey/endian.h"
 
+
 /** this function is called when the data phase of a SetCommFeature command completed. Read data is in the commandDataBuffer. */
 bool USBCDC_SetCommFeatureCompleted(USB_Device_Struct* device) {
 	USBCDC_Behaviour_Struct* cdc = (USBCDC_Behaviour_Struct*)device->callbackRefcon;

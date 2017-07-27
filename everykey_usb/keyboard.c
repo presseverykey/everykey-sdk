@@ -90,7 +90,7 @@ const uint8_t kbd_configDescriptor[] = {
 	0x81,								//bEndpointAddress: Logical endpoint 1, direction IN
 	USB_EPTYPE_INTERRUPT,				//bmAttributesL: Interrput endpoint
 	I16_TO_LE_BA(8),					//wMaxPacketSize: 8 bytes (report size)
-	0x0a								//bInterval: Poll interval in ms
+	0x01								//bInterval: Poll interval in ms (usually 0x0a)
 };
 
 
@@ -109,7 +109,7 @@ const uint8_t kbd_manufacturerName[] = {
 const uint8_t kbd_deviceName[] = {
 	0x12,								//bLength: length of this descriptor in bytes (18)
 	USB_DESC_STRING,					//bDescriptorType: string descriptor
-	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
+	'E',0,'v',0,'e',0,'r',0,'y',0,'k',0,'e',0,'y',0			//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t kbd_serialName[] = {

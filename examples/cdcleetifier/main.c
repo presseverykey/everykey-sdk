@@ -7,8 +7,7 @@ void main(void) {
 	everycdc cdc;
 	everycdc_init(&cdc);
 
-	
-	everypio_write  (LED, false);
+	everypio_write(LED, false);
 
 	while(true) {
 		int b;
@@ -31,3 +30,4 @@ void main(void) {
 		}
 	}
 }
+

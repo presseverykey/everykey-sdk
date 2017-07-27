@@ -7,6 +7,7 @@
 #include "../everykey/nvic.h"
 #include "../everykey/gpio.h"
 
+#define DEBUG(a) every_gpio_write(0,7,a)
 
 
 #pragma mark USB globals
@@ -124,8 +125,8 @@ uint32_t USB_EP_Read(USB_Device_Struct* device, uint8_t epIdx, uint8_t* buffer, 
 }
 
 uint32_t USB_EP_Write(USB_Device_Struct* device, uint8_t epIdx, const uint8_t* buffer, uint32_t length) {
-	if (USB_EP_GetFull(device,epIdx)) return 0;					//cannot write - all buffers full
-	//	if (USB_EP_GetStall(epIdx)) return length;					//EP is stalled: Do not write but flush output
+	if (USB_EP_GetFull(device, epIdx)) return 0;					//cannot write - all buffers full
+	if (USB_EP_GetStall(device, epIdx)) return length;					//EP is stalled: Do not write but flush output
 	uint8_t logEpIdx = epIdx >> 1;
 	USB->CTRL = USB_CTRL_LOG_EP * logEpIdx + USB_CTRL_WR_EN;	//enable writing for this ep
 	NOP;					//wait a bit, just to be safe
@@ -248,6 +249,7 @@ bool USB_HandleGetStatus(USB_Device_Struct* device) {
 }
 
 bool USB_HandleGetDescriptor(USB_Device_Struct* device) {
+
 	//Request only sent to device. wValueH contains the descriptor type, wValueL contains the desriptor index.
 	//In case of string descriptors, wIndex (l and h) contains the language ID
 	if ((device->currentCommand.bmRequestType & USB_RT_RECIPIENT_MASK) != USB_RT_RECIPIENT_DEVICE) return false;
@@ -543,6 +545,7 @@ void USB_HandleData(USB_Device_Struct* device, int epIdx) {
 
 /** this function is added to the interrupt vector table - see startup.c */
 void usb_irq_handler(void) {
+
 	USB_Device_Struct* device = _usbDevice;
 	uint32_t interruptMask = USB->DEVINTST;	//read interrupt pending mask
 	USB->DEVINTCLR = interruptMask;			//clear interrupt pending mask
@@ -578,7 +581,8 @@ void usb_irq_handler(void) {
 					break;
 			}
 		}
-	}	
+	}
+
 }
 
 void usb_fiq_handler(void) {
@@ -629,7 +633,7 @@ bool USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device
 	IOCON->PIO0_6 = 0x01;				//set PIO0_6 to !USB_Connect function
 
 	// Enable interrupts
-	NVIC_EnableInterrupt(NVIC_USBFIQ);
+//	NVIC_EnableInterrupt(NVIC_USBFIQ);
 	NVIC_EnableInterrupt(NVIC_USBIRQ);
 	
 	USB_Reset(device); //set all state variables to start

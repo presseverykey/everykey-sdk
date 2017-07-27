@@ -153,15 +153,15 @@ const uint8_t mouse_languages[] = {
 };
 	
 const uint8_t mouse_manufacturerName[] = {
-	0x22,								//bLength: length of this descriptor in bytes (34)
+	0x26,								//bLength: length of this descriptor in bytes (38)
 	USB_DESC_STRING,					//bDescriptorType: string descriptor
-	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'A',0,'n',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
+	'P',0,'r',0,'e',0,'s',0,'s',0,' ',0,'E',0,'v',0,'e',0,'r',0,'y',0,' ',0,'K',0,'e',0,'y',0,' ',0,'U',0,'G',0	//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t mouse_deviceName[] = {
 	0x12,								//bLength: length of this descriptor in bytes (18)
 	USB_DESC_STRING,					//bDescriptorType: string descriptor
-	'A',0,'n',0,'y',0,'k',0,'e',0,'y',0,'0',0,'x',0			//bString[]: String (UTF16LE, not terminated)
+	'E',0,'v',0,'e',0,'r',0,'y',0,'k',0,'e',0,'y',0			//bString[]: String (UTF16LE, not terminated)
 };
 
 const uint8_t mouse_serialName[] = {

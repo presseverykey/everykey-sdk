@@ -4,9 +4,9 @@
 
 #define POINTER_NOT_SET ((void*)-1)
 
-I2C_State* i2c_state = POINTER_NOT_SET;
+static I2C_State* i2c_state = POINTER_NOT_SET;
 
-volatile uint8_t latestI2CState = 0;
+static volatile uint8_t latestI2CState = 0;
 
 void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 	i2c_state = inState;
@@ -18,6 +18,7 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 	i2c_state->readBuffer = NULL;
 	i2c_state->completionHandler = NULL;
 	i2c_state->flags = 0;
+	i2c_state->ignoreNack = false;
 
 	uint32_t scl = 360;	//default: 100kbps
 	switch (mode) {		//set pin functions and I2C clock rate: 2 * SCL * data rate = CPU clock
@@ -31,7 +32,7 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 			scl = 36;
 			break;
 	}
-	uint32_t func = 0x01 | ((mode == I2C_MODE_FASTPLUS) ? 0x200 : 0);
+	uint32_t func = 0x01 | ((mode == I2C_MODE_FASTPLUS) ? 0x200 : 0x00);
 	IOCON->PIO0_4 = func;
 	IOCON->PIO0_5 = func;
 
@@ -53,6 +54,10 @@ void I2C_Init(I2C_MODE mode, I2C_State* inState) {
 
 }
 
+void I2C_SetIgnoreNACK(bool ignore) {
+	i2c_state->ignoreNack = ignore;
+}
+
 void I2C_WriteNextByte() {	//very low level, just push next byte from buffer
 	I2C->DAT = *(i2c_state->writeBuffer);
 	i2c_state->writeBuffer++;
@@ -71,6 +76,20 @@ void i2c_handler(void) {
 			I2C->DAT = (i2c_state->slaveAddress << 1) | ((i2c_state->toWrite > 0) ? 0 : 1);	//SLA+R/W
 			I2C->CONCLR = I2C_CONCLR_STAC;
 			break;
+		case I2C_STAT_SLAW_NACKED:			//SLAW failed -> finish, notify
+			if (!(i2c_state->ignoreNack)) {
+				I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
+				userStatus = I2C_STATUS_ADDRESSING_FAILED;
+				goto stopAndNotifyUser;
+				break;
+			}
+		case I2C_STAT_DATA_WRITE_NACKED:	//Data write failed -> finish, notify
+			if (!(i2c_state->ignoreNack)) {
+				I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
+				userStatus = I2C_STATUS_DATA_FAILED;
+				goto stopAndNotifyUser;
+				break;
+			}
 		case I2C_STAT_SLAW_ACKED:			//Write addressing succeeded
 		case I2C_STAT_DATA_WRITE_ACKED:		//Byte successfully written
 			if (i2c_state->toWrite > 0) {		//more to write
@@ -90,16 +109,6 @@ void i2c_handler(void) {
 				}
 			}
 			break;
-		case I2C_STAT_SLAW_NACKED:			//SLAW failed -> finish, notify
-			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
-			userStatus = I2C_STATUS_ADDRESSING_FAILED;
-			goto stopAndNotifyUser;
-			break;
-		case I2C_STAT_DATA_WRITE_NACKED:	//Data write failed -> finish, notify
-			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
-			userStatus = I2C_STATUS_DATA_FAILED;
-			goto stopAndNotifyUser;
-			break;
 		case I2C_STAT_ARBITRATION_LOST:		//Arbitration lost -> finish, notify
 			i2c_state->toWrite = 0;
 			i2c_state->toRead = 0;
@@ -107,14 +116,16 @@ void i2c_handler(void) {
 			userStatus = I2C_STATUS_ARBITRATION_LOST;
 			goto notifyUser;
 			break;
+		case I2C_STAT_SLAR_NACKED:			//SLAR nacked -> finish, notify
+			if (!(i2c_state->ignoreNack)) {
+				I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
+				userStatus = I2C_STATUS_ADDRESSING_FAILED;
+				goto stopAndNotifyUser;
+				break;
+			}
 		case I2C_STAT_SLAR_ACKED:
 			if (i2c_state->toRead > 1) I2C->CONSET = I2C_CONSET_AA;
 			else I2C->CONCLR = I2C_CONCLR_AAC;
-			break;
-		case I2C_STAT_SLAR_NACKED:			//SLAR nacked -> finish, notify
-			I2C->CONCLR = I2C_CONCLR_STAC | I2C_CONCLR_AAC;
-			userStatus = I2C_STATUS_ADDRESSING_FAILED;
-			goto stopAndNotifyUser;
 			break;
 		case I2C_STAT_DATA_READ_ACKED:		//byte read and acked (more to come)
 			{

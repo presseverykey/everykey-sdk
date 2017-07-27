@@ -13,6 +13,7 @@
 #include "adc.h"
 #include "uart.h"
 #include "nvic.h"
+#include "wdt.h"
 #include "iap.h"
 #include "scb.h"
 
