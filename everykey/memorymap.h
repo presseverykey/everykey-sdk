@@ -554,7 +554,14 @@ typedef enum SSP_SR_BITS {
 	SSP_SR_RFF					= 0x08,
 	SSP_SR_BSY					= 0x10
 } SSP_SR_BITS;
-	
+
+typedef enum SSP_INTERRUPT_BITS {
+	SSP_INT_RORI        = 0x01,
+	SSP_INT_RTI         = 0x02,
+	SSP_INT_RXI         = 0x04,
+	SSP_INT_TXI         = 0x08
+} SSP_INTERRUPT_BITS;
+
 #define SSP0 ((SSP_STRUCT*)0x40040000)
 //#define SSP1 ((SSP_STRUCT*)0x40058000) //Not available on LPC1343
 

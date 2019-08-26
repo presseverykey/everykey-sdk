@@ -1,5 +1,5 @@
 #include "wdt.h"
-
+#include "utils.h"
 
 
 void WDT_Start(SYSCON_WDTOSCCTRL_BITS baseFreq, uint8_t divider, uint32_t reload, bool doReset) {

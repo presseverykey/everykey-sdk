@@ -29,6 +29,9 @@ uint32_t strlen(const char* s);
 /** copy a C string (including termination) */
 char* strcpy(char *dst, const char *src);
 
+/** compare strings */
+int strcmp(const void *s1, const void *s2);
+
 #endif
 
 

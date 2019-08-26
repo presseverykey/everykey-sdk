@@ -9,6 +9,7 @@
 
 #define DEBUG(a) every_gpio_write(0,7,a)
 
+static volatile uint32_t STATUS; //This weird thing must stay in for now (pkus the conditional code further down) until we found out why it makes a difference
 
 #pragma mark USB globals
 
@@ -61,6 +62,10 @@ void USB_SIE_SetConnected(USB_Device_Struct* device, bool connected) {
 
 bool USB_SIE_GetConnected(USB_Device_Struct* device) {
 	return (USB_SIE_Command_Read1(device, USB_SIE_CMD_GetSetDeviceStatus) & 1) ? true : false;
+}
+
+uint8_t USB_SIE_GetDeviceStatus(USB_Device_Struct* device) {
+	return USB_SIE_Command_Read1(device, USB_SIE_CMD_GetSetDeviceStatus);
 }
 
 void USB_SIE_SetAddress(USB_Device_Struct* device, uint8_t address, bool enabled) {
@@ -188,6 +193,7 @@ void USB_Reset(USB_Device_Struct* device) {
 	device->currentConfiguration = 0;
 	device->controlOutDataCompleteCallback = NULL;
 	device->controlStatusCallback = NULL;
+	device->newAddress = 0;
 	int i;
 	for (i=0; i<USB_MAX_INTERFACES_PER_DEVICE; i++) device->interfaceAltSetting[i] = 0;
 	USB_SIE_SetAddress(device, 0, true);
@@ -256,6 +262,8 @@ bool USB_HandleGetDescriptor(USB_Device_Struct* device) {
 	if ((device->currentCommand.bmRequestType & USB_RT_DIR_MASK) != USB_RT_DIR_DEVICE_TO_HOST) return false;
 	const uint8_t* base = NULL;
 	uint16_t len = 0;
+
+
 	switch (device->currentCommand.wValueH) {
 		case USB_DESC_DEVICE:
 			base = device->deviceDefinition->deviceDescriptor;
@@ -274,9 +282,18 @@ bool USB_HandleGetDescriptor(USB_Device_Struct* device) {
 			}
 			break;
 	}
+
 	if (base == NULL) return false;
 	uint16_t maxLen = ((device->currentCommand.wLengthH) << 8) | (device->currentCommand.wLengthL);
 	if (len > maxLen) len = maxLen;
+
+	if ((device->newAddress) && (device->currentCommand.wValueH == 1)) {
+		STATUS = len + 12;
+	}
+
+
+
+
 	/* Allow assignment to non-const pointer. We already checked that the direction is DEVICE_TO_HOST,
 	 so that buffer contents are not modified. We could also have different base pointers, but we want
 	 to save memory. */
@@ -353,7 +370,7 @@ bool USB_HandleSetConfiguration(USB_Device_Struct* device) {
 }
 
 bool USB_HandleSetAddress2(USB_Device_Struct* device) {
-	USB_SIE_SetAddress(device, device->currentCommand.wValueL & 0x7f, 1);
+	USB_SIE_SetAddress(device, device->newAddress, 1);
 	return true;
 }
 
@@ -365,6 +382,7 @@ bool USB_HandleSetAddress(USB_Device_Struct* device) {
 	if (device->currentCommand.wLengthH != 0) return false;
 	if (device->currentCommand.wValueH != 0) return false;
 	if (device->currentCommand.wValueL >= 0x80) return false;
+	device->newAddress = device->currentCommand.wValueL & 0x7f;
 	device->controlStatusCallback = USB_HandleSetAddress2; //we actually change address after status out
 	return true;
 }
@@ -552,6 +570,14 @@ void usb_irq_handler(void) {
 
 	//We could test other USB interrupts here if we need to
 
+	//device status change interrupt
+	if (interruptMask & USB_DEVINT_DEV_STAT) {	//status change
+		uint8_t devStat = USB_SIE_GetDeviceStatus(device);
+		if (devStat & 0x10) {	//got a bus reset
+			device->newAddress = 0;	//was implicitly reset
+		}
+	}
+
 	//Check frame interrupt
 	if (interruptMask & USB_DEVINT_FRAME) {
 		uint8_t i;
@@ -628,6 +654,8 @@ bool USB_Init(const USB_Device_Definition* definition, USB_Device_Struct* device
 	SYSCON->USBCLKUEN = 0;				//Trigger main clock source change
 	SYSCON->USBCLKUEN = 1;
 	
+	USB_SIE_SetConnected(device, false);
+
 	// Configure (USB)
 	IOCON->PIO0_3 = 0x01;				//set PIO0_3 to VBus function
 	IOCON->PIO0_6 = 0x01;				//set PIO0_6 to !USB_Connect function

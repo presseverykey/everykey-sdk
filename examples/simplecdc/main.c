@@ -16,7 +16,7 @@
 const uint8_t deviceDescriptor[] = {
 	18,                             //bLength: length of this structure in bytes (18)
 	USB_DESC_DEVICE,                //bDescriptorType: usb device descriptor
-	I16_TO_LE_BA(0x0200),           //bcdUSB - USB 2.0
+	I16_TO_LE_BA(0x0101),           //bcdUSB - USB 1.1
 	USB_CLASS_CDC,                  //bDeviceClass: CDC
 	0x00,                           //bDeviceSubClass: Device subclass (must be 0 if bDeviceClass is 0)
 	0x00,                           //bDeviceProtocol: 0 for no specific device-level protocols

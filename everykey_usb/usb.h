@@ -237,6 +237,9 @@ struct _USB_Device_Struct {
 	
 	/** Number of remaining bytes to transfer in data phase */
 	uint32_t currentCommandDataRemaining;
+
+	/** address set by host */
+	uint8_t newAddress;
 		
 };
 

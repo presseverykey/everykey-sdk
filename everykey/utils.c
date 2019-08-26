@@ -69,4 +69,15 @@ char* strcpy(char *dst, const char *src) {
     memcpy(dst, src, strlen(src) + 1); //copy including termination
 }
 
+/** compare strings */
+int strcmp(const void *s1, const void *s2) {
+    if ((s1 == NULL) && (s2 == NULL)) { return 0; }
+    if (s1 == NULL) { return 1; }
+    if (s2 == NULL) { return 1; }
+    uint32_t size1 = strlen(s1);
+    uint32_t size2 = strlen(s2);
+    if (size1 != size2) { return 1; }
+    return memcmp(s1, s2, size1);
+}
+
 

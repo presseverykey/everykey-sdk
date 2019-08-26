@@ -27,11 +27,12 @@ void ct16b0_handler(void) DEFAULTS_TO(deadend);
 void ct16b1_handler(void) DEFAULTS_TO(deadend);
 void ct32b0_handler(void) DEFAULTS_TO(deadend);
 void ct32b1_handler(void) DEFAULTS_TO(deadend);
+void i2c_handler(void) DEFAULTS_TO(deadend);
 void gpio0_handler(void) DEFAULTS_TO(deadend);
 void gpio1_handler(void) DEFAULTS_TO(deadend);
 void gpio2_handler(void) DEFAULTS_TO(deadend);
 void gpio3_handler(void) DEFAULTS_TO(deadend);
-void i2c_handler(void) DEFAULTS_TO(deadend);
+void ssp_handler(void) DEFAULTS_TO(deadend);
 void uart_handler(void) DEFAULTS_TO(deadend);
 /* The vector table - contains the initial stack pointer and
  pointers to boot code as well as interrupt and fault handler pointers.
@@ -103,7 +104,7 @@ const VECTOR_TABLE vtable = {
 	ct16b1_handler,          //16-bit Timer 1 handler
 	ct32b0_handler,          //32-bit Timer 0 handler
 	ct32b1_handler,          //32-bit Timer 1 handler
-	deadend,                 //SSP
+	ssp_handler,             //SSP
 	uart_handler,            //UART
 	usb_irq_handler,         //USB IRQ
 	usb_fiq_handler,         //USB FIQ

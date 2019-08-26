@@ -11,7 +11,7 @@ const uint8_t kbd_deviceDescriptor[] = {
 	0x00,                           //bDeviceProtocol: 0 for no specific device-level protocols
 	USB_MAX_COMMAND_PACKET_SIZE,	//bMaxPacketSize0: Max packet size for control endpointit)
 	0x34, 0x12,                     //idVendor: 16 bit vendor id
-	0x78, 0x56,                     //idProduct: 16 bit product id
+	0x79, 0x56,                     //idProduct: 16 bit product id
 	0x00, 0x01,                     //bcdDevice: Device release version
 	0x01,                           //iManufacturer: Manufacturer string index
 	0x02,                           //iProduct: Product string index

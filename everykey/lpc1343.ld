@@ -2,9 +2,11 @@
 
 /* MEMORY describes the device's memory blocks and their addresses */
 
+/* NOTE: First 0x180 bytes of RAM are used by the USB ROM driver */
+
 MEMORY { 
   flash (rx)  : ORIGIN = 0x00000000, LENGTH = 32K
-  ram   (rwx) : ORIGIN = 0x10000000, LENGTH =  8K
+  ram   (rwx) : ORIGIN = 0x10000180, LENGTH =  0x1e80
 }
 
 _LD_STACK_TOP = 0x10001ff0; /* Stack should start here */
